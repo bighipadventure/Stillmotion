@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SD画像 → 動画</title>
+<title>Stillmotion</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,71 +11,123 @@
 <style>
 /* ===== TOKENS ===== */
 :root {
-  --paper: #eef1f4;
+  --bg: #eceef2;
   --surface: #ffffff;
-  --ink: #1d2a36;
-  --muted: #5b6b7a;
-  --line: #d3dae1;
-  --teal: #1e5b63;
-  --teal-ink: #ffffff;
-  --teal-soft: #dcebec;
-  --lamp: #f2a93b;
-  --lamp-soft: #fbe8c8;
-  --danger: #b3261e;
-  --ok: #2e7d4f;
-  --film: #26313b;
-  --radius-s: 6px;
-  --radius-m: 10px;
+  --surface-2: #f4f5f8;
+  --ink: #12161c;
+  --muted: #4b5462;
+  --line: #d9dde4;
+  --line-strong: #a9b2be;
+  --accent: #0c5965;
+  --accent-hover: #08454f;
+  --on-accent: #ffffff;
+  --accent-soft: #dff0f2;
+  --on-accent-soft: #08414a;
+  --lamp: #f0a63a;
+  --on-lamp: #1b1204;
+  --lamp-glow: rgba(240, 166, 58, .38);
+  --danger: #b42318;
+  --danger-soft: #fdeceb;
+  --ok: #1b6e40;
+  --warn-soft: #fff0d6;
+  --on-warn-soft: #573800;
+  --tag-browser: #e3ecfb;
+  --on-tag-browser: #1d3f7a;
+  --tag-llm: #efe6fa;
+  --on-tag-llm: #4b2a7a;
+  --tag-comfy: #fff0d6;
+  --on-tag-comfy: #5a3a00;
+  --film: #161b21;
+  --film-cell: #28313b;
+  --film-ink: #c3ccd6;
+  --film-active: #4a391a;
+  --film-active-ink: #ffdc9c;
+  --film-error: #5c2521;
+  --film-error-ink: #ffd8d4;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
   --font: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  color-scheme: light;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #151b21;
-    --surface: #1e262e;
-    --ink: #e6ecf1;
-    --muted: #9aa9b6;
-    --line: #34404b;
-    --teal: #4fa3ad;
-    --teal-ink: #0d1a1c;
-    --teal-soft: #22393c;
-    --lamp: #f2a93b;
-    --lamp-soft: #4a3a20;
-    --danger: #ff8a80;
-    --ok: #7ccf9a;
-    --film: #0c1116;
+    --bg: #0d1115;
+    --surface: #161b21;
+    --surface-2: #1e252d;
+    --ink: #eef2f6;
+    --muted: #a9b4c0;
+    --line: #2b333d;
+    --line-strong: #4a5562;
+    --accent: #5fc3cd;
+    --accent-hover: #86d6de;
+    --on-accent: #04191c;
+    --accent-soft: #143439;
+    --on-accent-soft: #bdeef3;
+    --lamp: #f2b04d;
+    --on-lamp: #1b1204;
+    --lamp-glow: rgba(242, 176, 77, .3);
+    --danger: #ff9188;
+    --danger-soft: #3b1714;
+    --ok: #78d6a0;
+    --warn-soft: #3a2c10;
+    --on-warn-soft: #ffe0a8;
+    --tag-browser: #1c2d4a;
+    --on-tag-browser: #bcd3ff;
+    --tag-llm: #2c2142;
+    --on-tag-llm: #dcc9ff;
+    --tag-comfy: #3a2c10;
+    --on-tag-comfy: #ffe0a8;
+    --film: #090c0f;
+    --film-cell: #222a33;
+    color-scheme: dark;
   }
 }
 *, *::before, *::after { box-sizing: inherit; }
 html { scroll-padding-top: env(safe-area-inset-top, 0px); }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.65; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
 /* ===== CONTROLS ===== */
-button {
-  border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-s);
-  padding: 7px 14px; cursor: pointer;
+button, .filebtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+  border-radius: var(--radius-s); padding: 8px 16px; cursor: pointer; font-weight: 500; line-height: 1.4;
+  transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
 }
-button:hover:not(:disabled) { border-color: var(--teal); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button.primary { background: var(--teal); color: var(--teal-ink); border-color: var(--teal); font-weight: 700; }
-button.big { width: 100%; padding: 14px; font-size: 18px; letter-spacing: .05em; }
-button.chip { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
-button.chip[aria-pressed="true"] { background: var(--teal-soft); border-color: var(--teal); font-weight: 700; }
-button.link { border: none; background: none; padding: 0; color: var(--teal); text-decoration: underline; }
-button.danger { color: var(--danger); }
+button:hover:not(:disabled), .filebtn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--on-accent-soft); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+button.big { width: 100%; padding: 15px; font-size: 18px; letter-spacing: .08em; border-radius: var(--radius-m); }
+button.run { background: var(--lamp); border-color: var(--lamp); color: var(--on-lamp); font-weight: 700; }
+button.run:hover:not(:disabled) { background: var(--lamp); border-color: var(--lamp); color: var(--on-lamp); box-shadow: 0 0 0 5px var(--lamp-glow); }
+button.chip { border-radius: 999px; padding: 5px 14px; font-size: 13px; }
+button.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button.chip[aria-pressed="true"]::before { content: "✓"; }
+button.link { border: none; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 700; }
+button.link:hover:not(:disabled) { background: none; color: var(--accent-hover); }
+button.danger { color: var(--danger); border-color: var(--danger); background: var(--surface); }
+button.danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+.filebtn { position: relative; overflow: hidden; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 3px solid var(--lamp); outline-offset: 2px; }
 input[type="text"], input[type="url"], input[type="password"], input[type="number"], select, textarea {
-  width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 7px 10px;
+  width: 100%; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-s); padding: 8px 11px;
+  transition: border-color .15s, background-color .15s;
 }
-textarea { resize: vertical; line-height: 1.55; }
-input[type="range"], input[type="checkbox"] { accent-color: var(--teal); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--surface); }
+input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
+textarea { resize: vertical; line-height: 1.6; }
+input[type="range"], input[type="checkbox"] { accent-color: var(--accent); }
 input[type="range"] { width: 100%; }
-label.field { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
-label.field > input, label.field > select, label.field > textarea { margin-top: 3px; font-size: 15px; color: var(--ink); }
+label.field { display: block; margin-bottom: 14px; font-size: 13px; font-weight: 500; color: var(--muted); }
+label.field > input, label.field > select, label.field > textarea { margin-top: 4px; font-size: 15px; font-weight: 400; color: var(--ink); }
 label.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin-bottom: 10px; }
 label.check input { margin-top: 5px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -84,91 +136,115 @@ label.check input { margin-top: 5px; }
 .msg { font-size: 14px; margin: 8px 0; white-space: pre-wrap; }
 .msg.ok { color: var(--ok); }
 .msg.err { color: var(--danger); }
-details > summary { cursor: pointer; color: var(--muted); font-size: 14px; }
-code { background: var(--teal-soft); padding: 1px 6px; border-radius: 4px; word-break: break-all; }
+details > summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; }
+details > summary:hover { color: var(--ink); }
+code { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
 
 /* ===== LAYOUT ===== */
-.topbar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
-.topbar h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: .04em; }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.topbar h1 { font-size: 20px; margin: 0 8px 0 0; font-weight: 700; letter-spacing: .06em; display: flex; align-items: center; gap: 10px; }
+.topbar h1::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: var(--lamp); box-shadow: 0 0 0 4px var(--lamp-glow); }
 .pills { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
-.pill { font-size: 13px; border-radius: 999px; padding: 4px 12px; display: inline-flex; gap: 6px; align-items: center; }
-.pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.pill { font-size: 13px; border-radius: 999px; padding: 4px 12px; background: var(--surface-2); border-color: var(--line); }
+.pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
 .pill[data-state="ok"]::before { background: var(--ok); }
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
-.banner { background: var(--lamp-soft); padding: 10px 24px; font-size: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.layout { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.banner { background: var(--warn-soft); color: var(--on-warn-soft); padding: 10px 24px; font-size: 14px; font-weight: 500; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.layout { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
 @media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 16px; } .topbar { padding: 12px 16px; } }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 18px; }
-.col-input { display: flex; flex-direction: column; gap: 14px; align-self: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 20px; }
+.col-input { display: flex; flex-direction: column; gap: 16px; align-self: start; }
 .col-output { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.box-title { font-size: 14px; font-weight: 700; margin: 0 0 10px; color: var(--ink); }
+.field-label { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; }
+.subbox { border-top: 1px solid var(--line); padding-top: 14px; }
 
 /* ===== DROPZONE ===== */
 .dropzone {
-  display: grid; place-items: center; min-height: 220px; border: 2px dashed var(--line); border-radius: var(--radius-m);
-  cursor: pointer; text-align: center; padding: 12px; overflow: hidden; position: relative; background: var(--paper);
+  display: grid; place-items: center; min-height: 220px; border: 2px dashed var(--line-strong); border-radius: var(--radius-m);
+  cursor: pointer; text-align: center; padding: 12px; overflow: hidden; position: relative; background: var(--surface-2);
+  transition: border-color .15s, background-color .15s;
 }
-.dropzone.over { border-color: var(--teal); background: var(--teal-soft); }
-.dropzone img { max-width: 100%; max-height: 360px; border-radius: var(--radius-s); display: block; }
+.dropzone:focus-within { outline: 3px solid var(--lamp); outline-offset: 2px; }
+.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone .hint { color: var(--muted); font-size: 14px; }
 .dropzone .hint strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
 .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.dropzone.has-image { cursor: default; border-style: solid; border-color: var(--line); background: var(--film); }
+.dropzone.has-image input { pointer-events: none; }
+#frame-canvas { position: relative; z-index: 1; display: block; max-width: 100%; max-height: 380px; border-radius: 4px; touch-action: none; }
+#frame-canvas.draggable { cursor: grab; }
+#frame-canvas.dragging { cursor: grabbing; }
 #meta-text { white-space: pre-wrap; font-size: 12px; max-height: 240px; overflow: auto; margin: 8px 0 0; color: var(--muted); }
 .skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; }
+.seg button { flex: 1; border: none; border-radius: 0; border-right: 1px solid var(--line-strong); padding: 8px 6px; font-size: 13px; background: var(--surface); }
+.seg button:last-child { border-right: none; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+#frame-actions button { padding: 6px 12px; font-size: 13px; }
+.frame-info { font-size: 13px; color: var(--muted); margin: 10px 0 0; white-space: pre-wrap; }
+.frame-info strong { color: var(--ink); font-size: 15px; }
 
 /* ===== FILMSTRIP ===== */
 .filmstrip {
-  list-style: none; margin: 0; padding: 14px 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-  background: var(--film); border-radius: var(--radius-s); position: relative;
-  --hole: radial-gradient(circle, var(--paper) 0 3px, transparent 3.5px);
+  list-style: none; margin: 0; padding: 16px 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  background: var(--film); border-radius: var(--radius-m); position: relative;
 }
 .filmstrip::before, .filmstrip::after {
-  content: ""; position: absolute; left: 6px; right: 6px; height: 8px;
-  background-image: linear-gradient(90deg, transparent 0 6px, var(--paper) 6px 14px, transparent 14px 20px);
-  background-size: 20px 8px; opacity: .35; border-radius: 2px;
+  content: ""; position: absolute; left: 8px; right: 8px; height: 6px;
+  background-image: linear-gradient(90deg, transparent 0 6px, var(--film-ink) 6px 14px, transparent 14px 20px);
+  background-size: 20px 6px; opacity: .22; border-radius: 2px;
 }
-.filmstrip::before { top: 3px; }
-.filmstrip::after { bottom: 3px; }
+.filmstrip::before { top: 4px; }
+.filmstrip::after { bottom: 4px; }
 .filmstrip li {
-  border-radius: 3px; padding: 10px 8px; text-align: center; font-weight: 700; font-size: 14px;
-  background: #3a4651; color: #a9b6c1; transition: background .25s, color .25s;
+  border-radius: 4px; padding: 10px 8px; text-align: center; font-weight: 700; font-size: 14px;
+  background: var(--film-cell); color: var(--film-ink); transition: background .25s, color .25s;
 }
 .filmstrip li small { display: block; font-weight: 400; font-size: 12px; min-height: 1.5em; }
-.filmstrip li[data-state="active"] { background: var(--lamp-soft); color: #4a3510; animation: flicker 1.4s ease-in-out infinite; }
-.filmstrip li[data-state="done"] { background: var(--lamp); color: #2b1d05; }
-.filmstrip li[data-state="error"] { background: #5a2420; color: #ffd6d2; }
-@keyframes flicker { 50% { filter: brightness(1.12); } }
-@media (prefers-reduced-motion: reduce) { .filmstrip li[data-state="active"] { animation: none; } }
+.filmstrip li[data-state="active"] { background: var(--film-active); color: var(--film-active-ink); box-shadow: inset 0 0 0 1px var(--lamp); animation: flicker 1.4s ease-in-out infinite; }
+.filmstrip li[data-state="done"] { background: var(--lamp); color: var(--on-lamp); }
+.filmstrip li[data-state="error"] { background: var(--film-error); color: var(--film-error-ink); }
+@keyframes flicker { 50% { filter: brightness(1.15); } }
+@media (prefers-reduced-motion: reduce) { .filmstrip li[data-state="active"] { animation: none; } * { transition: none !important; } }
 .progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .progress > div { height: 100%; width: 0; background: var(--lamp); transition: width .3s; }
 #run-status { margin: 0; font-size: 14px; min-height: 1.6em; white-space: pre-wrap; }
 #run-status.err { color: var(--danger); }
 
 /* ===== SCREEN ===== */
-.screen { background: var(--film); border-radius: var(--radius-m); min-height: 260px; display: grid; place-items: center; overflow: hidden; }
+.screen { background: var(--film); border-radius: var(--radius-l); min-height: 260px; display: grid; place-items: center; overflow: hidden; }
 .screen video { width: 100%; max-height: 70vh; display: block; background: #000; }
-.screen .empty { color: #a9b6c1; font-size: 14px; padding: 24px; text-align: center; }
+.screen .empty { color: var(--film-ink); font-size: 14px; padding: 24px; text-align: center; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
 
 /* ===== SETTINGS DIALOG ===== */
 dialog#settings {
-  width: min(980px, 100vw - 24px); max-height: calc(100vh - 24px); padding: 0; border: 1px solid var(--line);
-  border-radius: var(--radius-m); background: var(--surface); color: var(--ink);
+  width: min(980px, 100vw - 24px); height: min(740px, 100dvh - 24px); max-width: none; max-height: none;
+  padding: 0; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
 }
-dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
-.dlg-head { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+dialog#settings[open] { display: flex; flex-direction: column; }
+dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
+.dlg-head { flex: none; display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .dlg-head h2 { margin: 0; font-size: 18px; }
 .dlg-head button { margin-left: auto; }
-.dlg-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 520px; }
-@media (max-width: 700px) { .dlg-body { grid-template-columns: 1fr; } }
-.tabs { border-right: 1px solid var(--line); padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
-@media (max-width: 700px) { .tabs { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--line); } }
-.tabs button { border: none; text-align: left; background: none; padding: 8px 12px; border-radius: var(--radius-s); }
-.tabs button[aria-selected="true"] { background: var(--teal-soft); font-weight: 700; }
-.pane { padding: 20px 24px; overflow: auto; }
-.pane h3 { margin: 0 0 6px; font-size: 17px; }
-.pane h4 { margin: 20px 0 6px; font-size: 15px; }
+.dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.tabs { border-right: 1px solid var(--line); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--surface-2); }
+.tabs button { justify-content: flex-start; border: none; text-align: left; background: none; color: var(--muted); padding: 9px 12px; border-radius: var(--radius-s); }
+.tabs button:hover:not(:disabled) { background: var(--surface); color: var(--ink); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--lamp); }
+.pane { padding: 22px 26px; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; }
+@media (max-width: 700px) {
+  .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .tabs { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); }
+  .tabs button { flex: none; }
+  .tabs button[aria-selected="true"] { box-shadow: inset 0 -3px 0 var(--lamp); }
+  .pane { padding: 18px 16px; }
+}
+.pane h3 { margin: 0 0 6px; font-size: 18px; }
+.pane h4 { margin: 22px 0 6px; font-size: 15px; }
 .pane ol.steps { padding-left: 1.4em; }
 .pane ol.steps li { margin-bottom: 14px; }
 .picker { display: flex; gap: 8px; margin: 12px 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
@@ -176,15 +252,33 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
 .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 @media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
 .diag { font-size: 14px; margin: 6px 0; }
+
+/* ===== TIMELINE ===== */
+.timeline { list-style: none; margin: 18px 0 0; padding: 0; counter-reset: step; }
+.timeline li { position: relative; padding: 0 0 20px 46px; counter-increment: step; }
+.timeline li::before {
+  content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--film); color: var(--lamp); display: grid; place-items: center; font-weight: 700; font-size: 14px;
+}
+.timeline li::after { content: ""; position: absolute; left: 14px; top: 34px; bottom: 4px; width: 2px; background: var(--line); }
+.timeline li:last-child::after { display: none; }
+.tl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 30px; }
+.tl-head strong { font-size: 15px; }
+.timeline p { margin: 4px 0 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
+.where { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 10px; }
+.where.browser { background: var(--tag-browser); color: var(--on-tag-browser); }
+.where.llm { background: var(--tag-llm); color: var(--on-tag-llm); }
+.where.comfy { background: var(--tag-comfy); color: var(--on-tag-comfy); }
 </style>
 </head>
 <body>
 <header class="topbar">
-  <h1>SD画像 → 動画</h1>
+  <h1>Stillmotion</h1>
   <div class="pills">
     <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
     <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
   </div>
+  <button id="open-flow">動画ができるまで</button>
   <button id="open-settings">設定</button>
 </header>
 <div class="banner" id="setup-banner" hidden>
@@ -194,11 +288,25 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
 
 <main class="layout">
   <section class="col-input panel">
-    <label class="dropzone" id="dropzone">
+    <div class="dropzone" id="dropzone">
       <input type="file" id="file-input" accept="image/png,image/*" aria-label="画像を選ぶ">
-      <img id="preview" alt="" hidden>
+      <canvas id="frame-canvas" tabindex="0" aria-label="動画の最初のフレーム" hidden></canvas>
       <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックして選ぶこともできます）</span>
-    </label>
+    </div>
+    <div class="row" id="frame-actions" hidden>
+      <button id="change-image">別の画像を選ぶ</button>
+      <button id="reset-focus">切り抜き位置を中央に戻す</button>
+    </div>
+    <section class="subbox" aria-labelledby="frame-title">
+      <h2 class="box-title" id="frame-title">動画のサイズ</h2>
+      <div class="map-grid">
+        <label class="field">縦横比<select id="aspect"></select></label>
+        <label class="field">大きさ（メガピクセル）<select id="megapixels"></select></label>
+      </div>
+      <div class="field-label" id="fit-label">画像の合わせ方</div>
+      <div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div>
+      <p class="frame-info" id="frame-info" aria-live="polite"></p>
+    </section>
     <details id="meta-box" hidden>
       <summary>画像の情報（メタデータ）</summary>
       <pre id="meta-text"></pre>
@@ -208,6 +316,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
     <div>
       <div class="note" style="margin:0 0 6px">スキル（押すとON/OFF）</div>
       <div class="skill-chips" id="skill-chips"></div>
+      <p class="note" id="skill-default-note" style="margin:8px 0 0"></p>
     </div>
     <label class="field" id="seconds-field">動画の長さ: <output id="seconds-out">5</output> 秒
       <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
@@ -217,7 +326,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <label class="field" style="margin-top:10px">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
       <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローの設定のまま）<textarea id="negative" rows="3"></textarea></label>
     </details>
-    <button class="primary big" id="run">実行</button>
+    <button class="run big" id="run">実行</button>
     <button id="cancel" hidden>中止する</button>
   </section>
 
@@ -264,6 +373,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
   <div class="dlg-body">
     <nav class="tabs" role="tablist">
       <button role="tab" data-pane="guide" aria-selected="true">はじめに</button>
+      <button role="tab" data-pane="flow">動画ができるまで</button>
       <button role="tab" data-pane="llm">文章AI（LLM）</button>
       <button role="tab" data-pane="video">動画（ComfyUI）</button>
       <button role="tab" data-pane="skills">スキル</button>
@@ -276,24 +386,69 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <p class="note">このページは、あなたのPCで動いている ComfyUI と ローカルLLM に、ブラウザから直接つなぎます。画像やプロンプトが外部のサーバーに送られることはありません。設定はこのブラウザの中だけに保存されます。</p>
       <ol class="steps">
         <li><strong>ComfyUI に「このページからの接続」を許可する</strong><br>
-          ComfyUI の起動オプションに次を追加して、ComfyUI を起動し直します。<br>
+          Stability Matrix で ComfyUI のカードの歯車アイコンを開き、一番下の「Extra Launch Arguments」に次の1行を<strong>そのまま</strong>貼り付けて保存します（前後に空白を入れない）。<br>
           <code id="cors-comfy"></code> <button class="link" data-copy="cors-comfy">コピー</button>
-          <div class="note">ポータブル版: 起動用の <code>run_nvidia_gpu.bat</code> をメモ帳で開き、<code>main.py</code> の後ろ（同じ行）に追記して保存。<br>デスクトップ版: 設定のサーバー設定に CORS ヘッダーの項目があります（表記はバージョンにより異なります）。値に <code id="origin-1"></code> を入れます。</div>
+          <div class="note">保存したら、ComfyUI を一度「停止」してから「Launch」で起動し直してください。保存だけでは反映されません。<br>Stability Matrix 以外の場合:<br>ポータブル版: 起動用の <code>run_nvidia_gpu.bat</code> をメモ帳で開き、<code>main.py</code> の後ろ（同じ行）に追記して保存。<br>デスクトップ版: 設定のサーバー設定に CORS ヘッダーの項目があります（表記はバージョンにより異なります）。値に <code id="origin-1"></code> を入れます。</div>
         </li>
         <li><strong>ローカルLLMのサーバーを起動し、CORS を有効にする</strong><br>
-          <div class="note">LM Studio: 「Developer」→ サーバーを起動 → サーバー設定の「Enable CORS」をオン。<br>
-          Bionic 単体では外部ツール向けのサーバーが開いていない場合があります。その場合は LM Studio でサーバーを起動してください。<br>
+          <div class="note">Bionic: 設定 →「ローカルモデルAPI」で「ローカルAPIサーバー」と「CORS」をオン。<br>
+          LM Studio: 「Developer」→ サーバーを起動 → サーバー設定の「Enable CORS」をオン。<br>
           Ollama: 環境変数 <code>OLLAMA_ORIGINS</code> に <code id="origin-2"></code> を設定して起動し直します。</div>
         </li>
         <li><strong>ブラウザは Chrome または Edge を使う</strong><br>
           <div class="note">初回の接続時に「ローカルネットワーク上のデバイスへのアクセス」の確認が出たら「許可」を押してください。Safari では動かない場合があります。</div>
         </li>
         <li><strong>「文章AI（LLM）」タブ</strong>で「自動で探す」→ モデルを選んで保存</li>
-        <li><strong>「動画（ComfyUI）」タブ</strong>でワークフローを登録して保存</li>
+        <li><strong>「動画（ComfyUI）」タブ</strong>で ComfyUI のURLを確認して保存（MiniMax H3 のワークフローは最初から入っています。別のワークフローを使うときだけ登録します）</li>
       </ol>
       <h4>接続の診断</h4>
       <button id="run-diag">いまの設定で接続を確認</button>
       <div id="diag-out"></div>
+    </section>
+
+    <section class="pane" data-pane="flow" hidden>
+      <h3>動画ができるまで</h3>
+      <p class="note">「実行」を押してから動画が表示されるまでに、裏側で起きていることを順番に並べました。色のついたラベルは「どこで処理されているか」です。どれもあなたのPCの中で行われ、外部のサーバーには送られません。</p>
+      <ol class="timeline">
+        <li>
+          <div class="tl-head"><span class="where browser">ブラウザ</span><strong>画像を読み込む</strong></div>
+          <p>ドロップしたPNGの中に埋め込まれた「メタデータ」を読み取ります。Stable Diffusion で画像を作ったときのプロンプト、ネガティブプロンプト、シード、モデル名などです。この時点では画像はまだどこにも送られていません。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where browser">ブラウザ</span><strong>画像を動画の形に整える</strong></div>
+          <p>「動画のサイズ」の一覧から選んだ縦横比（ComfyUI の解像度セレクターと同じ型）に合わせて、画像を切り抜くか、余白を足します。この画像が動画の最初のフレームになります。動画と画像の縦横比がずれていると、動画モデルが画像を引き伸ばしたり、端が欠けたりする原因になります。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where llm">文章AI</span><strong>動画用のプロンプトを書いてもらう</strong></div>
+          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、メタデータ、整えた画像（画像対応モデルのとき）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where llm">文章AI</span><strong>日本語訳を作る（設定でONのとき）</strong></div>
+          <p>確認しやすいように、できた英語プロンプトを日本語に訳します。動画に使われるのは英語のほうです。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>整えた画像を ComfyUI に送る</strong></div>
+          <p>手順2で作った画像を ComfyUI の input フォルダに保存します。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where browser">ブラウザ</span><strong>ワークフローに値を書き込む</strong></div>
+          <p>登録したワークフロー（JSON）のコピーに、プロンプト・画像のファイル名・シード・動画の長さ・縦横比とメガピクセル（解像度セレクターがない場合は幅と高さ）を書き込みます。登録した元のJSONは書き換わりません。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>順番待ちのあと、動画を生成する</strong></div>
+          <p>ComfyUI がモデルを読み込み、ノイズから少しずつ映像（MiniMax H3 なら音声も）を作っていきます。いちばん時間がかかる手順で、進み具合は画面上部のバーに表示されます。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>できた動画を受け取って表示する</strong></div>
+          <p>完成した動画ファイルを ComfyUI の output フォルダから受け取り、画面で再生します。「動画を保存」でダウンロードできます。</p>
+        </li>
+        <li>
+          <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>GPUメモリを片付ける（設定でONのとき）</strong></div>
+          <p>文章AIと動画モデルが同じGPUを取り合わないように、ComfyUI が使っていたGPUメモリを解放します。</p>
+        </li>
+      </ol>
+      <h4>やり直すときに動く手順</h4>
+      <p class="note">「AIで修正」は手順3〜4だけ、「このプロンプトで動画を作り直す」は手順5〜9だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
@@ -323,7 +478,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
 
     <section class="pane" data-pane="video" hidden>
       <h3>動画（ComfyUI）</h3>
-      <p class="note">ComfyUI でふだん動いている画像→動画のワークフロー（MiniMax H3、Wan など）をそのまま使います。</p>
+      <p class="note">ComfyUI でふだん動いている画像→動画のワークフロー（MiniMax H3、Wan など）をそのまま使います。MiniMax H3 のワークフローは最初から「MiniMax H3（既定）」として入っています。</p>
       <div class="picker"><select id="vid-pick" aria-label="編集する設定"></select><button id="vid-new">＋ 新規</button></div>
       <label class="field">名前（例: MiniMax H3）<input type="text" id="vid-name"></label>
       <div class="row" style="align-items:flex-end;margin-bottom:12px">
@@ -336,6 +491,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
         <li>メニューの「ワークフロー」→「エクスポート (API)」（Export (API)）で JSON を保存</li>
         <li>その JSON を下で選ぶ → 書き込み先が自動で選ばれます</li>
       </ol>
+      <div class="row" style="margin-bottom:12px"><button id="wf-default">既定のワークフロー（MiniMax H3）を読み込む</button></div>
       <label class="dropzone" id="wf-drop" style="min-height:90px">
         <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
         <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
@@ -349,8 +505,8 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <label class="field">プロンプト形式<select id="vid-style"></select></label>
       <div class="map-grid">
         <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
-        <label class="field">短辺のピクセル数（0 = ワークフローのまま）<input type="number" id="vid-short" min="0" step="32"></label>
       </div>
+      <p class="note">動画の縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
       <label class="check"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ。次の生成は少し遅くなります）</label>
       <div class="row"><button class="primary" id="vid-save">保存して使う</button><button class="danger" id="vid-del">削除</button></div>
       <p class="msg" id="vid-msg"></p>
@@ -361,16 +517,16 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <p class="note">プロンプトを作るときに文章AIへ追加で渡す指示です。Agent Skills 形式（SKILL.md）の読み込み・書き出しができ、Bionic などで使っている SKILL.md もそのまま読み込めます。使うスキルはメイン画面で選びます。</p>
       <div class="picker"><select id="skill-pick" aria-label="編集するスキル"></select><button id="skill-new">＋ 新規</button></div>
       <div class="row" style="margin-bottom:14px">
-        <label class="dropzone" style="min-height:0;padding:8px 14px;display:inline-block">
+        <label class="filebtn">
           <input type="file" id="skill-file" accept=".md,text/markdown" multiple aria-label="SKILL.mdを読み込む">
-          <span class="hint">SKILL.md を読み込む（複数可）</span>
+          SKILL.md を読み込む（複数可）
         </label>
         <button id="skill-export">SKILL.md として書き出し</button>
       </div>
       <label class="field">名前<input type="text" id="skill-name"></label>
       <label class="field">説明（一覧に表示されます）<input type="text" id="skill-desc"></label>
       <label class="field">指示の内容<textarea id="skill-body" rows="12"></textarea></label>
-      <div class="row"><button class="primary" id="skill-save">保存</button><button class="danger" id="skill-del">削除</button></div>
+      <div class="row"><button class="primary" id="skill-save">保存</button><button id="skill-restore" hidden>既定の内容に戻す</button><button class="danger" id="skill-del">削除</button></div>
       <p class="msg" id="skill-msg"></p>
     </section>
 
@@ -380,7 +536,7 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <div class="picker"><select id="style-pick" aria-label="編集する形式"></select><button id="style-new">＋ 新規</button></div>
       <label class="field">名前<input type="text" id="style-name"></label>
       <label class="field">指示文<textarea id="style-text" rows="16"></textarea></label>
-      <div class="row"><button class="primary" id="style-save">保存</button><button class="danger" id="style-del">削除</button></div>
+      <div class="row"><button class="primary" id="style-save">保存</button><button id="style-restore" hidden>既定の内容に戻す</button><button class="danger" id="style-del">削除</button></div>
       <p class="msg" id="style-msg"></p>
     </section>
 
@@ -391,9 +547,9 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
       <p class="note">別のブラウザやPCに設定を移すときに使います。書き出したファイルには APIキーも含まれるため、他人に渡すときは注意してください。</p>
       <div class="row">
         <button id="export-settings">設定を書き出す</button>
-        <label class="dropzone" style="min-height:0;padding:8px 14px;display:inline-block">
+        <label class="filebtn">
           <input type="file" id="import-settings" accept=".json" aria-label="設定を読み込む">
-          <span class="hint">設定を読み込む</span>
+          設定を読み込む
         </label>
       </div>
       <h4>初期化</h4>
@@ -405,8 +561,42 @@ dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
 
 <script>
 const USER_SETTINGS = {
+  appName: "Stillmotion",
+  pagesUrl: "https://bighipadventure.github.io/Stillmotion/",
+  pagesOrigin: "https://bighipadventure.github.io",
+  fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   settingsVersion: 1,
+  defaultsRevision: 3,
+  defaultVideoId: "h3default",
+  defaultSkillId: "h3writing",
+  defaultVideoName: "MiniMax H3（既定）",
+  defaultWorkflowName: "既定（MiniMax H3 画像→動画）",
+  h3ClassPrefix: "MiniMaxH3",
+  frame: {
+    aspects: [
+      ["1:1 (Square)", "1:1 正方形"], ["2:3 (Portrait Photo)", "2:3 縦（写真）"], ["3:2 (Photo)", "3:2 横（写真）"],
+      ["3:4 (Portrait Standard)", "3:4 縦（スタンダード）"], ["4:3 (Standard)", "4:3 横（スタンダード）"],
+      ["9:16 (Portrait Widescreen)", "9:16 縦（ワイド）"], ["16:9 (Widescreen)", "16:9 横（ワイド）"], ["21:9 (Ultrawide)", "21:9 横（ウルトラワイド）"],
+    ],
+    megapixels: [0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.98, 1.0, 1.2, 1.5, 1.8, 2.0],
+    megapixelUnit: 1048576,
+    workflowSizeLabel: "ワークフローのまま",
+    fits: [["crop", "切り抜く"], ["blur", "余白（ぼかし）"], ["black", "余白（黒）"]],
+    defaultAspect: "16:9 (Widescreen)",
+    defaultMegapixels: 0.4,
+    defaultFit: "crop",
+    sizeMultiple: 32,
+    previewMaxSide: 760,
+    blurPx: 32,
+    blurShade: "rgba(0, 0, 0, 0.35)",
+    padColor: "#000000",
+    cropShade: "rgba(6, 9, 12, 0.62)",
+    cropStroke: "#f2b04d",
+    cropStrokeWidth: 2,
+    keyStep: 0.02,
+    sameRatioTolerance: 0.01,
+  },
   knownLlmServers: [
     { name: "LM Studio / Bionic", url: "http://localhost:1234/v1" },
     { name: "Ollama", url: "http://localhost:11434/v1" },
@@ -427,16 +617,16 @@ const USER_SETTINGS = {
   imageMaxSide: 1024,
   imageJpegQuality: 0.9,
   previewChars: 40,
-  uploadPrefix: "sd2video_",
+  uploadPrefix: "stillmotion_",
   videoExtensions: [".mp4", ".webm", ".mkv", ".mov", ".gif", ".webp"],
-  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep line breaks and labels such as \"Audio:\". Output only the translation.",
-  translateToEn: "Translate the following Japanese text into natural English suitable as a video-generation prompt. Keep line breaks and labels such as \"Audio:\". Output only the English text.",
+  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep line breaks, timing notation, and field names or labels such as \"integrated_multimodal_description:\" and \"Audio:\" exactly as they are (do not translate them). Output only the translation.",
+  translateToEn: "Translate the following Japanese text into natural English suitable as a video-generation prompt. Keep line breaks, timing notation, and field names or labels such as \"integrated_multimodal_description:\" and \"Audio:\" exactly as they are. Output only the English text.",
   skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
   quickInstructions: [
     { label: "動きを大きく", text: "Make the motion bigger and more dynamic." },
     { label: "ゆっくり穏やかに", text: "Make the motion slower, calmer and more subtle." },
     { label: "カメラを固定", text: "Use a static camera with no camera movement." },
-    { label: "音楽なし", text: "Remove music; keep only natural ambient sound and sound effects." },
+    { label: "音楽なし", text: "Remove music; keep only natural ambient sound and sound effects. If there is a non_diegetic_music field, set it to \"none\"." },
   ],
   slots: [
     { key: "prompt", label: "プロンプト", kind: "str" },
@@ -446,15 +636,22 @@ const USER_SETTINGS = {
     { key: "width", label: "幅", kind: "int" },
     { key: "height", label: "高さ", kind: "int" },
     { key: "frames", label: "フレーム数", kind: "int" },
+    { key: "aspect", label: "縦横比（解像度セレクター）", kind: "str" },
+    { key: "megapixels", label: "メガピクセル（解像度セレクター）", kind: "num" },
     { key: "seconds", label: "秒数", kind: "num" },
   ],
   defaultStyles: {
-    h3: { name: "MiniMax H3（音声つき）", text: `You write prompts for the MiniMax H3 image-to-video model, which generates video together with native stereo audio.
-The video starts exactly on the given still image (first frame) and lasts about {seconds} seconds.
-Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided, then write in English:
-1. One or two sentences on the look and setting, consistent with the image (same character, outfit and place; no new characters).
-2. What happens over time: natural, plausible motion of the subject and the environment, and one clear camera move (e.g. slow push in, orbit, pan, static shot).
-3. A final line starting with "Audio:" describing ambient sound, sound effects and music that fit the scene. No speech or dialogue unless the instruction asks for it.
+    h3: { name: "MiniMax H3 I2VA（公式形式・音声つき）", text: `You write prompts for the MiniMax H3 video model in I2VA mode (image to video with native audio).
+The video starts exactly on the given still image (the first frame) and develops forward from it for about {seconds} seconds.
+Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided.
+Write in English using exactly these three fields, in this order, each starting on a new line with the field name followed by a colon:
+integrated_multimodal_description:
+overall_soundscape:
+non_diegetic_music:
+- integrated_multimodal_description: begin from the first frame (same character, outfit and place; no new characters), then describe what happens over time with timing that adds up to {seconds} seconds (for example "0-2s: ...", "2-5s: ..."). Cover composition, subjects, environment, actions, one clear camera move, and the sound tied to each action.
+- overall_soundscape: ambient sound and sound effects for the whole clip.
+- non_diegetic_music: background music (genre, instruments, mood), or "none".
+No speech or dialogue unless the instruction asks for it; keep any dialogue or visible text in its original language.
 Do not use tag lists, weights, or quality words such as "masterpiece". Output only the prompt.` },
     wan: { name: "Wan 2.2 など（音声なし）", text: `You write prompts for an image-to-video model (such as Wan 2.2) that has no audio.
 The video starts from the given still image as its first frame and lasts about {seconds} seconds.
@@ -466,6 +663,15 @@ Infer the situation from the Stable Diffusion prompt (comma-separated tags) and 
 Do not use tag lists, weights, or quality tags such as "masterpiece". Output only the prompt text, with no preface, quotes, or markdown.` },
   },
   defaultSkills: {
+    h3writing: { name: "h3-prompt-writing", description: "MiniMax H3 公式スキル（I2VA用・既定）", body: `You are writing a MiniMax H3 video generation prompt. Source: MiniMax-AI/MiniMax-H3 skills/h3-prompt-writing.
+Workflow:
+1. The input mode is I2VA (from first frame): start from the supplied first frame and develop forward from it.
+2. Structure the output using these fields in order: integrated_multimodal_description, overall_soundscape, non_diegetic_music.
+3. Preserve exact field names, section order, labels, and timing notation.
+Output rules:
+- Write the sections in English; preserve dialogue, lyrics, and visible scene text in their original language.
+- Describe each shot by composition, subjects, environment, actions, camera, sound, and the exact point where referenced content appears.
+- Avoid plot summaries, unresolved reference labels, and timing that does not match the requested duration.` },
     anime: { name: "anime-motion", description: "アニメ・イラスト調の画像向けの動き", body: `The source image is an anime or illustration style picture.
 - Keep the 2D illustrated look; do not describe it as photorealistic.
 - Prefer expressive but clean motion typical of anime: hair and clothes swaying, blinking, small gestures, sparkles or petals in the air.
@@ -479,6 +685,292 @@ Do not use tag lists, weights, or quality tags such as "masterpiece". Output onl
 - Environment motion should be soft and continuous (floating particles, slow clouds, rippling water).
 - Use a static camera or an extremely slow push-in.` },
   },
+  defaultWorkflow: {
+    "92": {
+      "inputs": {
+        "filename_prefix": "video/MiniMax_H3",
+        "format": "auto",
+        "format.codec": "auto",
+        "codec": "auto",
+        "video": [
+          "105:91",
+          0
+        ]
+      },
+      "class_type": "SaveVideo",
+      "_meta": {
+        "title": "ビデオを保存"
+      }
+    },
+    "114": {
+      "inputs": {
+        "image": ""
+      },
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "画像を読み込む"
+      }
+    },
+    "115": {
+      "inputs": {
+        "aspect_ratio": "16:9 (Widescreen)",
+        "megapixels": 0.4,
+        "multiple": 32
+      },
+      "class_type": "ResolutionSelector",
+      "_meta": {
+        "title": "解像度セレクター"
+      }
+    },
+    "105:11": {
+      "inputs": {
+        "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+      },
+      "class_type": "VAELoader",
+      "_meta": {
+        "title": "VAEを読み込む"
+      }
+    },
+    "105:24": {
+      "inputs": {
+        "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+      },
+      "class_type": "VAELoader",
+      "_meta": {
+        "title": "VAEを読み込む"
+      }
+    },
+    "105:23": {
+      "inputs": {
+        "samples": [
+          "105:14",
+          0
+        ],
+        "vae": [
+          "105:24",
+          0
+        ]
+      },
+      "class_type": "VAEDecodeAudio",
+      "_meta": {
+        "title": "VAEデコード音声"
+      }
+    },
+    "105:10": {
+      "inputs": {
+        "samples": [
+          "105:14",
+          0
+        ],
+        "vae": [
+          "105:11",
+          0
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "VAEデコード"
+      }
+    },
+    "105:14": {
+      "inputs": {
+        "noise": [
+          "105:15",
+          0
+        ],
+        "guider": [
+          "105:16",
+          0
+        ],
+        "sampler": [
+          "105:17",
+          0
+        ],
+        "sigmas": [
+          "105:9",
+          0
+        ],
+        "latent_image": [
+          "105:104",
+          1
+        ]
+      },
+      "class_type": "SamplerCustomAdvanced",
+      "_meta": {
+        "title": "カスタムサンプラー（高度）"
+      }
+    },
+    "105:15": {
+      "inputs": {
+        "noise_seed": 0
+      },
+      "class_type": "RandomNoise",
+      "_meta": {
+        "title": "ランダムノイズ"
+      }
+    },
+    "105:104": {
+      "inputs": {
+        "prompt": "",
+        "width": [
+          "115",
+          0
+        ],
+        "height": [
+          "115",
+          1
+        ],
+        "length": [
+          "105:107",
+          1
+        ],
+        "clip": [
+          "105:125",
+          1
+        ],
+        "vae": [
+          "105:11",
+          0
+        ],
+        "first_frame": [
+          "114",
+          0
+        ]
+      },
+      "class_type": "MiniMaxH3ImageToVideo",
+      "_meta": {
+        "title": "MiniMax H3 画像から動画へ"
+      }
+    },
+    "105:107": {
+      "inputs": {
+        "expression": "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17",
+        "values.a": [
+          "105:111",
+          0
+        ]
+      },
+      "class_type": "ComfyMathExpression",
+      "_meta": {
+        "title": "数式"
+      }
+    },
+    "105:111": {
+      "inputs": {
+        "value": 5
+      },
+      "class_type": "PrimitiveFloat",
+      "_meta": {
+        "title": "Float (duration)"
+      }
+    },
+    "105:6": {
+      "inputs": {
+        "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      },
+      "class_type": "UNETLoader",
+      "_meta": {
+        "title": "拡散モデルを読み込む"
+      }
+    },
+    "105:16": {
+      "inputs": {
+        "model": [
+          "105:125",
+          0
+        ],
+        "conditioning": [
+          "105:104",
+          0
+        ]
+      },
+      "class_type": "BasicGuider",
+      "_meta": {
+        "title": "基本ガイダー"
+      }
+    },
+    "105:13": {
+      "inputs": {
+        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "type": "minimax",
+        "device": "default"
+      },
+      "class_type": "CLIPLoader",
+      "_meta": {
+        "title": "CLIPを読み込む"
+      }
+    },
+    "105:91": {
+      "inputs": {
+        "fps": 24,
+        "bit_depth": 8,
+        "color_space": "sRGB",
+        "codec": "none",
+        "images": [
+          "105:10",
+          0
+        ],
+        "audio": [
+          "105:23",
+          0
+        ]
+      },
+      "class_type": "CreateVideo",
+      "_meta": {
+        "title": "動画を作成"
+      }
+    },
+    "105:9": {
+      "inputs": {
+        "scheduler": "simple",
+        "steps": 8,
+        "denoise": 1,
+        "model": [
+          "105:125",
+          0
+        ]
+      },
+      "class_type": "BasicScheduler",
+      "_meta": {
+        "title": "基本スケジューラー"
+      }
+    },
+    "105:17": {
+      "inputs": {
+        "sampler_name": "euler"
+      },
+      "class_type": "KSamplerSelect",
+      "_meta": {
+        "title": "Kサンプラー選択"
+      }
+    },
+    "105:125": {
+      "inputs": {
+        "PowerLoraLoaderHeaderWidget": {
+          "type": "PowerLoraLoaderHeaderWidget"
+        },
+        "lora_1": {
+          "on": true,
+          "lora": "minimax_h3_turbo_v4_step600_ema_pruned_comfyui.safetensors",
+          "strength": 1
+        },
+        "➕ Add Lora": "",
+        "model": [
+          "105:6",
+          0
+        ],
+        "clip": [
+          "105:13",
+          0
+        ]
+      },
+      "class_type": "Power Lora Loader (rgthree)",
+      "_meta": {
+        "title": "Power Lora Loader (rgthree)"
+      }
+    }
+  },
   messages: {
     needImage: "先に画像を入れてください。",
     needPrompt: "英語プロンプトが空です。先に「実行」してください。",
@@ -489,7 +981,7 @@ Do not use tag lists, weights, or quality tags such as "masterpiece". Output onl
     needVideo: "動画の設定がまだです。「設定」→「動画（ComfyUI）」でワークフローを登録してください。",
     bannerSetup: "最初に、文章AIとComfyUIの接続を設定してください。",
     probeOk: "接続OK",
-    probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可してください。",
+    probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可し、設定後は停止→起動し直してください。",
     probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
     llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
     readingImage: "画像を読み込んでいます…",
@@ -520,6 +1012,19 @@ Do not use tag lists, weights, or quality tags such as "masterpiece". Output onl
     lengthLocked: "（このワークフローでは変更できません）",
     negLocked: "ネガティブプロンプト（このワークフローでは使いません）",
     negOpen: "ネガティブプロンプト（空欄ならワークフローの設定のまま）",
+    skillDefaultInUse: "スキルがOFFのときは、既定のスキル「{name}」を使います（MiniMax H3 のワークフローのとき）。",
+    skillDefaultSkipped: "選んだスキルを使います（既定のスキル「{name}」より優先）。",
+    skillDefaultNotH3: "このワークフローは MiniMax H3 ではないため、既定のスキルは使いません。",
+    frameSize: "{w}×{h} で生成します",
+    frameSource: "（元の画像 {sw}×{sh}、{aspect} の型で処理）",
+    frameSame: "縦横比がほぼ同じなので、そのまま縮小・拡大して使います。",
+    frameCropHint: "画像をドラッグ（または矢印キー）で、切り抜く位置を調整できます。",
+    framePadHint: "画像全体を残し、足りない部分に余白を足します。",
+    frameNoImage: "画像を入れると、この型に合わせて切り抜き（または余白を追加）します。",
+    frameWorkflow: "動画の大きさはワークフローの設定のまま作ります（画像は加工せずに送ります）。",
+    frameNoSizeSlot: "このワークフローには縦横比・大きさの書き込み先がないため、画像の加工だけ行います。",
+    restored: "既定の内容に戻しました（まだ保存されていません。「保存」を押すと確定します）。",
+    defaultWorkflowLoaded: "既定のワークフロー（MiniMax H3）を読み込みました。モデルファイル名が ComfyUI 側と同じか確認して「保存して使う」を押してください。",
   },
 };
 
@@ -611,14 +1116,42 @@ class SettingsStore {
           vision: true, temperature: USER_SETTINGS.defaultTemperature, maxTokens: USER_SETTINGS.defaultMaxTokens },
       },
       llmActive: llmId,
-      videoProfiles: {},
-      videoActive: "",
+      videoProfiles: { [USER_SETTINGS.defaultVideoId]: SettingsStore.defaultVideoProfile() },
+      videoActive: USER_SETTINGS.defaultVideoId,
       styles,
       skills,
       activeSkills: [],
       translate: true,
       seenGuide: false,
+      ui: {},
+      defaultsRevision: USER_SETTINGS.defaultsRevision,
     };
+  }
+
+  static defaultVideoProfile() {
+    const workflow = clone(USER_SETTINGS.defaultWorkflow);
+    return {
+      name: USER_SETTINGS.defaultVideoName, comfyUrl: USER_SETTINGS.defaultComfyUrl,
+      workflow, workflowName: USER_SETTINGS.defaultWorkflowName, mapping: WorkflowMapper.detect(workflow),
+      styleId: "h3", seconds: USER_SETTINGS.defaultSeconds, freeVram: true,
+    };
+  }
+
+  addMissingDefaults(data) {
+    if ((data.defaultsRevision || 0) >= USER_SETTINGS.defaultsRevision) return data;
+    const sid = USER_SETTINGS.defaultSkillId;
+    if (!data.skills[sid]) data.skills[sid] = clone(USER_SETTINGS.defaultSkills[sid]);
+    const vid = USER_SETTINGS.defaultVideoId;
+    const builtin = data.videoProfiles[vid];
+    if (!builtin) data.videoProfiles[vid] = SettingsStore.defaultVideoProfile();
+    else if (builtin.workflowName === USER_SETTINGS.defaultWorkflowName) {
+      const fresh = SettingsStore.defaultVideoProfile();
+      builtin.workflow = fresh.workflow;
+      builtin.mapping = fresh.mapping;
+    }
+    if (!data.videoProfiles[data.videoActive]) data.videoActive = vid;
+    data.defaultsRevision = USER_SETTINGS.defaultsRevision;
+    return data;
   }
 
   load() {
@@ -626,7 +1159,7 @@ class SettingsStore {
       const raw = localStorage.getItem(USER_SETTINGS.storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.version === USER_SETTINGS.settingsVersion) return { ...this.defaults(), ...parsed };
+        if (parsed && parsed.version === USER_SETTINGS.settingsVersion) return this.addMissingDefaults({ ...this.defaults(), ...parsed, defaultsRevision: parsed.defaultsRevision || 0 });
       }
     } catch {}
     return this.defaults();
@@ -638,7 +1171,7 @@ class SettingsStore {
 
   replace(data) {
     if (!data || data.version !== USER_SETTINGS.settingsVersion || !data.llmProfiles) throw new UserError(USER_SETTINGS.messages.importBad);
-    this.data = { ...this.defaults(), ...data };
+    this.data = this.addMissingDefaults({ ...this.defaults(), ...data, defaultsRevision: data.defaultsRevision || 0 });
     this.save();
   }
 
@@ -655,8 +1188,20 @@ class SettingsStore {
     return (video && styles[video.styleId]) || Object.values(styles)[0];
   }
 
+  get ui() { return this.data.ui; }
+
+  chosenSkillIds() {
+    return this.data.activeSkills.filter((id) => id !== USER_SETTINGS.defaultSkillId && this.data.skills[id]);
+  }
+
+  usesDefaultSkill() {
+    const video = this.video;
+    return !this.chosenSkillIds().length && !!this.data.skills[USER_SETTINGS.defaultSkillId] && (!video || WorkflowMapper.isH3(video.workflow));
+  }
+
   activeSkillObjects() {
-    return this.data.activeSkills.map((id) => this.data.skills[id]).filter(Boolean);
+    if (this.usesDefaultSkill()) return [this.data.skills[USER_SETTINGS.defaultSkillId]];
+    return this.chosenSkillIds().map((id) => this.data.skills[id]);
   }
 }
 
@@ -947,6 +1492,10 @@ class WorkflowMapper {
     return wf[id]._meta?.title || wf[id].class_type;
   }
 
+  static isH3(wf) {
+    return Object.values(wf || {}).some((n) => String(n.class_type).includes(USER_SETTINGS.h3ClassPrefix));
+  }
+
   static matchesKind(v, kind) {
     if (this.isLink(v) || typeof v === "boolean") return false;
     if (kind === "str") return typeof v === "string";
@@ -1002,6 +1551,9 @@ class WorkflowMapper {
     m.seconds = m.frames ? "" : first((id, k, v) => typeof v === "number" &&
       (["duration", "seconds"].includes(k) || /duration|seconds?|秒/i.test(this.title(wf, id))));
     const frameNode = m.frames ? m.frames.split("|")[0] : null;
+    m.aspect = first((id, k, v) => k === "aspect_ratio" && typeof v === "string");
+    const aspectNode = m.aspect ? m.aspect.split("|")[0] : null;
+    m.megapixels = aspectNode ? first((id, k, v) => k === "megapixels" && typeof v === "number" && id === aspectNode) : "";
     for (const key of ["width", "height"]) {
       m[key] = first((id, k, v) => k === key && Number.isInteger(v) && id === frameNode) ||
         first((id, k, v) => k === key && Number.isInteger(v) && !/upscale|resize|scale/i.test(wf[id].class_type));
@@ -1182,6 +1734,73 @@ class ComfyClient {
   }
 }
 
+// ===== FRAME FITTER =====
+class FrameFitter {
+  static ratioOf(aspect) {
+    const [w, h] = aspect.match(/^(\d+):(\d+)/).slice(1).map(Number);
+    return w / h;
+  }
+
+  static targetSize(megapixels, ratio, step) {
+    const pixels = megapixels * USER_SETTINGS.frame.megapixelUnit;
+    const snap = (v) => Math.max(step, Math.round(v / step) * step);
+    return { width: snap(Math.sqrt(pixels * ratio)), height: snap(Math.sqrt(pixels / ratio)) };
+  }
+
+  static cropRect(srcW, srcH, dstW, dstH, focus) {
+    const scale = Math.max(dstW / srcW, dstH / srcH);
+    const w = dstW / scale, h = dstH / scale;
+    const clamp = (v, max) => Math.min(Math.max(v, 0), max);
+    const x = clamp(focus.x * srcW - w / 2, srcW - w);
+    const y = clamp(focus.y * srcH - h / 2, srcH - h);
+    return { x, y, w, h, focus: { x: (x + w / 2) / srcW, y: (y + h / 2) / srcH } };
+  }
+
+  static containRect(srcW, srcH, dstW, dstH) {
+    const scale = Math.min(dstW / srcW, dstH / srcH);
+    const w = srcW * scale, h = srcH * scale;
+    return { x: (dstW - w) / 2, y: (dstH - h) / 2, w, h };
+  }
+
+  static render(img, size, fit, focus) {
+    const cfg = USER_SETTINGS.frame;
+    const srcW = img.naturalWidth, srcH = img.naturalHeight;
+    const canvas = document.createElement("canvas");
+    canvas.width = size.width;
+    canvas.height = size.height;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    if (fit === "crop") {
+      const r = this.cropRect(srcW, srcH, size.width, size.height, focus);
+      ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, size.width, size.height);
+      return canvas;
+    }
+    if (fit === "blur") {
+      const cover = this.cropRect(srcW, srcH, size.width, size.height, { x: 0.5, y: 0.5 });
+      const blur = cfg.blurPx * Math.max(size.width, size.height) / cfg.previewMaxSide;
+      ctx.filter = `blur(${blur}px)`;
+      ctx.drawImage(img, cover.x, cover.y, cover.w, cover.h, -blur, -blur, size.width + blur * 2, size.height + blur * 2);
+      ctx.filter = "none";
+      ctx.fillStyle = cfg.blurShade;
+    } else {
+      ctx.fillStyle = cfg.padColor;
+    }
+    ctx.fillRect(0, 0, size.width, size.height);
+    const r = this.containRect(srcW, srcH, size.width, size.height);
+    ctx.drawImage(img, r.x, r.y, r.w, r.h);
+    return canvas;
+  }
+
+  static toFile(canvas, baseName) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) { reject(new Error("画像を作れませんでした")); return; }
+        resolve(new File([blob], `${baseName}_${canvas.width}x${canvas.height}.png`, { type: "image/png" }));
+      }, "image/png");
+    });
+  }
+}
+
 // ===== STATUS BAR =====
 class StatusBar {
   constructor(store) {
@@ -1231,16 +1850,38 @@ class MainView {
     this.listeners = new AbortController();
     this.file = null;
     this.meta = null;
-    this.imageDataUrl = null;
+    this.img = null;
+    this.focus = { x: 0.5, y: 0.5 };
+    this.drag = null;
     this.previewUrl = null;
     this.videoUrl = null;
     this.videoBlob = null;
     this.videoExt = ".mp4";
     this.lastRun = null;
     this.running = null;
+    this.initUiState();
     this.bind();
     this.buildQuickButtons();
+    this.buildFrameControls();
     this.refresh();
+  }
+
+  initUiState() {
+    const ui = this.store.ui;
+    const cfg = USER_SETTINGS.frame;
+    ui.aspect ??= cfg.defaultAspect;
+    ui.megapixels ??= cfg.defaultMegapixels;
+    ui.fit ??= cfg.defaultFit;
+    if (!cfg.megapixels.includes(Number(ui.megapixels))) ui.megapixels = cfg.defaultMegapixels;
+    if (!cfg.aspects.some(([v]) => v === ui.aspect)) ui.aspect = cfg.defaultAspect;
+    if (!cfg.fits.some(([v]) => v === ui.fit)) ui.fit = cfg.defaultFit;
+    $("seed").value = ui.seed ?? "";
+    $("negative").value = ui.negative ?? "";
+  }
+
+  saveUi(patch) {
+    Object.assign(this.store.ui, patch);
+    this.store.save();
   }
 
   on(el, type, fn) {
@@ -1265,8 +1906,23 @@ class MainView {
       if (e.dataTransfer.files[0]) this.loadImage(e.dataTransfer.files[0]);
     });
     this.on($("sel-llm"), "change", (e) => { this.store.data.llmActive = e.target.value; this.store.save(); this.statusBar.refresh(); });
-    this.on($("sel-video"), "change", (e) => { this.store.data.videoActive = e.target.value; this.store.save(); this.applyVideoProfile(); this.statusBar.refresh(); });
-    this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; });
+    this.on($("sel-video"), "change", (e) => {
+      this.store.data.videoActive = e.target.value;
+      delete this.store.ui.seconds;
+      this.store.save();
+      this.applyVideoProfile();
+      this.updateSkillNote();
+      this.updateFrame();
+      this.statusBar.refresh();
+    });
+    this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); });
+    this.on($("seed"), "input", (e) => this.saveUi({ seed: e.target.value }));
+    this.on($("negative"), "input", (e) => this.saveUi({ negative: e.target.value }));
+    this.on($("aspect"), "change", (e) => { this.saveUi({ aspect: e.target.value }); this.updateFrame(); });
+    this.on($("megapixels"), "change", (e) => { this.saveUi({ megapixels: Number(e.target.value) }); this.updateFrame(); });
+    this.on($("change-image"), "click", () => $("file-input").click());
+    this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5 }; this.drawPreview(); });
+    this.bindCanvas();
     this.on($("run"), "click", () => this.runAll());
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
@@ -1274,7 +1930,7 @@ class MainView {
     this.on($("to-en"), "click", () => this.translate("en"));
     this.on($("revise"), "click", () => this.revise($("instruction").value));
     this.on($("instruction"), "keydown", (e) => { if (e.key === "Enter" && !e.isComposing) this.revise($("instruction").value); });
-    this.on($("dl-video"), "click", () => this.videoBlob && downloadBlob(this.videoBlob, `sd2video_${this.lastRun.stamp}${this.videoExt}`));
+    this.on($("dl-video"), "click", () => this.videoBlob && downloadBlob(this.videoBlob, `${USER_SETTINGS.fileNamePrefix}${this.lastRun.stamp}${this.videoExt}`));
     this.on($("dl-prompt"), "click", () => this.downloadPrompt());
     this.on($("banner-open"), "click", () => this.openSettings());
   }
@@ -1292,12 +1948,13 @@ class MainView {
 
   refresh() {
     const d = this.store.data;
+    this.initUiState();
     fillSelect($("sel-llm"), Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]), d.llmActive);
     const videos = Object.entries(d.videoProfiles).map(([id, p]) => [id, p.name]);
     fillSelect($("sel-video"), videos.length ? videos : [["", "（未設定）"]], d.videoActive);
     const chips = $("skill-chips");
     d.activeSkills = d.activeSkills.filter((id) => d.skills[id]);
-    chips.replaceChildren(...Object.entries(d.skills).map(([id, s]) => {
+    chips.replaceChildren(...Object.entries(d.skills).filter(([id]) => id !== USER_SETTINGS.defaultSkillId).map(([id, s]) => {
       const b = document.createElement("button");
       b.className = "chip";
       b.textContent = s.name;
@@ -1308,17 +1965,33 @@ class MainView {
         d.activeSkills = on ? [...d.activeSkills, id] : d.activeSkills.filter((x) => x !== id);
         b.setAttribute("aria-pressed", String(on));
         this.store.save();
+        this.updateSkillNote();
       });
       return b;
     }));
     this.applyVideoProfile();
+    this.updateSkillNote();
+    this.updateFrame();
+  }
+
+  updateSkillNote() {
+    const m = USER_SETTINGS.messages;
+    const def = this.store.data.skills[USER_SETTINGS.defaultSkillId];
+    const note = $("skill-default-note");
+    note.hidden = !def;
+    if (!def) return;
+    const video = this.store.video;
+    let text = m.skillDefaultInUse;
+    if (this.store.chosenSkillIds().length) text = m.skillDefaultSkipped;
+    else if (video && !WorkflowMapper.isH3(video.workflow)) text = m.skillDefaultNotH3;
+    note.textContent = text.replace("{name}", def.name);
   }
 
   applyVideoProfile() {
     const v = this.store.video;
     const m = v?.mapping || {};
     const lengthOk = !!(m.frames || m.seconds);
-    const seconds = v?.seconds ?? USER_SETTINGS.defaultSeconds;
+    const seconds = this.store.ui.seconds ?? v?.seconds ?? USER_SETTINGS.defaultSeconds;
     $("seconds").value = seconds;
     $("seconds-out").textContent = seconds;
     $("seconds").disabled = !lengthOk && !!v;
@@ -1339,10 +2012,13 @@ class MainView {
       meta.height = img.naturalHeight;
       this.file = file;
       this.meta = meta;
-      this.imageDataUrl = this.toDataUrl(img);
-      $("preview").src = this.previewUrl;
-      $("preview").hidden = false;
+      this.img = img;
+      this.focus = { x: 0.5, y: 0.5 };
+      $("frame-canvas").hidden = false;
       $("drop-hint").hidden = true;
+      $("frame-actions").hidden = false;
+      $("dropzone").classList.add("has-image");
+      this.updateFrame();
       this.showMeta(meta);
       this.setStep("image", "done", meta.format === "none" ? "メタデータなし" : `${meta.width}×${meta.height}`);
       this.setStep("prompt", "idle", "");
@@ -1365,13 +2041,163 @@ class MainView {
     });
   }
 
-  toDataUrl(img) {
-    const scale = Math.min(1, USER_SETTINGS.imageMaxSide / Math.max(img.naturalWidth, img.naturalHeight));
+  toDataUrl(source, width, height) {
+    const scale = Math.min(1, USER_SETTINGS.imageMaxSide / Math.max(width, height));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.naturalWidth * scale);
-    canvas.height = Math.round(img.naturalHeight * scale);
-    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", USER_SETTINGS.imageJpegQuality);
+  }
+
+  // FRAME
+  buildFrameControls() {
+    const cfg = USER_SETTINGS.frame;
+    const ui = this.store.ui;
+    fillSelect($("aspect"), cfg.aspects, ui.aspect);
+    $("fit-mode").replaceChildren(...cfg.fits.map(([value, label]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.fit = value;
+      b.textContent = label;
+      this.on(b, "click", () => { this.saveUi({ fit: value }); this.updateFrame(); });
+      return b;
+    }));
+  }
+
+  workflowMultiple() {
+    const v = this.store.video;
+    const target = v?.mapping?.aspect;
+    const multiple = target ? v.workflow[target.split("|")[0]]?.inputs?.multiple : null;
+    return Number.isInteger(multiple) && multiple > 0 ? multiple : USER_SETTINGS.frame.sizeMultiple;
+  }
+
+  presetSize(megapixels, step = this.workflowMultiple()) {
+    return FrameFitter.targetSize(megapixels, FrameFitter.ratioOf(this.store.ui.aspect), step);
+  }
+
+  frameSize(step = this.workflowMultiple()) {
+    const mp = Number(this.store.ui.megapixels);
+    if (!this.meta || !mp) return null;
+    return this.presetSize(mp, step);
+  }
+
+  fillMegapixelOptions() {
+    const cfg = USER_SETTINGS.frame;
+    fillSelect($("megapixels"), cfg.megapixels.map((mp) => {
+      if (!mp) return ["0", cfg.workflowSizeLabel];
+      const size = this.presetSize(mp);
+      return [String(mp), `${mp}（${size.width}×${size.height}）`];
+    }), String(this.store.ui.megapixels));
+  }
+
+  updateFrame() {
+    const ui = this.store.ui;
+    const m = USER_SETTINGS.messages;
+    const workflowSize = !Number(ui.megapixels);
+    $("aspect").value = ui.aspect;
+    this.fillMegapixelOptions();
+    $("aspect").disabled = workflowSize;
+    document.querySelectorAll("#fit-mode button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.fit === ui.fit));
+      b.disabled = workflowSize;
+    });
+    const lines = [];
+    let needsCrop = false;
+    const mapping = this.store.video?.mapping || {};
+    if (workflowSize) {
+      lines.push(m.frameWorkflow);
+    } else if (!this.meta) {
+      const size = this.presetSize(Number(ui.megapixels));
+      lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height));
+      lines.push(m.frameNoImage);
+    } else {
+      const size = this.frameSize();
+      const sameRatio = Math.abs(size.width / size.height - this.meta.width / this.meta.height) / (this.meta.width / this.meta.height) < USER_SETTINGS.frame.sameRatioTolerance;
+      lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height) +
+        m.frameSource.replace("{sw}", this.meta.width).replace("{sh}", this.meta.height).replace("{aspect}", ui.aspect.split(" ")[0]));
+      lines.push(sameRatio ? m.frameSame : ui.fit === "crop" ? m.frameCropHint : m.framePadHint);
+      needsCrop = !sameRatio && ui.fit === "crop";
+    }
+    const sizeWritable = (mapping.aspect && mapping.megapixels) || (mapping.width && mapping.height);
+    if (!workflowSize && this.store.video && !sizeWritable) lines.push(m.frameNoSizeSlot);
+    $("frame-info").textContent = lines.join("\n");
+    $("reset-focus").hidden = !needsCrop;
+    this.drawPreview();
+  }
+
+  drawPreview() {
+    const canvas = $("frame-canvas");
+    if (!this.img) return;
+    const cfg = USER_SETTINGS.frame;
+    const ui = this.store.ui;
+    const img = this.img;
+    const srcW = img.naturalWidth, srcH = img.naturalHeight;
+    const size = this.frameSize();
+    const ctx = canvas.getContext("2d");
+    const cropMode = size && ui.fit === "crop";
+    canvas.classList.toggle("draggable", !!cropMode);
+    if (!size || cropMode) {
+      const scale = Math.min(1, cfg.previewMaxSide / Math.max(srcW, srcH));
+      canvas.width = Math.round(srcW * scale);
+      canvas.height = Math.round(srcH * scale);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      if (!cropMode) return;
+      const r = FrameFitter.cropRect(srcW, srcH, size.width, size.height, this.focus);
+      this.focus = r.focus;
+      const [x, y, w, h] = [r.x * scale, r.y * scale, r.w * scale, r.h * scale];
+      ctx.fillStyle = cfg.cropShade;
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.rect(x, y, w, h);
+      ctx.fill("evenodd");
+      ctx.strokeStyle = cfg.cropStroke;
+      ctx.lineWidth = cfg.cropStrokeWidth;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      return;
+    }
+    const scale = Math.min(1, cfg.previewMaxSide / Math.max(size.width, size.height));
+    const small = { width: Math.round(size.width * scale), height: Math.round(size.height * scale) };
+    const rendered = FrameFitter.render(img, small, ui.fit, this.focus);
+    canvas.width = small.width;
+    canvas.height = small.height;
+    ctx.drawImage(rendered, 0, 0);
+  }
+
+  bindCanvas() {
+    const canvas = $("frame-canvas");
+    const canDrag = () => !!this.frameSize() && this.store.ui.fit === "crop" && !this.running;
+    const moveBy = (dx, dy) => {
+      this.focus = { x: this.focus.x + dx, y: this.focus.y + dy };
+      this.drawPreview();
+    };
+    this.on(canvas, "pointerdown", (e) => {
+      if (!canDrag()) return;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add("dragging");
+      this.drag = { x: e.clientX, y: e.clientY };
+    });
+    this.on(canvas, "pointermove", (e) => {
+      if (!this.drag) return;
+      const rect = canvas.getBoundingClientRect();
+      moveBy((e.clientX - this.drag.x) / rect.width, (e.clientY - this.drag.y) / rect.height);
+      this.drag = { x: e.clientX, y: e.clientY };
+    });
+    const end = () => { this.drag = null; canvas.classList.remove("dragging"); };
+    this.on(canvas, "pointerup", end);
+    this.on(canvas, "pointercancel", end);
+    this.on(canvas, "keydown", (e) => {
+      const step = USER_SETTINGS.frame.keyStep;
+      const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!delta || !canDrag()) return;
+      e.preventDefault();
+      moveBy(...delta);
+    });
+  }
+
+  fittedFrame(size) {
+    if (!size) return null;
+    return FrameFitter.render(this.img, size, this.store.ui.fit, this.focus);
   }
 
   showMeta(meta) {
@@ -1400,8 +2226,13 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels"]) $(id).disabled = busy;
     document.querySelectorAll("#quick button").forEach((b) => { b.disabled = busy; });
+    if (!busy) this.updateFrame();
+    else {
+      $("aspect").disabled = true;
+      document.querySelectorAll("#fit-mode button").forEach((b) => { b.disabled = true; });
+    }
     $("cancel").hidden = !busy;
   }
 
@@ -1449,10 +2280,14 @@ class MainView {
     this.running.phase = "prompt";
     this.setStep("prompt", "active", current ? "修正中" : "作成中");
     this.status(USER_SETTINGS.messages.generatingPrompt);
+    const size = this.frameSize();
+    const frame = this.fittedFrame(size);
+    const imageDataUrl = frame ? this.toDataUrl(frame, frame.width, frame.height) : this.toDataUrl(this.img, this.meta.width, this.meta.height);
+    const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
     const en = await llm.generatePrompt({
       style: this.store.styleFor(this.store.video),
       skills: this.store.activeSkillObjects(),
-      meta: this.meta, imageDataUrl: this.imageDataUrl, seconds: Number($("seconds").value),
+      meta, imageDataUrl, seconds: Number($("seconds").value),
       current, instruction, signal,
     });
     $("prompt-en").value = en;
@@ -1505,7 +2340,14 @@ class MainView {
   }
 
   // VIDEO
-  async computeValues(comfy, wf, mapping, seconds) {
+  async sizeStep(comfy, wf, mapping) {
+    const multiple = this.workflowMultiple();
+    if (mapping.aspect || !mapping.width) return multiple;
+    const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.width), mapping.width.split("|")[1]);
+    return Math.max(multiple, Number(spec.step) || 1);
+  }
+
+  async computeValues(comfy, wf, mapping, seconds, size) {
     const seedInput = $("seed").value.trim();
     const seed = seedInput === "" ? Math.floor(Math.random() * USER_SETTINGS.seedMax) : Number(seedInput);
     const negative = $("negative").value.trim();
@@ -1514,13 +2356,12 @@ class MainView {
       const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.frames), mapping.frames.split("|")[1]);
       values.frames = WorkflowMapper.snap(seconds * WorkflowMapper.fps(wf), spec);
     }
-    const short = Number(this.store.video.shortEdge || 0);
-    if (short && mapping.width && mapping.height) {
-      const scale = short / Math.min(this.meta.width, this.meta.height);
-      for (const [key, size] of [["width", this.meta.width * scale], ["height", this.meta.height * scale]]) {
-        const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping[key]), mapping[key].split("|")[1]);
-        values[key] = WorkflowMapper.snap(size, Object.keys(spec).length ? spec : { min: 32, step: 32 });
-      }
+    if (size && mapping.aspect && mapping.megapixels) {
+      values.aspect = this.store.ui.aspect;
+      values.megapixels = Number(this.store.ui.megapixels);
+    } else if (size && mapping.width && mapping.height) {
+      values.width = size.width;
+      values.height = size.height;
     }
     return values;
   }
@@ -1535,8 +2376,11 @@ class MainView {
     this.setProgress(0);
     this.status(m.uploading);
     const seconds = Number($("seconds").value);
-    const values = await this.computeValues(comfy, v.workflow, v.mapping, seconds);
-    values.image = await comfy.upload(this.file);
+    const size = this.frameSize(await this.sizeStep(comfy, v.workflow, v.mapping));
+    const values = await this.computeValues(comfy, v.workflow, v.mapping, seconds, size);
+    const frame = this.fittedFrame(size);
+    const baseName = (this.file.name || "image").replace(/\.\w+$/, "");
+    values.image = await comfy.upload(frame ? await FrameFitter.toFile(frame, baseName) : this.file);
     if (signal.aborted) throw new DOMException("aborted", "AbortError");
     const promptId = await comfy.queue(WorkflowMapper.apply(v.workflow, v.mapping, values));
     this.running.promptId = promptId;
@@ -1553,7 +2397,8 @@ class MainView {
       this.status(m.downloading);
       const blob = await comfy.fetchVideo(info);
       this.showVideo(blob, info.filename);
-      this.lastRun = { stamp: timestamp(), values, profile: v.name, seconds, filename: info.filename };
+      this.lastRun = { stamp: timestamp(), values, profile: v.name, seconds, filename: info.filename,
+        frame: size ? { ...size, aspect: this.store.ui.aspect, fit: this.store.ui.fit } : null };
       $("dl-prompt").disabled = false;
       this.setProgress(1);
       this.setStep("video", "done", "完成");
@@ -1582,13 +2427,13 @@ class MainView {
     const data = {
       prompt_en: $("prompt-en").value, prompt_ja: $("prompt-ja").value,
       written_values: { ...this.lastRun.values, prompt: undefined },
-      seconds: this.lastRun.seconds, video_profile: this.lastRun.profile, comfy_filename: this.lastRun.filename,
+      seconds: this.lastRun.seconds, frame: this.lastRun.frame, video_profile: this.lastRun.profile, comfy_filename: this.lastRun.filename,
       llm_profile: this.store.llm?.name, llm_model: this.store.llm?.model,
       skills: this.store.activeSkillObjects().map((s) => s.name),
       prompt_style: this.store.styleFor(this.store.video)?.name,
       source_image: this.file?.name, source_metadata: this.meta,
     };
-    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `sd2video_${this.lastRun.stamp}.json`);
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}${this.lastRun.stamp}.json`);
   }
 }
 
@@ -1615,7 +2460,7 @@ class SettingsView {
 
   open(pane = null) {
     this.loadAll();
-    if (pane) this.showPane(pane);
+    this.showPane(pane || this.store.ui.settingsPane || "guide");
     if (!this.dialog.open) this.dialog.showModal();
   }
 
@@ -1644,6 +2489,7 @@ class SettingsView {
     this.on($("wf-file"), "change", (e) => e.target.files[0] && this.loadWorkflowFile(e.target.files[0]));
     this.bindDrop($("wf-drop"), (f) => this.loadWorkflowFile(f));
     this.on($("vid-save"), "click", () => this.saveVideo());
+    this.on($("wf-default"), "click", () => this.useDefaultWorkflow());
     this.on($("vid-del"), "click", () => this.deleteEntry("videoProfiles", "videoActive", this.editing.video, $("vid-msg"), () => this.loadAll()));
 
     this.on($("skill-pick"), "change", (e) => this.loadSkill(e.target.value));
@@ -1651,16 +2497,18 @@ class SettingsView {
     this.on($("skill-file"), "change", (e) => this.importSkills([...e.target.files]));
     this.on($("skill-export"), "click", () => this.exportSkill());
     this.on($("skill-save"), "click", () => this.saveSkill());
+    this.on($("skill-restore"), "click", () => this.restoreDefault("skill"));
     this.on($("skill-del"), "click", () => this.deleteEntry("skills", null, this.editing.skill, $("skill-msg"), () => this.loadAll(), true));
 
     this.on($("style-pick"), "change", (e) => this.loadStyle(e.target.value));
     this.on($("style-new"), "click", () => this.loadStyle(null));
     this.on($("style-save"), "click", () => this.saveStyle());
+    this.on($("style-restore"), "click", () => this.restoreDefault("style"));
     this.on($("style-del"), "click", () => this.deleteEntry("styles", null, this.editing.style, $("style-msg"), () => this.loadAll()));
 
     this.on($("opt-translate"), "change", (e) => { this.store.data.translate = e.target.checked; this.store.save(); });
     this.on($("export-settings"), "click", () => downloadBlob(new Blob([JSON.stringify(this.store.data, null, 2)],
-      { type: "application/json" }), `sd2video_settings_${timestamp()}.json`));
+      { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}settings_${timestamp()}.json`));
     this.on($("import-settings"), "change", (e) => e.target.files[0] && this.importSettings(e.target.files[0]));
     this.on($("reset-settings"), "click", () => {
       if (!confirm(USER_SETTINGS.messages.resetConfirm)) return;
@@ -1682,8 +2530,11 @@ class SettingsView {
   }
 
   showPane(name) {
+    if (!document.querySelector(`.pane[data-pane="${name}"]`)) name = "guide";
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
     document.querySelectorAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== name; });
+    this.store.ui.settingsPane = name;
+    this.store.save();
   }
 
   loadAll() {
@@ -1701,7 +2552,7 @@ class SettingsView {
 
   // GUIDE
   fillGuide() {
-    const origin = location.origin.startsWith("http") ? location.origin : "*";
+    const origin = location.origin.startsWith("http") ? location.origin : USER_SETTINGS.pagesOrigin;
     $("cors-comfy").textContent = `--enable-cors-header ${origin}`;
     $("origin-1").textContent = origin;
     $("origin-2").textContent = origin;
@@ -1831,7 +2682,6 @@ class SettingsView {
     $("vid-url").value = v?.comfyUrl || USER_SETTINGS.defaultComfyUrl;
     $("vid-style").value = v?.styleId || Object.keys(d.styles)[0];
     $("vid-seconds").value = v?.seconds ?? USER_SETTINGS.defaultSeconds;
-    $("vid-short").value = v?.shortEdge ?? 0;
     $("vid-free").checked = v?.freeVram ?? true;
     $("wf-hint").firstChild.textContent = v ? `登録済み: ${v.workflowName}` : "API形式のワークフローJSONをドロップ";
     this.renderMapping(v?.workflow || null, v?.mapping || {});
@@ -1869,7 +2719,7 @@ class SettingsView {
       this.pendingWorkflow = { workflow: wf, name: file.name };
       this.renderMapping(wf, mapping);
       $("wf-hint").firstChild.textContent = `読み込み済み: ${file.name}`;
-      const isH3 = Object.values(wf).some((n) => n.class_type.includes("MiniMaxH3"));
+      const isH3 = WorkflowMapper.isH3(wf);
       if (isH3 && this.store.data.styles.h3) $("vid-style").value = "h3";
       if (!$("vid-name").value.trim()) $("vid-name").value = isH3 ? "MiniMax H3" : file.name.replace(/\.json$/i, "");
       setMsg(msg, WorkflowMapper.summary(mapping) + "\n内容を確認して「保存して使う」を押してください。", mapping.prompt && mapping.image ? "ok" : "err");
@@ -1877,6 +2727,17 @@ class SettingsView {
     } catch (err) {
       setMsg(msg, describeError(err, "ワークフロー"), "err");
     }
+  }
+
+  useDefaultWorkflow() {
+    const wf = clone(USER_SETTINGS.defaultWorkflow);
+    const mapping = WorkflowMapper.detect(wf);
+    this.pendingWorkflow = { workflow: wf, name: USER_SETTINGS.defaultWorkflowName };
+    this.renderMapping(wf, mapping);
+    $("wf-hint").firstChild.textContent = `読み込み済み: ${USER_SETTINGS.defaultWorkflowName}`;
+    if (this.store.data.styles.h3) $("vid-style").value = "h3";
+    if (!$("vid-name").value.trim()) $("vid-name").value = USER_SETTINGS.defaultVideoName;
+    setMsg($("wf-msg"), `${WorkflowMapper.summary(mapping)}\n${USER_SETTINGS.messages.defaultWorkflowLoaded}`, "ok");
   }
 
   async testComfy() {
@@ -1903,7 +2764,7 @@ class SettingsView {
       name, comfyUrl: $("vid-url").value.trim() || USER_SETTINGS.defaultComfyUrl,
       workflow: this.pendingWorkflow.workflow, workflowName: this.pendingWorkflow.name, mapping,
       styleId: $("vid-style").value, seconds: Number($("vid-seconds").value) || USER_SETTINGS.defaultSeconds,
-      shortEdge: Number($("vid-short").value) || 0, freeVram: $("vid-free").checked,
+      freeVram: $("vid-free").checked,
     };
     this.store.data.videoActive = id;
     this.store.data.seenGuide = true;
@@ -1921,6 +2782,7 @@ class SettingsView {
     $("skill-name").value = s.name;
     $("skill-desc").value = s.description;
     $("skill-body").value = s.body;
+    $("skill-restore").hidden = !USER_SETTINGS.defaultSkills[this.editing.skill];
     setMsg($("skill-msg"), "");
   }
 
@@ -1967,7 +2829,25 @@ class SettingsView {
     const s = d.styles[this.editing.style] || { name: "", text: "" };
     $("style-name").value = s.name;
     $("style-text").value = s.text;
+    $("style-restore").hidden = !USER_SETTINGS.defaultStyles[this.editing.style];
     setMsg($("style-msg"), "");
+  }
+
+  restoreDefault(kind) {
+    if (kind === "skill") {
+      const s = USER_SETTINGS.defaultSkills[this.editing.skill];
+      if (!s) return;
+      $("skill-name").value = s.name;
+      $("skill-desc").value = s.description;
+      $("skill-body").value = s.body;
+      setMsg($("skill-msg"), USER_SETTINGS.messages.restored, "ok");
+      return;
+    }
+    const s = USER_SETTINGS.defaultStyles[this.editing.style];
+    if (!s) return;
+    $("style-name").value = s.name;
+    $("style-text").value = s.text;
+    setMsg($("style-msg"), USER_SETTINGS.messages.restored, "ok");
   }
 
   saveStyle() {
@@ -2003,6 +2883,7 @@ class App {
     this.listeners = new AbortController();
     const signal = this.listeners.signal;
     $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
+    $("open-flow").addEventListener("click", () => this.settings.open("flow"), { signal });
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
     this.statusBar.refresh();
@@ -2022,7 +2903,7 @@ class App {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  window.sd2video = new App();
+  window.stillmotion = new App();
 });
 </script>
 </body>
