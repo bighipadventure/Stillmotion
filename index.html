@@ -44,6 +44,7 @@
   --film-active-ink: #ffdc9c;
   --film-error: #5c2521;
   --film-error-ink: #ffd8d4;
+  --run-height: 52px;
   --radius-s: 8px;
   --radius-m: 12px;
   --radius-l: 16px;
@@ -206,6 +207,8 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 
 /* ===== FILMSTRIP ===== */
 .status-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.status-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 32px; }
+#cancel { padding: 4px 14px; font-size: 13px; margin-left: auto; }
 .filmstrip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .filmstrip li {
   display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 999px;
@@ -224,9 +227,13 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 #run-status { margin: 0; font-size: 13px; min-height: 1.5em; white-space: pre-wrap; }
 .video-panel { display: flex; flex-direction: column; gap: 12px; }
 .video-panel .gallery { margin-top: 0; }
+.run-block { display: flex; flex-direction: column; gap: 6px; }
 .run-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: end; }
-.count-field { margin: 0; }
-.count-field select { padding: 13px 10px; font-size: 16px; }
+.run-row label.count-field { margin: 0; }
+.run-row select, .run-row button.big { height: var(--run-height); margin: 0; }
+.run-row select { padding: 0 10px; font-size: 16px; }
+.run-row button.big { padding: 0 15px; }
+.run-block .note { margin: 0; }
 #run-status.err { color: var(--danger); }
 
 /* ===== SCREEN ===== */
@@ -234,20 +241,29 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .screen video { width: 100%; max-height: 70vh; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 14px; padding: 24px; text-align: center; }
 .gallery-head { display: flex; align-items: baseline; gap: 10px; }
-.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 12px; }
+.gallery { display: flex; gap: 12px; overflow-x: auto; padding: 4px 4px 8px; margin: 0 -4px; scroll-snap-type: x proximity; }
 .gallery:empty { display: none; }
-.job { border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
-.job[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.job { flex: 0 0 176px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
+.job[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
 .job-thumb { position: relative; display: block; width: 100%; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
 .job-thumb:hover:not(:disabled) { background: var(--film); }
-.job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; transition: filter .3s; }
 .job-thumb:disabled { cursor: default; opacity: 1; }
+.job[data-state="preparing"] .job-thumb img, .job[data-state="queued"] .job-thumb img, .job[data-state="running"] .job-thumb img { filter: brightness(.4) saturate(.5); }
+.job-thumb .spinner {
+  position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--lamp); animation: spin .9s linear infinite;
+}
+.job[data-state="queued"] .job-thumb .spinner, .job[data-state="preparing"] .job-thumb .spinner { border-top-color: rgba(255, 255, 255, .85); animation-duration: 1.6s; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .15s; }
 .job[data-state="done"] .job-thumb:hover .play, .job[data-state="done"] .job-thumb:focus-visible .play { opacity: 1; }
 .job-badge { position: absolute; left: 8px; top: 8px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 10px; background: var(--film-cell); color: var(--film-ink); }
 .job[data-state="running"] .job-badge { background: var(--film-active); color: var(--film-active-ink); }
 .job[data-state="done"] .job-badge { background: var(--lamp); color: var(--on-lamp); }
 .job[data-state="error"] .job-badge { background: var(--film-error); color: var(--film-error-ink); }
+.job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 8px; font-size: 12px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
+.job:not([aria-current="true"]) .job-now { display: none; }
 .job-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
 .job-title { font-weight: 700; font-size: 13px; }
 .job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
@@ -255,6 +271,10 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .job .progress { height: 4px; }
 .job-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .job-actions button { padding: 3px 10px; font-size: 12px; }
+.preview-head { display: flex; align-items: center; min-height: 26px; }
+.preview-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.preview-label.active { color: var(--on-accent-soft); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; padding: 2px 12px; }
+@media (prefers-reduced-motion: reduce) { .job-thumb .spinner { animation-duration: 3s; } }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
 
@@ -393,6 +413,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         </div>
         <div class="row" style="margin-top:8px"><button id="last-clear" hidden>最後の画像を外す</button></div>
       </div>
+      <label class="field" style="margin:12px 0 0">狙いたい構図・シチュエーション（任意）<textarea id="direction" rows="3" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
     </section>
     <details id="meta-box" hidden>
       <summary>画像の情報（メタデータ）</summary>
@@ -418,21 +439,25 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
       <label class="field" style="margin-top:10px">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
       <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローの設定のまま）<textarea id="negative" rows="3"></textarea></label>
     </details>
-    <div class="run-row">
-      <label class="field count-field">本数<select id="run-count"></select></label>
-      <button class="run big" id="run">実行</button>
+    <div class="run-block">
+      <div class="run-row">
+        <label class="field count-field">本数<select id="run-count"></select></label>
+        <button class="run big" id="run">実行</button>
+      </div>
+      <p class="note">同じ画像とプロンプトで、指定した本数の動画を作ります。</p>
     </div>
-    <p class="note" style="margin:-8px 0 0">同じ画像とプロンプトで、指定した本数の動画を作ります。</p>
-    <button id="cancel" hidden>中止する</button>
   </section>
 
   <section class="col-output">
     <div class="panel status-panel">
-      <ol class="filmstrip" id="filmstrip" aria-label="進み具合">
-        <li data-step="image" data-state="idle">画像<small></small></li>
-        <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
-        <li data-step="video" data-state="idle">動画<small></small></li>
-      </ol>
+      <div class="status-head">
+        <ol class="filmstrip" id="filmstrip" aria-label="進み具合">
+          <li data-step="image" data-state="idle">画像<small></small></li>
+          <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
+          <li data-step="video" data-state="idle">動画<small></small></li>
+        </ol>
+        <button class="danger" id="cancel" hidden>中止する</button>
+      </div>
       <div class="progress"><div id="progress-bar"></div></div>
       <p id="run-status" role="status"></p>
     </div>
@@ -455,17 +480,17 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
     </div>
     <section class="panel video-panel" aria-labelledby="gallery-title">
       <div class="gallery-head"><h2 class="box-title" id="gallery-title" style="margin:0">動画</h2><span class="note" id="gallery-count" style="margin:0"></span></div>
+      <p class="note" id="gallery-empty" style="margin:0">「実行」を押すと、作った動画がここに古い順（左）から並びます。パネルを押すと下で確認できます。</p>
+      <div class="gallery" id="gallery" aria-label="作った動画"></div>
+      <div class="preview-head"><span class="preview-label" id="player-label"></span></div>
       <div class="screen" id="screen">
-        <p class="empty" id="screen-empty">できあがった動画がここに表示されます。下のパネルをクリックすると再生します。</p>
-        <video id="video" controls loop autoplay playsinline hidden></video>
+        <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
+        <video id="video" controls loop playsinline preload="metadata" hidden></video>
       </div>
       <div class="row">
         <button id="dl-video" disabled>この動画を保存</button>
         <button id="dl-prompt" disabled>この動画のプロンプトを保存</button>
-        <span class="note" id="player-label" style="margin:0"></span>
       </div>
-      <p class="note" id="gallery-empty" style="margin:0">「実行」を押すと、指定した本数の動画がここに並びます。パネルをクリックすると再生します。</p>
-      <div class="gallery" id="gallery"></div>
     </section>
   </section>
 </main>
@@ -559,7 +584,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         </li>
         <li>
           <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>できた動画を受け取って表示する</strong></div>
-          <p>完成した動画ファイルを ComfyUI の output フォルダから受け取り、「生成した動画」にパネルとして並べます。パネルをクリックすると再生し、「この動画を保存」でダウンロードできます。</p>
+          <p>完成した動画ファイルを ComfyUI の output フォルダから受け取り、「動画」欄にパネルとして並べます。このとき動画ファイルの中に、プロンプト・使ったモデルと LoRA・シード・元画像の情報などを書き込みます（「この動画を保存」で保存したファイルに入っています）。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>GPUメモリを片付ける（設定でONのとき）</strong></div>
@@ -707,8 +732,9 @@ const USER_SETTINGS = {
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   settingsVersion: 1,
-  defaultsRevision: 5,
-  legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d"], skill: ["f6e1e724", "647fe80d"] },
+  defaultsRevision: 6,
+  legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
+  japanesePattern: /[\u3040-\u30ff\u4e00-\u9fff]/,
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
   legacyWorkflowNames: ["既定（MiniMax H3 画像→動画）"],
   officialSkillUrl: "https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing",
@@ -764,11 +790,12 @@ const USER_SETTINGS = {
   previewChars: 40,
   uploadPrefix: "stillmotion_",
   videoExtensions: [".mp4", ".webm", ".mkv", ".mov", ".gif", ".webp"],
-  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep these exactly as they are, untranslated: the first line if it starts with \"For the target video\" or \"How the reference pictures align\", the field names (integrated_multimodal_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), <Picture 1>, N/A, and everything inside <d>...</d>. Keep line breaks. Output only the translation.",
+  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep only these unchanged: the field names (integrated_multimodal_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), <Picture 1>, N/A, and everything inside <d>...</d>. Translate every other sentence into Japanese. Keep line breaks. Output only the translation.",
+  translateToJaRetry: "日本語に翻訳してください。英語の文章はすべて自然な日本語の文にします。ただし integrated_multimodal_description: などの項目名、[Shot 1] などのカット番号、00:03.500 などの時刻、(S1) などの話者ID、<Picture 1>、N/A、<d>...</d> の中身はそのまま残します。改行も残し、訳文だけを出力してください。",
   translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), <Picture 1>, N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
   promptOptions: {
     header: "Generation settings (these take priority over everything above):",
-    h3Only: ["mode", "music", "voice"],
+    h3Only: ["mode", "music", "voice", "vocal", "camera"],
     instructionLines: {
       I2VA: "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.",
       FL2VA: "How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the {S}-second mark of the target video.",
@@ -786,25 +813,40 @@ const USER_SETTINGS = {
         ["on", "あり", "Non-diegetic music: yes. In non_diegetic_music, describe instrumentation, tempo, rhythm and dynamic changes in 1–3 sentences, without abstract mood words."],
         ["off", "なし", "Non-diegetic music: none. non_diegetic_music must be exactly N/A."],
       ] },
-      { key: "voice", label: "人物の声", default: "off", choices: [
-        ["on", "あり", "Voices: characters may speak. Give each speaker a stable ID such as (S1), describe the voice when the speaker first appears, and write short natural lines you invent yourself inside <d>[Japanese] ...</d> (use another language tag only if the picture clearly suggests it)."],
-        ["off", "なし", "Voices: none. No character speaks, sings or uses an off-screen voice; use no speaker IDs and no <d> tags. Non-verbal sounds such as breathing may appear only in overall_soundscape."],
+      { key: "voice", label: "セリフ・歌", default: "off", choices: [
+        ["on", "あり", "Speech: characters may speak, sing, hum or whisper. Give each speaker a stable ID such as (S1), describe the voice when the speaker first appears, and write short natural lines you invent yourself inside <d>[Japanese] ...</d> (use another language tag only if the picture clearly suggests it)."],
+        ["off", "なし", "Speech: none. No character speaks, sings, hums or whispers, on or off screen; use no speaker IDs and no <d> tags."],
+      ] },
+      { key: "vocal", label: "息・声の音", default: "off", choices: [
+        ["on", "あり", "Non-verbal vocal sounds: allowed. Breathing, panting, sighs, gasps, moans, laughter and screams from characters may be described where they fit the action, in integrated_multimodal_description and overall_soundscape."],
+        ["off", "なし", "Non-verbal vocal sounds: none. No breathing or breath sounds, panting, sighs, gasps, moans, laughter, giggles, screams or any other sound from a character's mouth, nose or throat, in any field including overall_soundscape."],
       ] },
       { key: "motion", label: "動き", default: "normal", choices: [
-        ["subtle", "控えめ", "Motion: subtle. Keep subject motion small and gentle; use a static shot or camera motion with small amplitude at slow speed."],
-        ["normal", "ふつう", "Motion: natural. Use natural, moderate subject motion; describe camera motion without amplitude or speed words unless needed."],
-        ["big", "大げさ", "Motion: exaggerated. Use large, energetic subject motion and expressive reactions; use camera motion with large amplitude at fast speed."],
+        ["subtle", "控えめ", "Subject motion: subtle. Keep the characters' and objects' movements small, slow and gentle."],
+        ["normal", "ふつう", "Subject motion: natural, moderate movement that fits the scene."],
+        ["big", "大げさ", "Subject motion: exaggerated. Make the characters' movements large, energetic and expressive, with strong reactions."],
+      ] },
+      { key: "camera", label: "カメラ", default: "auto", choices: [
+        ["auto", "おまかせ", "Camera: choose the camera work that best fits the scene and the motion setting."],
+        ["static", "固定", "Camera: one static shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\"."],
+        ["zoom", "ズーム", "Camera: one continuous shot with no cuts, in which the camera gradually pushes in toward the main subject at slow speed across the whole clip."],
+        ["cuts", "場面転換", "Camera: use 2–3 shots with clear cuts that change the viewpoint or the scene. Each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to ...\", and keeps the same characters and outfits."],
       ] },
     ],
+    singleShotModes: ["FL2VA", "L2VA"],
+    directionRule: "User direction (highest priority for content, composition and situation; it may be written in Japanese, so interpret it and write the prompt in English): {text}",
     modeInfo: {
       I2VA: "画像を最初のフレームにして、その続きを動かします。",
       FL2VA: "1枚目を最初、2枚目を最後のフレームにして、その間をつなぐ動画を作ります。最後の画像を入れないときは最初の画像を最後にも使うので、元の姿に戻る（ループする）動画になります。",
       L2VA: "画像を最後のフレームにして、そこへたどり着く動画を作ります。",
     },
     lastSameAsFirst: "Picture 2 is identical to Picture 1: the clip must return to the opening pose and composition at the end, so that it loops seamlessly.",
-    notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声の指定は使いません（動きの指定だけ反映します）。",
+    notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声・カメラの指定は使いません（動きと自由入力だけ反映します）。",
+    cutsSingleShot: "FL2VA と L2VA は公式ガイドどおり1カットで作るため、「場面転換」は使えません。",
   },
   customModelValue: "__custom__",
+  metadataFormat: "stillmotion-metadata",
+  metadataVersion: 1,
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
@@ -845,7 +887,7 @@ integrated_multimodal_description is the main body, written along the timeline:
 - Speakers (only when voices are allowed): a stable ID such as (S1); describe the voice when the speaker first appears; only the language tag and the spoken words go inside <d>, e.g. The girl with a bright, clear voice (S1) says: <d>[Japanese] おはよう！</d>
 - Text actually visible on screen goes in double quotation marks, verbatim.
 
-overall_soundscape: 1–4 English sentences in one paragraph covering ambient sound, physical action sounds and non-verbal human sounds (footsteps, fabric, breathing, laughter). Do not repeat dialogue or diegetic music. Use N/A only for complete silence.
+overall_soundscape: 1–4 English sentences in one paragraph covering ambient sound and physical action sounds (footsteps, fabric, objects), plus non-verbal vocal sounds such as breathing or laughter only when voices are allowed. Do not repeat dialogue or diegetic music. Use N/A only for complete silence.
 non_diegetic_music: 1–3 English sentences on instrumentation, tempo, rhythm and dynamic changes, without abstract mood words; or N/A.
 
 Example (I2VA):
@@ -1298,7 +1340,6 @@ Tips for better results:
     lengthLocked: "（このワークフローでは変更できません）",
     negLocked: "ネガティブプロンプト（このワークフローでは使いません）",
     negOpen: "ネガティブプロンプト（空欄ならワークフローの設定のまま）",
-    skillDefaultInUse: "スキル: MiniMax H3 公式の「{name}」を使います。",
     skillDefaultSkipped: "選んだスキルを使います（公式の「{name}」の代わりに使われます）。",
     skillDefaultNotH3: "このワークフローは MiniMax H3 ではないため、既定のスキルは使いません。",
     frameSize: "{w}×{h} で生成します",
@@ -1313,7 +1354,7 @@ Tips for better results:
     modeNeedsFirst: "このワークフローの動画ノードは最初のフレームが必須のため、L2VA は使えません。",
     sizeMismatch: "完成しましたが、動画の大きさが {vw}×{vh} で、指定した {w}×{h} と縦横比が違います。「設定」→「動画（ComfyUI）」の「書き込み先」で、縦横比（解像度セレクター）か幅・高さが選ばれているか確認してください。",
     sizeMismatchShort: "縦横比が指定と違います（{vw}×{vh}）",
-    jobDone: "動画 #{n} が完成しました。パネルをクリックすると再生します。",
+    jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
     mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
@@ -1765,7 +1806,8 @@ class LlmClient {
   }
 
   translate(text, to, signal) {
-    return this.chat(to === "ja" ? USER_SETTINGS.translateToJa : USER_SETTINGS.translateToEn, text, null, signal);
+    const system = { ja: USER_SETTINGS.translateToJa, jaRetry: USER_SETTINGS.translateToJaRetry, en: USER_SETTINGS.translateToEn }[to];
+    return this.chat(system, text, null, signal);
   }
 
   async testVision() {
@@ -1896,6 +1938,34 @@ class WorkflowMapper {
       if (out[id]) out[id].inputs[key] = values[slot];
     }
     return out;
+  }
+
+  static usedModels(wf) {
+    const seen = new Set();
+    const visit = (id) => {
+      if (!wf[id] || seen.has(id)) return;
+      seen.add(id);
+      const node = wf[id];
+      const inputs = node.inputs || {};
+      if (node.class_type === "ComfySwitchNode" && this.isLink(inputs.switch)) {
+        const flag = wf[inputs.switch[0]]?.inputs?.value;
+        visit(inputs.switch[0]);
+        if (typeof flag === "boolean") { const pick = inputs[flag ? "on_true" : "on_false"]; if (this.isLink(pick)) visit(pick[0]); return; }
+      }
+      for (const v of Object.values(inputs)) if (this.isLink(v)) visit(v[0]);
+    };
+    for (const [id, node] of Object.entries(wf)) if (/Save|Preview/i.test(node.class_type)) visit(id);
+    const models = [];
+    const loras = [];
+    for (const id of seen) {
+      const inputs = wf[id].inputs || {};
+      for (const [k, v] of Object.entries(inputs)) {
+        if (typeof v === "string" && /^(unet_name|ckpt_name|vae_name|clip_name\d*|model_name)$/.test(k)) models.push({ type: k, name: v });
+        if (k === "lora_name" && typeof v === "string") loras.push({ name: v, strength: inputs.strength_model ?? inputs.strength ?? null });
+        if (v && typeof v === "object" && !Array.isArray(v) && "lora" in v && v.on !== false) loras.push({ name: v.lora, strength: v.strength ?? null });
+      }
+    }
+    return { models, loras };
   }
 
   static frameNode(wf, imageTarget) {
@@ -2094,6 +2164,145 @@ class ComfyClient {
   }
 }
 
+// ===== MP4 METADATA =====
+class Mp4Metadata {
+
+  static typeOf(bytes, p) {
+    return String.fromCharCode(bytes[p + 4], bytes[p + 5], bytes[p + 6], bytes[p + 7]);
+  }
+
+  static boxes(bytes, start, end) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const out = [];
+    let p = start;
+    while (p + 8 <= end) {
+      let size = view.getUint32(p);
+      let header = 8;
+      if (size === 1) {
+        size = Number(view.getBigUint64(p + 8));
+        header = 16;
+      } else if (size === 0) {
+        size = end - p;
+      }
+      if (size < header || p + size > end) break;
+      out.push({ type: this.typeOf(bytes, p), start: p, end: p + size, header });
+      p += size;
+    }
+    return out;
+  }
+
+  static concat(parts) {
+    const out = new Uint8Array(parts.reduce((n, x) => n + x.length, 0));
+    let p = 0;
+    for (const x of parts) { out.set(x, p); p += x.length; }
+    return out;
+  }
+
+  static box(type, parts) {
+    const body = this.concat(parts);
+    const out = new Uint8Array(8 + body.length);
+    new DataView(out.buffer).setUint32(0, out.length);
+    for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i) & 0xff;
+    out.set(body, 8);
+    return out;
+  }
+
+  static u32(n) {
+    const b = new Uint8Array(4);
+    new DataView(b.buffer).setUint32(0, n);
+    return b;
+  }
+
+  static commentBox(text) {
+    const data = this.box("data", [this.u32(1), this.u32(0), new TextEncoder().encode(text)]);
+    return this.box("\u00a9cmt", [data]);
+  }
+
+  static rebuildIlst(bytes, ilst, text) {
+    const kids = ilst ? this.boxes(bytes, ilst.start + ilst.header, ilst.end).filter((b) => b.type !== "\u00a9cmt") : [];
+    return this.box("ilst", [...kids.map((b) => bytes.subarray(b.start, b.end)), this.commentBox(text)]);
+  }
+
+  static rebuildMeta(bytes, meta, text) {
+    if (!meta) {
+      const hdlr = this.box("hdlr", [this.u32(0), this.u32(0), new TextEncoder().encode("mdir"), new TextEncoder().encode("appl"), this.u32(0), this.u32(0), new Uint8Array(1)]);
+      return this.box("meta", [this.u32(0), hdlr, this.rebuildIlst(bytes, null, text)]);
+    }
+    const full = this.typeOf(bytes, meta.start + meta.header) !== "hdlr";
+    const start = meta.start + meta.header + (full ? 4 : 0);
+    const kids = this.boxes(bytes, start, meta.end);
+    const parts = full ? [bytes.subarray(meta.start + meta.header, start)] : [];
+    let done = false;
+    for (const k of kids) {
+      if (k.type === "ilst") { parts.push(this.rebuildIlst(bytes, k, text)); done = true; }
+      else parts.push(bytes.subarray(k.start, k.end));
+    }
+    if (!done) parts.push(this.rebuildIlst(bytes, null, text));
+    return this.box("meta", parts);
+  }
+
+  static rebuildUdta(bytes, udta, text) {
+    const kids = udta ? this.boxes(bytes, udta.start + udta.header, udta.end) : [];
+    const parts = [];
+    let done = false;
+    for (const k of kids) {
+      if (k.type === "meta") { parts.push(this.rebuildMeta(bytes, k, text)); done = true; }
+      else parts.push(bytes.subarray(k.start, k.end));
+    }
+    if (!done) parts.push(this.rebuildMeta(bytes, null, text));
+    return this.box("udta", parts);
+  }
+
+  static shiftOffsets(bytes, start, end, delta) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    for (const b of this.boxes(bytes, start, end)) {
+      if (b.type === "stco" || b.type === "co64") {
+        const count = view.getUint32(b.start + b.header + 4);
+        const first = b.start + b.header + 8;
+        for (let i = 0; i < count; i++) {
+          if (b.type === "stco") view.setUint32(first + i * 4, view.getUint32(first + i * 4) + delta);
+          else view.setBigUint64(first + i * 8, view.getBigUint64(first + i * 8) + BigInt(delta));
+        }
+      } else if (["trak", "mdia", "minf", "stbl"].includes(b.type)) {
+        this.shiftOffsets(bytes, b.start + b.header, b.end, delta);
+      }
+    }
+  }
+
+  static embed(buffer, text) {
+    const bytes = new Uint8Array(buffer);
+    const top = this.boxes(bytes, 0, bytes.length);
+    const moov = top.find((b) => b.type === "moov");
+    if (top[0]?.type !== "ftyp" || !moov || top.some((b) => b.type === "moof")) return null;
+    const kids = this.boxes(bytes, moov.start + moov.header, moov.end);
+    const parts = [];
+    let done = false;
+    for (const k of kids) {
+      if (k.type === "udta") { parts.push(this.rebuildUdta(bytes, k, text)); done = true; }
+      else parts.push(bytes.subarray(k.start, k.end));
+    }
+    if (!done) parts.push(this.rebuildUdta(bytes, null, text));
+    const newMoov = this.box("moov", parts);
+    const delta = newMoov.length - (moov.end - moov.start);
+    if (delta && top.some((b) => b.type === "mdat" && b.start > moov.start)) this.shiftOffsets(newMoov, 8, newMoov.length, delta);
+    return this.concat([bytes.subarray(0, moov.start), newMoov, bytes.subarray(moov.end)]);
+  }
+
+  static read(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const find = (start, end, type) => this.boxes(bytes, start, end).find((b) => b.type === type);
+    const moov = find(0, bytes.length, "moov");
+    const udta = moov && find(moov.start + moov.header, moov.end, "udta");
+    const meta = udta && find(udta.start + udta.header, udta.end, "meta");
+    if (!meta) return null;
+    const full = this.typeOf(bytes, meta.start + meta.header) !== "hdlr";
+    const ilst = find(meta.start + meta.header + (full ? 4 : 0), meta.end, "ilst");
+    const cmt = ilst && find(ilst.start + ilst.header, ilst.end, "\u00a9cmt");
+    const data = cmt && find(cmt.start + cmt.header, cmt.end, "data");
+    return data ? new TextDecoder().decode(bytes.subarray(data.start + data.header + 8, data.end)) : null;
+  }
+}
+
 // ===== FRAME FITTER =====
 class FrameFitter {
   static ratioOf(aspect) {
@@ -2242,6 +2451,7 @@ class MainView {
     }
     $("seed").value = ui.seed ?? "";
     $("negative").value = ui.negative ?? "";
+    $("direction").value = ui.direction ?? "";
   }
 
   saveUi(patch) {
@@ -2297,6 +2507,7 @@ class MainView {
     this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); });
     this.on($("seed"), "input", (e) => this.saveUi({ seed: e.target.value }));
     this.on($("negative"), "input", (e) => this.saveUi({ negative: e.target.value }));
+    this.on($("direction"), "input", (e) => this.saveUi({ direction: e.target.value }));
     this.on($("aspect"), "change", (e) => { this.saveUi({ aspect: e.target.value }); this.updateFrame(); });
     this.on($("megapixels"), "change", (e) => { this.saveUi({ megapixels: Number(e.target.value) }); this.updateFrame(); });
     this.on($("change-image"), "click", () => $("file-input").click());
@@ -2393,13 +2604,12 @@ class MainView {
     $("skill-chips").hidden = !hasOwn;
     const def = this.store.data.skills[USER_SETTINGS.defaultSkillId];
     const note = $("skill-default-note");
-    note.hidden = !def;
-    if (!def) return;
     const video = this.store.video;
-    let text = m.skillDefaultInUse;
-    if (this.store.chosenSkillIds().length) text = m.skillDefaultSkipped;
-    else if (video && !WorkflowMapper.isH3(video.workflow)) text = m.skillDefaultNotH3;
-    note.textContent = text.replace("{name}", def.name);
+    let text = "";
+    if (def && this.store.chosenSkillIds().length) text = m.skillDefaultSkipped;
+    else if (def && video && !WorkflowMapper.isH3(video.workflow)) text = m.skillDefaultNotH3;
+    note.hidden = !text;
+    note.textContent = text.replace("{name}", def?.name || "");
   }
 
   applyVideoProfile() {
@@ -2653,6 +2863,7 @@ class MainView {
 
   promptOptions() {
     const chosen = { ...this.store.ui.promptOptions };
+    if (chosen.camera === "cuts" && USER_SETTINGS.promptOptions.singleShotModes.includes(chosen.mode)) chosen.camera = "auto";
     if (!this.isH3()) {
       chosen.mode = "I2VA";
       for (const key of USER_SETTINGS.promptOptions.h3Only) if (key !== "mode") delete chosen[key];
@@ -2671,6 +2882,22 @@ class MainView {
     return `${this.instructionLine()}\n\n${body}`;
   }
 
+  async translateToJa(llm, en, signal) {
+    const pattern = USER_SETTINGS.promptOptions.instructionPattern;
+    const line = (en.match(pattern)?.[0] || "").trim();
+    const body = en.replace(pattern, "").trim();
+    let ja = await llm.translate(body, "ja", signal);
+    if (!USER_SETTINGS.japanesePattern.test(ja)) ja = await llm.translate(body, "jaRetry", signal);
+    return line ? `${line}\n\n${ja}` : ja;
+  }
+
+  syncJaInstruction() {
+    const ja = $("prompt-ja").value;
+    if (!ja.trim() || !this.isH3()) return;
+    const body = ja.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trimStart();
+    $("prompt-ja").value = `${this.instructionLine()}\n\n${body}`;
+  }
+
   settingsText() {
     const cfg = USER_SETTINGS.promptOptions;
     const chosen = this.promptOptions();
@@ -2678,6 +2905,8 @@ class MainView {
       .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2]);
     if (this.isH3()) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
     if (chosen.mode === "FL2VA" && !this.last) lines.push(cfg.lastSameAsFirst);
+    const direction = (this.store.ui.direction || "").trim();
+    if (direction) lines.push(cfg.directionRule.replace("{text}", direction));
     return `${cfg.header}\n${lines.map((l) => `- ${l}`).join("\n")}`;
   }
 
@@ -2690,7 +2919,17 @@ class MainView {
       b.disabled = !h3 && cfg.h3Only.includes(b.dataset.group);
     });
     const mode = this.promptOptions().mode;
-    $("mode-info").textContent = h3 ? cfg.modeInfo[mode] : cfg.notH3;
+    const singleShot = cfg.singleShotModes.includes(mode);
+    const cutsButton = document.querySelector('#prompt-options [data-group="camera"][data-value="cuts"]');
+    if (cutsButton) {
+      cutsButton.disabled ||= singleShot;
+      cutsButton.title = singleShot ? cfg.cutsSingleShot : "";
+      if (singleShot && ui.camera === "cuts") {
+        cutsButton.setAttribute("aria-pressed", "false");
+        document.querySelector('#prompt-options [data-group="camera"][data-value="auto"]').setAttribute("aria-pressed", "true");
+      }
+    }
+    $("mode-info").textContent = h3 ? cfg.modeInfo[mode] + (singleShot && ui.camera === "cuts" ? `\n${cfg.cutsSingleShot}` : "") : cfg.notH3;
     $("last-box").hidden = mode !== "FL2VA";
   }
 
@@ -2768,7 +3007,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels", "last-input", "last-clear", "run-count"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels", "last-input", "last-clear", "run-count", "direction"]) $(id).disabled = busy;
     if (!busy) this.updatePromptOptions();
     else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
     if (!busy) this.updateFrame();
@@ -2776,7 +3015,7 @@ class MainView {
       $("aspect").disabled = true;
       document.querySelectorAll("#fit-mode button").forEach((b) => { b.disabled = true; });
     }
-    $("cancel").hidden = !busy;
+    this.updateCancel();
   }
 
   async guard(task) {
@@ -2796,10 +3035,16 @@ class MainView {
     }
   }
 
+  updateCancel() {
+    $("cancel").hidden = !this.running && !this.jobs.some((j) => this.isPending(j));
+  }
+
   async cancel() {
-    if (!this.running) return;
-    this.running.controller.abort();
-    if (this.running.comfy && this.running.promptId) await this.running.comfy.cancel(this.running.promptId);
+    if (this.running) this.running.controller.abort();
+    const pending = this.jobs.filter((j) => this.isPending(j));
+    pending.sort((a, b) => Number(a.state === "running") - Number(b.state === "running"));
+    for (const job of pending) await this.cancelJob(job);
+    if (pending.length) this.status(USER_SETTINGS.messages.cancelled);
   }
 
   requireLlm() {
@@ -2843,12 +3088,18 @@ class MainView {
     $("prompt-ja").value = "";
     if (this.store.data.translate) {
       this.status(USER_SETTINGS.messages.translating);
-      $("prompt-ja").value = await llm.translate($("prompt-en").value, "ja", signal);
+      $("prompt-ja").value = await this.translateToJa(llm, $("prompt-en").value, signal);
     }
     this.setStep("prompt", "done", current ? "修正済み" : "完成");
   }
 
+  scrollToTop() {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  }
+
   runAll() {
+    this.scrollToTop();
     this.guard(async (signal) => {
       if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
       this.requireVideo();
@@ -2870,6 +3121,7 @@ class MainView {
       if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
       if (!instruction.trim()) throw new UserError(USER_SETTINGS.messages.needInstruction);
       await this.makePrompt(signal, $("prompt-en").value, instruction);
+      $("instruction").value = "";
       this.status(USER_SETTINGS.messages.revised);
     });
   }
@@ -2881,8 +3133,12 @@ class MainView {
       const llm = this.requireLlm();
       this.running.phase = null;
       this.status(USER_SETTINGS.messages.translating);
-      const out = await llm.translate(src, to, signal);
-      $(to === "ja" ? "prompt-ja" : "prompt-en").value = to === "en" ? this.withInstruction(out) : out;
+      if (to === "ja") {
+        $("prompt-ja").value = await this.translateToJa(llm, src, signal);
+      } else {
+        const body = src.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trim();
+        $("prompt-en").value = this.withInstruction(await llm.translate(body, "en", signal));
+      }
       this.status("翻訳しました。");
     });
   }
@@ -2896,11 +3152,13 @@ class MainView {
     const total = ui.runCount;
     const seedBase = $("seed").value.trim();
     $("prompt-en").value = this.withInstruction($("prompt-en").value);
+    this.syncJaInstruction();
     const shared = {
       profile: clone(v), prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
       seconds: Number($("seconds").value), negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
       img: this.img, meta: this.meta, file: this.file, last: options.mode === "FL2VA" && this.last ? { ...this.last } : null, options,
+      direction: (ui.direction || "").trim(),
       skills: this.store.activeSkillObjects().map((s) => s.name), style: this.store.styleFor(v)?.name,
       llm: this.store.llm?.name, llmModel: this.store.llm?.model,
     };
@@ -2914,10 +3172,12 @@ class MainView {
         values: null, size: null, lastImage: null,
       });
     }
-    this.jobs.unshift(...batch.reverse());
+    this.jobs.push(...batch);
     this.renderJobs();
-    this.status(m.jobStarted.replace("{n}", total > 1 ? `${batch[batch.length - 1].id}〜#${batch[0].id}` : batch[0].id));
-    for (const job of batch.reverse()) this.runJob(job);
+    const gallery = $("gallery");
+    gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
+    this.status(m.jobStarted.replace("{n}", total > 1 ? `${batch[0].id}〜#${batch[batch.length - 1].id}` : batch[0].id));
+    for (const job of batch) this.runJob(job);
   }
 
   jobThumb(job) {
@@ -2986,6 +3246,7 @@ class MainView {
       job.lastImage = `${job.file.name}（最初の画像と同じ）`;
     }
     if (frameId) WorkflowMapper.applyMode(workflow, frameId, mode, lastName);
+    job.workflow = workflow;
     if (signal.aborted) throw new DOMException("aborted", "AbortError");
     job.promptId = await comfy.queue(workflow);
     this.setJob(job, { state: "queued", note: "" });
@@ -2999,7 +3260,7 @@ class MainView {
         if (job.state === "running") this.setJob(job, { note: `${steps ? steps + " / " : ""}${sec}秒経過` });
       });
       this.setJob(job, { note: m.downloading });
-      job.blob = await comfy.fetchVideo(info);
+      job.blob = await this.embedMetadata(job, await comfy.fetchVideo(info));
       job.filename = info.filename;
       job.ext = (info.filename.match(/\.\w+$/) || [".mp4"])[0];
       job.url = URL.createObjectURL(job.blob);
@@ -3080,10 +3341,10 @@ class MainView {
     this.selectedJob = job;
     const video = $("video");
     if (job?.url) {
+      video.poster = job.thumb;
       video.src = job.url;
       video.hidden = false;
       $("screen-empty").hidden = true;
-      video.play().catch(() => {});
     } else {
       video.removeAttribute("src");
       video.load();
@@ -3092,11 +3353,13 @@ class MainView {
     }
     $("dl-video").disabled = !job?.blob;
     $("dl-prompt").disabled = !job;
-    $("player-label").textContent = job ? `#${job.id} を表示中` : "";
+    $("player-label").textContent = job ? `▶ プレビュー中: ${this.jobLabel(job)}` : "";
+    $("player-label").classList.toggle("active", !!job);
     this.renderJobs();
   }
 
   renderJobs() {
+    this.updateCancel();
     const pending = this.jobs.filter((j) => this.isPending(j));
     const running = this.jobs.find((j) => j.state === "running");
     $("gallery-empty").hidden = this.jobs.length > 0;
@@ -3108,10 +3371,32 @@ class MainView {
       this.setStep("video", this.jobs.some((j) => j.state === "done") ? "done" : "idle", this.jobs.length ? `${this.jobs.length}件` : "");
     }
     this.setProgress(running ? running.progress : 0);
-    $("gallery").replaceChildren(...this.jobs.map((job) => this.jobCard(job)));
+    this.syncCards();
   }
 
-  jobCard(job) {
+  jobLabel(job) {
+    const batch = job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : "";
+    return `#${job.id}${batch}　${job.aspect.split(" ")[0]} / ${job.seconds}秒 / ${job.options.mode}`;
+  }
+
+  syncCards() {
+    const gallery = $("gallery");
+    this.cards ??= new Map();
+    for (const [job, card] of this.cards) {
+      if (!this.jobs.includes(job)) { card.remove(); this.cards.delete(job); }
+    }
+    for (const job of this.jobs) {
+      let card = this.cards.get(job);
+      if (!card) {
+        card = this.createCard(job);
+        this.cards.set(job, card);
+        gallery.append(card);
+      }
+      this.updateCard(job, card);
+    }
+  }
+
+  createCard(job) {
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
@@ -3119,20 +3404,36 @@ class MainView {
       return e;
     };
     const card = el("article", "job");
-    card.dataset.state = job.state;
-    card.setAttribute("aria-current", String(job === this.selectedJob));
     const thumb = el("button", "job-thumb");
-    thumb.disabled = job.state !== "done";
-    thumb.setAttribute("aria-label", `#${job.id} を再生`);
+    thumb.setAttribute("aria-label", `#${job.id} をプレビュー`);
     const img = el("img");
     img.src = job.thumb;
     img.alt = "";
-    thumb.append(img, el("span", "job-badge", USER_SETTINGS.jobStates[job.state]), el("span", "play", "▶"));
+    thumb.append(img, el("span", "job-badge"), el("span", "play", "▶"), el("span", "job-now", "プレビュー中"));
     thumb.addEventListener("click", () => this.selectJob(job));
+    card.append(thumb, el("div", "job-body"));
+    return card;
+  }
+
+  updateCard(job, card) {
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    const pending = this.isPending(job);
+    card.dataset.state = job.state;
+    card.setAttribute("aria-current", String(job === this.selectedJob));
+    const thumb = card.querySelector(".job-thumb");
+    thumb.disabled = job.state !== "done";
+    thumb.querySelector(".job-badge").textContent = USER_SETTINGS.jobStates[job.state];
+    const spinner = thumb.querySelector(".spinner");
+    if (pending && !spinner) thumb.append(el("span", "spinner"));
+    if (!pending && spinner) spinner.remove();
     const body = el("div", "job-body");
-    const batch = job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : "";
-    body.append(el("div", "job-title", `#${job.id}${batch}　${job.aspect.split(" ")[0]} / ${job.seconds}秒 / ${job.options.mode}`));
-    if (this.isPending(job)) {
+    body.append(el("div", "job-title", this.jobLabel(job)));
+    if (pending) {
       const bar = el("div", "progress");
       const fill = el("div");
       fill.style.width = `${job.progress * 100}%`;
@@ -3151,27 +3452,47 @@ class MainView {
       b.addEventListener("click", fn);
       actions.append(b);
     };
-    if (this.isPending(job)) {
+    if (pending) {
       action("中止", () => this.cancelJob(job), "danger");
     } else {
       action("プロンプト", () => this.downloadPrompt(job));
       action("削除", () => this.removeJob(job));
     }
     body.append(actions);
-    card.append(thumb, body);
-    return card;
+    card.querySelector(".job-body").replaceWith(body);
+  }
+
+  jobRecord(job) {
+    const used = WorkflowMapper.usedModels(job.workflow || job.profile.workflow);
+    return {
+      format: USER_SETTINGS.metadataFormat, version: USER_SETTINGS.metadataVersion,
+      app: USER_SETTINGS.appName, app_url: USER_SETTINGS.pagesUrl, created: new Date().toISOString(),
+      prompt: { en: job.prompt, ja: job.promptJa },
+      direction: job.direction, options: job.options,
+      video: {
+        seconds: job.seconds, aspect: job.aspect, megapixels: job.megapixels, fit: job.fit,
+        width: job.size?.width ?? null, height: job.size?.height ?? null, seed: job.values?.seed ?? null,
+      },
+      models: used.models, loras: used.loras,
+      workflow: job.profile.name, llm: { profile: job.llm, model: job.llmModel }, skills: job.skills, prompt_style: job.style,
+      source_image: { file: job.file?.name || null, metadata: job.meta }, last_image: job.lastImage,
+      comfy_filename: job.filename || null,
+    };
+  }
+
+  async embedMetadata(job, blob) {
+    try {
+      const out = Mp4Metadata.embed(await blob.arrayBuffer(), JSON.stringify(this.jobRecord(job)));
+      job.metaEmbedded = !!out;
+      return out ? new Blob([out], { type: blob.type || "video/mp4" }) : blob;
+    } catch {
+      job.metaEmbedded = false;
+      return blob;
+    }
   }
 
   downloadPrompt(job) {
-    const data = {
-      prompt_en: job.prompt, prompt_ja: job.promptJa,
-      written_values: job.values ? { ...job.values, prompt: undefined } : null,
-      seconds: job.seconds, frame: job.size ? { ...job.size, aspect: job.aspect, fit: job.fit } : null,
-      prompt_options: job.options, last_image: job.lastImage, state: job.state,
-      video_profile: job.profile.name, comfy_filename: job.filename,
-      llm_profile: job.llm, llm_model: job.llmModel, skills: job.skills, prompt_style: job.style,
-      source_image: job.file?.name, source_metadata: job.meta,
-    };
+    const data = this.jobRecord(job);
     downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}.json`);
   }
 }
