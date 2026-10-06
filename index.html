@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SD画像 → 動画</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ===== TOKENS ===== */
+:root {
+  --paper: #eef1f4;
+  --surface: #ffffff;
+  --ink: #1d2a36;
+  --muted: #5b6b7a;
+  --line: #d3dae1;
+  --teal: #1e5b63;
+  --teal-ink: #ffffff;
+  --teal-soft: #dcebec;
+  --lamp: #f2a93b;
+  --lamp-soft: #fbe8c8;
+  --danger: #b3261e;
+  --ok: #2e7d4f;
+  --film: #26313b;
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --font: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151b21;
+    --surface: #1e262e;
+    --ink: #e6ecf1;
+    --muted: #9aa9b6;
+    --line: #34404b;
+    --teal: #4fa3ad;
+    --teal-ink: #0d1a1c;
+    --teal-soft: #22393c;
+    --lamp: #f2a93b;
+    --lamp-soft: #4a3a20;
+    --danger: #ff8a80;
+    --ok: #7ccf9a;
+    --film: #0c1116;
+  }
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ===== CONTROLS ===== */
+button {
+  border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-s);
+  padding: 7px 14px; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--teal); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button.primary { background: var(--teal); color: var(--teal-ink); border-color: var(--teal); font-weight: 700; }
+button.big { width: 100%; padding: 14px; font-size: 18px; letter-spacing: .05em; }
+button.chip { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+button.chip[aria-pressed="true"] { background: var(--teal-soft); border-color: var(--teal); font-weight: 700; }
+button.link { border: none; background: none; padding: 0; color: var(--teal); text-decoration: underline; }
+button.danger { color: var(--danger); }
+input[type="text"], input[type="url"], input[type="password"], input[type="number"], select, textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 7px 10px;
+}
+textarea { resize: vertical; line-height: 1.55; }
+input[type="range"], input[type="checkbox"] { accent-color: var(--teal); }
+input[type="range"] { width: 100%; }
+label.field { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+label.field > input, label.field > select, label.field > textarea { margin-top: 3px; font-size: 15px; color: var(--ink); }
+label.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin-bottom: 10px; }
+label.check input { margin-top: 5px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row > .grow { flex: 1 1 200px; }
+.note { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
+.msg { font-size: 14px; margin: 8px 0; white-space: pre-wrap; }
+.msg.ok { color: var(--ok); }
+.msg.err { color: var(--danger); }
+details > summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+code { background: var(--teal-soft); padding: 1px 6px; border-radius: 4px; word-break: break-all; }
+
+/* ===== LAYOUT ===== */
+.topbar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.topbar h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: .04em; }
+.pills { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.pill { font-size: 13px; border-radius: 999px; padding: 4px 12px; display: inline-flex; gap: 6px; align-items: center; }
+.pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.pill[data-state="ok"]::before { background: var(--ok); }
+.pill[data-state="warn"]::before { background: var(--lamp); }
+.pill[data-state="down"]::before { background: var(--danger); }
+.banner { background: var(--lamp-soft); padding: 10px 24px; font-size: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.layout { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 16px; } .topbar { padding: 12px 16px; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 18px; }
+.col-input { display: flex; flex-direction: column; gap: 14px; align-self: start; }
+.col-output { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* ===== DROPZONE ===== */
+.dropzone {
+  display: grid; place-items: center; min-height: 220px; border: 2px dashed var(--line); border-radius: var(--radius-m);
+  cursor: pointer; text-align: center; padding: 12px; overflow: hidden; position: relative; background: var(--paper);
+}
+.dropzone.over { border-color: var(--teal); background: var(--teal-soft); }
+.dropzone img { max-width: 100%; max-height: 360px; border-radius: var(--radius-s); display: block; }
+.dropzone .hint { color: var(--muted); font-size: 14px; }
+.dropzone .hint strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+#meta-text { white-space: pre-wrap; font-size: 12px; max-height: 240px; overflow: auto; margin: 8px 0 0; color: var(--muted); }
+.skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ===== FILMSTRIP ===== */
+.filmstrip {
+  list-style: none; margin: 0; padding: 14px 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  background: var(--film); border-radius: var(--radius-s); position: relative;
+  --hole: radial-gradient(circle, var(--paper) 0 3px, transparent 3.5px);
+}
+.filmstrip::before, .filmstrip::after {
+  content: ""; position: absolute; left: 6px; right: 6px; height: 8px;
+  background-image: linear-gradient(90deg, transparent 0 6px, var(--paper) 6px 14px, transparent 14px 20px);
+  background-size: 20px 8px; opacity: .35; border-radius: 2px;
+}
+.filmstrip::before { top: 3px; }
+.filmstrip::after { bottom: 3px; }
+.filmstrip li {
+  border-radius: 3px; padding: 10px 8px; text-align: center; font-weight: 700; font-size: 14px;
+  background: #3a4651; color: #a9b6c1; transition: background .25s, color .25s;
+}
+.filmstrip li small { display: block; font-weight: 400; font-size: 12px; min-height: 1.5em; }
+.filmstrip li[data-state="active"] { background: var(--lamp-soft); color: #4a3510; animation: flicker 1.4s ease-in-out infinite; }
+.filmstrip li[data-state="done"] { background: var(--lamp); color: #2b1d05; }
+.filmstrip li[data-state="error"] { background: #5a2420; color: #ffd6d2; }
+@keyframes flicker { 50% { filter: brightness(1.12); } }
+@media (prefers-reduced-motion: reduce) { .filmstrip li[data-state="active"] { animation: none; } }
+.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress > div { height: 100%; width: 0; background: var(--lamp); transition: width .3s; }
+#run-status { margin: 0; font-size: 14px; min-height: 1.6em; white-space: pre-wrap; }
+#run-status.err { color: var(--danger); }
+
+/* ===== SCREEN ===== */
+.screen { background: var(--film); border-radius: var(--radius-m); min-height: 260px; display: grid; place-items: center; overflow: hidden; }
+.screen video { width: 100%; max-height: 70vh; display: block; background: #000; }
+.screen .empty { color: #a9b6c1; font-size: 14px; padding: 24px; text-align: center; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
+
+/* ===== SETTINGS DIALOG ===== */
+dialog#settings {
+  width: min(980px, 100vw - 24px); max-height: calc(100vh - 24px); padding: 0; border: 1px solid var(--line);
+  border-radius: var(--radius-m); background: var(--surface); color: var(--ink);
+}
+dialog#settings::backdrop { background: rgba(10, 16, 22, .55); }
+.dlg-head { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.dlg-head h2 { margin: 0; font-size: 18px; }
+.dlg-head button { margin-left: auto; }
+.dlg-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 520px; }
+@media (max-width: 700px) { .dlg-body { grid-template-columns: 1fr; } }
+.tabs { border-right: 1px solid var(--line); padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 700px) { .tabs { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--line); } }
+.tabs button { border: none; text-align: left; background: none; padding: 8px 12px; border-radius: var(--radius-s); }
+.tabs button[aria-selected="true"] { background: var(--teal-soft); font-weight: 700; }
+.pane { padding: 20px 24px; overflow: auto; }
+.pane h3 { margin: 0 0 6px; font-size: 17px; }
+.pane h4 { margin: 20px 0 6px; font-size: 15px; }
+.pane ol.steps { padding-left: 1.4em; }
+.pane ol.steps li { margin-bottom: 14px; }
+.picker { display: flex; gap: 8px; margin: 12px 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.picker select { flex: 1; }
+.map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
+.diag { font-size: 14px; margin: 6px 0; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>SD画像 → 動画</h1>
+  <div class="pills">
+    <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
+    <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
+  </div>
+  <button id="open-settings">設定</button>
+</header>
+<div class="banner" id="setup-banner" hidden>
+  <span id="setup-banner-text"></span>
+  <button class="primary" id="banner-open">設定を開く</button>
+</div>
+
+<main class="layout">
+  <section class="col-input panel">
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="file-input" accept="image/png,image/*" aria-label="画像を選ぶ">
+      <img id="preview" alt="" hidden>
+      <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックして選ぶこともできます）</span>
+    </label>
+    <details id="meta-box" hidden>
+      <summary>画像の情報（メタデータ）</summary>
+      <pre id="meta-text"></pre>
+    </details>
+    <label class="field">文章AI<select id="sel-llm"></select></label>
+    <label class="field">動画の設定<select id="sel-video"></select></label>
+    <div>
+      <div class="note" style="margin:0 0 6px">スキル（押すとON/OFF）</div>
+      <div class="skill-chips" id="skill-chips"></div>
+    </div>
+    <label class="field" id="seconds-field">動画の長さ: <output id="seconds-out">5</output> 秒
+      <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
+    </label>
+    <details>
+      <summary>詳しい設定（ふだんは触らなくてOK）</summary>
+      <label class="field" style="margin-top:10px">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
+      <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローの設定のまま）<textarea id="negative" rows="3"></textarea></label>
+    </details>
+    <button class="primary big" id="run">実行</button>
+    <button id="cancel" hidden>中止する</button>
+  </section>
+
+  <section class="col-output">
+    <div class="panel">
+      <ol class="filmstrip" id="filmstrip">
+        <li data-step="image" data-state="idle">画像<small></small></li>
+        <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
+        <li data-step="video" data-state="idle">動画<small></small></li>
+      </ol>
+      <div class="progress" style="margin-top:12px"><div id="progress-bar"></div></div>
+      <p id="run-status" role="status" style="margin-top:8px"></p>
+    </div>
+    <div class="screen" id="screen">
+      <p class="empty" id="screen-empty">できあがった動画がここに表示されます</p>
+      <video id="video" controls loop autoplay playsinline hidden></video>
+    </div>
+    <div class="row">
+      <button id="dl-video" disabled>動画を保存</button>
+      <button id="dl-prompt" disabled>プロンプトを保存</button>
+    </div>
+    <div class="panel">
+      <div class="pair">
+        <label class="field">英語プロンプト（動画にはこちらを使います）<textarea id="prompt-en" rows="9"></textarea></label>
+        <label class="field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="9"></textarea></label>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button id="to-ja">英語 → 日本語を更新</button>
+        <button id="to-en">日本語 → 英語に反映</button>
+      </div>
+      <div class="note" style="margin-bottom:6px">AIに修正してもらう</div>
+      <div class="row" id="quick" style="margin-bottom:8px"></div>
+      <div class="row" style="margin-bottom:14px">
+        <input type="text" class="grow" id="instruction" placeholder="自由な指示（例: 髪が風で大きくなびくように）">
+        <button id="revise">AIで修正</button>
+      </div>
+      <button class="primary" id="rerun-video">このプロンプトで動画を作り直す</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="settings" aria-labelledby="settings-title">
+  <div class="dlg-head"><h2 id="settings-title">設定</h2><button id="close-settings">閉じる</button></div>
+  <div class="dlg-body">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-pane="guide" aria-selected="true">はじめに</button>
+      <button role="tab" data-pane="llm">文章AI（LLM）</button>
+      <button role="tab" data-pane="video">動画（ComfyUI）</button>
+      <button role="tab" data-pane="skills">スキル</button>
+      <button role="tab" data-pane="styles">プロンプト形式</button>
+      <button role="tab" data-pane="backup">バックアップ・その他</button>
+    </nav>
+
+    <section class="pane" data-pane="guide">
+      <h3>はじめての準備</h3>
+      <p class="note">このページは、あなたのPCで動いている ComfyUI と ローカルLLM に、ブラウザから直接つなぎます。画像やプロンプトが外部のサーバーに送られることはありません。設定はこのブラウザの中だけに保存されます。</p>
+      <ol class="steps">
+        <li><strong>ComfyUI に「このページからの接続」を許可する</strong><br>
+          ComfyUI の起動オプションに次を追加して、ComfyUI を起動し直します。<br>
+          <code id="cors-comfy"></code> <button class="link" data-copy="cors-comfy">コピー</button>
+          <div class="note">ポータブル版: 起動用の <code>run_nvidia_gpu.bat</code> をメモ帳で開き、<code>main.py</code> の後ろ（同じ行）に追記して保存。<br>デスクトップ版: 設定のサーバー設定に CORS ヘッダーの項目があります（表記はバージョンにより異なります）。値に <code id="origin-1"></code> を入れます。</div>
+        </li>
+        <li><strong>ローカルLLMのサーバーを起動し、CORS を有効にする</strong><br>
+          <div class="note">LM Studio: 「Developer」→ サーバーを起動 → サーバー設定の「Enable CORS」をオン。<br>
+          Bionic 単体では外部ツール向けのサーバーが開いていない場合があります。その場合は LM Studio でサーバーを起動してください。<br>
+          Ollama: 環境変数 <code>OLLAMA_ORIGINS</code> に <code id="origin-2"></code> を設定して起動し直します。</div>
+        </li>
+        <li><strong>ブラウザは Chrome または Edge を使う</strong><br>
+          <div class="note">初回の接続時に「ローカルネットワーク上のデバイスへのアクセス」の確認が出たら「許可」を押してください。Safari では動かない場合があります。</div>
+        </li>
+        <li><strong>「文章AI（LLM）」タブ</strong>で「自動で探す」→ モデルを選んで保存</li>
+        <li><strong>「動画（ComfyUI）」タブ</strong>でワークフローを登録して保存</li>
+      </ol>
+      <h4>接続の診断</h4>
+      <button id="run-diag">いまの設定で接続を確認</button>
+      <div id="diag-out"></div>
+    </section>
+
+    <section class="pane" data-pane="llm" hidden>
+      <h3>文章AI（LLM）</h3>
+      <p class="note">OpenAI互換のサーバー（LM Studio / Bionic、Ollama、llama.cpp など）に対応しています。複数登録して、メイン画面で切り替えられます。</p>
+      <div class="picker"><select id="llm-pick" aria-label="編集する設定"></select><button id="llm-new">＋ 新規</button></div>
+      <div class="row" style="margin-bottom:12px"><button id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">サーバーを起動してから押してください</span></div>
+      <label class="field">名前（自由）<input type="text" id="llm-name"></label>
+      <label class="field">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
+      <div class="row" style="align-items:flex-end;margin-bottom:12px">
+        <label class="field grow" style="margin:0">モデル<input type="text" id="llm-model" list="llm-model-list"><datalist id="llm-model-list"></datalist></label>
+        <button id="llm-fetch">モデル一覧を取得</button>
+      </div>
+      <div class="row" style="margin-bottom:6px">
+        <label class="check" style="margin:0"><input type="checkbox" id="llm-vision"> 画像もAIに見せる（画像対応モデルのみ）</label>
+        <button id="llm-vtest">画像対応をテスト</button>
+      </div>
+      <details style="margin:12px 0">
+        <summary>上級者向け</summary>
+        <label class="field" style="margin-top:10px">APIキー（ローカルなら空欄でOK）<input type="password" id="llm-key" autocomplete="off"></label>
+        <label class="field">発想の自由度（温度）: <output id="llm-temp-out"></output><input type="range" id="llm-temp" min="0" max="1.5" step="0.05"></label>
+        <label class="field">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
+      </details>
+      <div class="row"><button class="primary" id="llm-save">保存して使う</button><button class="danger" id="llm-del">削除</button></div>
+      <p class="msg" id="llm-msg"></p>
+    </section>
+
+    <section class="pane" data-pane="video" hidden>
+      <h3>動画（ComfyUI）</h3>
+      <p class="note">ComfyUI でふだん動いている画像→動画のワークフロー（MiniMax H3、Wan など）をそのまま使います。</p>
+      <div class="picker"><select id="vid-pick" aria-label="編集する設定"></select><button id="vid-new">＋ 新規</button></div>
+      <label class="field">名前（例: MiniMax H3）<input type="text" id="vid-name"></label>
+      <div class="row" style="align-items:flex-end;margin-bottom:12px">
+        <label class="field grow" style="margin:0">ComfyUI のURL<input type="url" id="vid-url" placeholder="http://127.0.0.1:8188"></label>
+        <button id="vid-test">接続テスト</button>
+      </div>
+      <h4>ワークフローの登録</h4>
+      <ol class="note" style="padding-left:1.4em">
+        <li>ComfyUI でワークフローを開き、一度ちゃんと動画が作れることを確認</li>
+        <li>メニューの「ワークフロー」→「エクスポート (API)」（Export (API)）で JSON を保存</li>
+        <li>その JSON を下で選ぶ → 書き込み先が自動で選ばれます</li>
+      </ol>
+      <label class="dropzone" id="wf-drop" style="min-height:90px">
+        <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
+        <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
+      </label>
+      <p class="msg" id="wf-msg"></p>
+      <details id="map-box">
+        <summary>書き込み先の確認・変更（自動検出が違うときだけ）</summary>
+        <div class="map-grid" id="map-grid" style="margin-top:10px"></div>
+      </details>
+      <h4>動画の作り方</h4>
+      <label class="field">プロンプト形式<select id="vid-style"></select></label>
+      <div class="map-grid">
+        <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
+        <label class="field">短辺のピクセル数（0 = ワークフローのまま）<input type="number" id="vid-short" min="0" step="32"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ。次の生成は少し遅くなります）</label>
+      <div class="row"><button class="primary" id="vid-save">保存して使う</button><button class="danger" id="vid-del">削除</button></div>
+      <p class="msg" id="vid-msg"></p>
+    </section>
+
+    <section class="pane" data-pane="skills" hidden>
+      <h3>スキル</h3>
+      <p class="note">プロンプトを作るときに文章AIへ追加で渡す指示です。Agent Skills 形式（SKILL.md）の読み込み・書き出しができ、Bionic などで使っている SKILL.md もそのまま読み込めます。使うスキルはメイン画面で選びます。</p>
+      <div class="picker"><select id="skill-pick" aria-label="編集するスキル"></select><button id="skill-new">＋ 新規</button></div>
+      <div class="row" style="margin-bottom:14px">
+        <label class="dropzone" style="min-height:0;padding:8px 14px;display:inline-block">
+          <input type="file" id="skill-file" accept=".md,text/markdown" multiple aria-label="SKILL.mdを読み込む">
+          <span class="hint">SKILL.md を読み込む（複数可）</span>
+        </label>
+        <button id="skill-export">SKILL.md として書き出し</button>
+      </div>
+      <label class="field">名前<input type="text" id="skill-name"></label>
+      <label class="field">説明（一覧に表示されます）<input type="text" id="skill-desc"></label>
+      <label class="field">指示の内容<textarea id="skill-body" rows="12"></textarea></label>
+      <div class="row"><button class="primary" id="skill-save">保存</button><button class="danger" id="skill-del">削除</button></div>
+      <p class="msg" id="skill-msg"></p>
+    </section>
+
+    <section class="pane" data-pane="styles" hidden>
+      <h3>プロンプト形式</h3>
+      <p class="note">動画モデルごとの基本の書き方です（文章AIへの指示文）。<code>{seconds}</code> は動画の秒数に置き換わります。動画の設定ごとにどれを使うか選べます。</p>
+      <div class="picker"><select id="style-pick" aria-label="編集する形式"></select><button id="style-new">＋ 新規</button></div>
+      <label class="field">名前<input type="text" id="style-name"></label>
+      <label class="field">指示文<textarea id="style-text" rows="16"></textarea></label>
+      <div class="row"><button class="primary" id="style-save">保存</button><button class="danger" id="style-del">削除</button></div>
+      <p class="msg" id="style-msg"></p>
+    </section>
+
+    <section class="pane" data-pane="backup" hidden>
+      <h3>バックアップ・その他</h3>
+      <label class="check"><input type="checkbox" id="opt-translate"> プロンプトを作ったら日本語訳も自動で作る</label>
+      <h4>設定の書き出し・読み込み</h4>
+      <p class="note">別のブラウザやPCに設定を移すときに使います。書き出したファイルには APIキーも含まれるため、他人に渡すときは注意してください。</p>
+      <div class="row">
+        <button id="export-settings">設定を書き出す</button>
+        <label class="dropzone" style="min-height:0;padding:8px 14px;display:inline-block">
+          <input type="file" id="import-settings" accept=".json" aria-label="設定を読み込む">
+          <span class="hint">設定を読み込む</span>
+        </label>
+      </div>
+      <h4>初期化</h4>
+      <button class="danger" id="reset-settings">すべての設定を消して最初に戻す</button>
+      <p class="msg" id="backup-msg"></p>
+    </section>
+  </div>
+</dialog>
+
+<script>
+const USER_SETTINGS = {
+  storageKey: "sd2video.settings.v1",
+  settingsVersion: 1,
+  knownLlmServers: [
+    { name: "LM Studio / Bionic", url: "http://localhost:1234/v1" },
+    { name: "Ollama", url: "http://localhost:11434/v1" },
+    { name: "llama.cpp", url: "http://localhost:8080/v1" },
+    { name: "KoboldCpp", url: "http://localhost:5001/v1" },
+    { name: "Jan", url: "http://localhost:1337/v1" },
+  ],
+  defaultComfyUrl: "http://127.0.0.1:8188",
+  defaultLlmUrl: "http://localhost:1234/v1",
+  defaultSeconds: 5,
+  defaultFps: 24,
+  defaultTemperature: 0.7,
+  defaultMaxTokens: 2048,
+  seedMax: 4294967295,
+  pollIntervalMs: 2000,
+  probeTimeoutMs: 2500,
+  llmTimeoutMs: 600000,
+  imageMaxSide: 1024,
+  imageJpegQuality: 0.9,
+  previewChars: 40,
+  uploadPrefix: "sd2video_",
+  videoExtensions: [".mp4", ".webm", ".mkv", ".mov", ".gif", ".webp"],
+  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep line breaks and labels such as \"Audio:\". Output only the translation.",
+  translateToEn: "Translate the following Japanese text into natural English suitable as a video-generation prompt. Keep line breaks and labels such as \"Audio:\". Output only the English text.",
+  skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
+  quickInstructions: [
+    { label: "動きを大きく", text: "Make the motion bigger and more dynamic." },
+    { label: "ゆっくり穏やかに", text: "Make the motion slower, calmer and more subtle." },
+    { label: "カメラを固定", text: "Use a static camera with no camera movement." },
+    { label: "音楽なし", text: "Remove music; keep only natural ambient sound and sound effects." },
+  ],
+  slots: [
+    { key: "prompt", label: "プロンプト", kind: "str" },
+    { key: "negative", label: "ネガティブプロンプト", kind: "str" },
+    { key: "image", label: "入力画像（LoadImage）", kind: "str" },
+    { key: "seed", label: "シード", kind: "int" },
+    { key: "width", label: "幅", kind: "int" },
+    { key: "height", label: "高さ", kind: "int" },
+    { key: "frames", label: "フレーム数", kind: "int" },
+    { key: "seconds", label: "秒数", kind: "num" },
+  ],
+  defaultStyles: {
+    h3: { name: "MiniMax H3（音声つき）", text: `You write prompts for the MiniMax H3 image-to-video model, which generates video together with native stereo audio.
+The video starts exactly on the given still image (first frame) and lasts about {seconds} seconds.
+Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided, then write in English:
+1. One or two sentences on the look and setting, consistent with the image (same character, outfit and place; no new characters).
+2. What happens over time: natural, plausible motion of the subject and the environment, and one clear camera move (e.g. slow push in, orbit, pan, static shot).
+3. A final line starting with "Audio:" describing ambient sound, sound effects and music that fit the scene. No speech or dialogue unless the instruction asks for it.
+Do not use tag lists, weights, or quality words such as "masterpiece". Output only the prompt.` },
+    wan: { name: "Wan 2.2 など（音声なし）", text: `You write prompts for an image-to-video model (such as Wan 2.2) that has no audio.
+The video starts from the given still image as its first frame and lasts about {seconds} seconds.
+Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided, then write ONE paragraph of natural English (60-120 words) that describes:
+- the subject and setting, consistent with the image (do not change appearance, outfit, or add new characters)
+- natural motion that plausibly happens within that time (body, face, hair, clothing, and the environment such as wind, light, particles, water)
+- one clear camera movement (e.g. slow push-in, gentle pan, static shot)
+- lighting and mood
+Do not use tag lists, weights, or quality tags such as "masterpiece". Output only the prompt text, with no preface, quotes, or markdown.` },
+  },
+  defaultSkills: {
+    anime: { name: "anime-motion", description: "アニメ・イラスト調の画像向けの動き", body: `The source image is an anime or illustration style picture.
+- Keep the 2D illustrated look; do not describe it as photorealistic.
+- Prefer expressive but clean motion typical of anime: hair and clothes swaying, blinking, small gestures, sparkles or petals in the air.
+- Avoid complex physics or large changes to the character's pose and proportions.` },
+    cinematic: { name: "cinematic-camera", description: "映画のようなカメラワークと光", body: `Direct the shot like a film cinematographer.
+- Choose one deliberate camera move that reveals the subject (slow dolly in, low-angle push, lateral tracking, or slow orbit).
+- Mention lens feel and depth of field (e.g. shallow focus, soft background bokeh).
+- Describe motivated lighting changes such as drifting light, flickering neon, or sun flare.` },
+    subtle: { name: "subtle-loop", description: "控えめな動き（ループ・壁紙向け）", body: `Make a calm, subtle animation suitable for a seamless loop or a live wallpaper.
+- Keep the subject mostly in the same pose; use breathing, blinking, gentle hair and cloth movement.
+- Environment motion should be soft and continuous (floating particles, slow clouds, rippling water).
+- Use a static camera or an extremely slow push-in.` },
+  },
+  messages: {
+    needImage: "先に画像を入れてください。",
+    needPrompt: "英語プロンプトが空です。先に「実行」してください。",
+    needInstruction: "修正の指示を入力してください（例: もっと動きを大きく）。",
+    needJa: "日本語欄が空です。",
+    needLlm: "文章AIの設定がまだです。「設定」→「文章AI（LLM）」で設定してください。",
+    needLlmModel: "文章AIのモデルが選ばれていません。「設定」→「文章AI（LLM）」でモデルを選んで保存してください。",
+    needVideo: "動画の設定がまだです。「設定」→「動画（ComfyUI）」でワークフローを登録してください。",
+    bannerSetup: "最初に、文章AIとComfyUIの接続を設定してください。",
+    probeOk: "接続OK",
+    probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可してください。",
+    probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
+    llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
+    readingImage: "画像を読み込んでいます…",
+    noMetadata: "メタデータが見つかりません（画像の見た目だけでプロンプトを作ります）",
+    generatingPrompt: "文章AIがプロンプトを考えています…",
+    translating: "日本語訳を作っています…",
+    uploading: "画像を ComfyUI に送っています…",
+    queued: "ComfyUI の順番待ちです…",
+    rendering: "動画を生成しています。数分〜十数分かかることがあります。",
+    downloading: "できあがった動画を受け取っています…",
+    done: "完成しました。",
+    cancelled: "中止しました。",
+    revised: "プロンプトを修正しました。よければ「このプロンプトで動画を作り直す」を押してください。",
+    workflowUiFormat: "これは通常の保存形式です。ComfyUI のメニューから「エクスポート (API)」で書き出したファイルを使ってください。",
+    workflowInvalid: "ComfyUI の API 形式のワークフローではありません。",
+    workflowNoVideo: "生成は終わりましたが、動画ファイルが見つかりません。ワークフローに Save Video などの保存ノードがあるか確認してください。",
+    modelMissingHint: "→ モデルファイル名が ComfyUI 側に見つからない可能性があります。ComfyUI でワークフローが動くか確認してから、もう一度書き出して登録し直してください。",
+    mapNeedPromptImage: "「プロンプト」と「入力画像」の書き込み先は必ず選んでください。",
+    nameRequired: "名前を入力してください。",
+    saved: "保存しました。",
+    deleted: "削除しました。",
+    lastOne: "最後の1つは削除できません。",
+    visionOk: "このモデルは画像を理解できます。画像もAIに見せる設定にしました。",
+    visionNg: "このモデルは画像を理解できないようです。メタデータの文字情報だけでプロンプトを作ります。",
+    resetConfirm: "すべての設定（登録したワークフローやスキルを含む）を消します。よろしいですか？",
+    importDone: "設定を読み込みました。",
+    importBad: "このファイルは設定ファイルとして読めません。",
+    lengthLocked: "（このワークフローでは変更できません）",
+    negLocked: "ネガティブプロンプト（このワークフローでは使いません）",
+    negOpen: "ネガティブプロンプト（空欄ならワークフローの設定のまま）",
+  },
+};
+
+// ===== UTILITIES =====
+const $ = (id) => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clone = (obj) => JSON.parse(JSON.stringify(obj));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const timestamp = () => {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+};
+
+class UserError extends Error {}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function readFileText(file) {
+  return file.text();
+}
+
+function setMsg(el, text, kind = "") {
+  el.textContent = text;
+  el.className = "msg" + (kind ? " " + kind : "");
+}
+
+function fillSelect(select, entries, value) {
+  select.replaceChildren(...entries.map(([v, label]) => new Option(label, v)));
+  if (value !== undefined && entries.some(([v]) => v === value)) select.value = value;
+}
+
+function describeError(err, who) {
+  if (err instanceof UserError) return err.message;
+  if (err.name === "AbortError") return USER_SETTINGS.messages.cancelled;
+  if (err.name === "TimeoutError") return `${who}からの応答がありません（時間切れ）。`;
+  if (err instanceof TypeError) return `${who}: ${USER_SETTINGS.messages.probeDown}`;
+  return `${who}: ${err.message}`;
+}
+
+// ===== NETWORK =====
+class Net {
+  static async probe(url) {
+    const timeout = USER_SETTINGS.probeTimeoutMs;
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(timeout) });
+      return res.ok ? "ok" : "down";
+    } catch {
+      try {
+        await fetch(url, { mode: "no-cors", signal: AbortSignal.timeout(timeout) });
+        return "cors";
+      } catch {
+        return "down";
+      }
+    }
+  }
+
+  static probeMessage(state) {
+    const m = USER_SETTINGS.messages;
+    return { ok: m.probeOk, cors: m.probeCors, down: m.probeDown }[state];
+  }
+}
+
+// ===== SETTINGS STORE =====
+class SettingsStore {
+  constructor() {
+    this.data = this.load();
+  }
+
+  defaults() {
+    const llmId = uid();
+    const styles = {};
+    for (const [id, s] of Object.entries(USER_SETTINGS.defaultStyles)) styles[id] = clone(s);
+    const skills = {};
+    for (const [id, s] of Object.entries(USER_SETTINGS.defaultSkills)) skills[id] = clone(s);
+    return {
+      version: USER_SETTINGS.settingsVersion,
+      llmProfiles: {
+        [llmId]: { name: "LM Studio / Bionic", baseUrl: USER_SETTINGS.defaultLlmUrl, apiKey: "", model: "",
+          vision: true, temperature: USER_SETTINGS.defaultTemperature, maxTokens: USER_SETTINGS.defaultMaxTokens },
+      },
+      llmActive: llmId,
+      videoProfiles: {},
+      videoActive: "",
+      styles,
+      skills,
+      activeSkills: [],
+      translate: true,
+      seenGuide: false,
+    };
+  }
+
+  load() {
+    try {
+      const raw = localStorage.getItem(USER_SETTINGS.storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.version === USER_SETTINGS.settingsVersion) return { ...this.defaults(), ...parsed };
+      }
+    } catch {}
+    return this.defaults();
+  }
+
+  save() {
+    localStorage.setItem(USER_SETTINGS.storageKey, JSON.stringify(this.data));
+  }
+
+  replace(data) {
+    if (!data || data.version !== USER_SETTINGS.settingsVersion || !data.llmProfiles) throw new UserError(USER_SETTINGS.messages.importBad);
+    this.data = { ...this.defaults(), ...data };
+    this.save();
+  }
+
+  reset() {
+    localStorage.removeItem(USER_SETTINGS.storageKey);
+    this.data = this.defaults();
+  }
+
+  get llm() { return this.data.llmProfiles[this.data.llmActive]; }
+  get video() { return this.data.videoProfiles[this.data.videoActive]; }
+
+  styleFor(video) {
+    const styles = this.data.styles;
+    return (video && styles[video.styleId]) || Object.values(styles)[0];
+  }
+
+  activeSkillObjects() {
+    return this.data.activeSkills.map((id) => this.data.skills[id]).filter(Boolean);
+  }
+}
+
+// ===== PNG METADATA =====
+class PngMetadataReader {
+  static async readTextChunks(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    if (!signature.every((b, i) => bytes[i] === b)) return {};
+    const view = new DataView(buffer);
+    const chunks = {};
+    let pos = 8;
+    while (pos + 8 <= bytes.length) {
+      const length = view.getUint32(pos);
+      const type = String.fromCharCode(...bytes.subarray(pos + 4, pos + 8));
+      const data = bytes.subarray(pos + 8, pos + 8 + length);
+      if (type === "tEXt" || type === "zTXt" || type === "iTXt") {
+        const entry = await this.decodeChunk(type, data);
+        if (entry) chunks[entry.key] = entry.text;
+      }
+      if (type === "IEND") break;
+      pos += 12 + length;
+    }
+    return chunks;
+  }
+
+  static async decodeChunk(type, data) {
+    const nul = data.indexOf(0);
+    if (nul < 0) return null;
+    const key = this.latin1(data.subarray(0, nul));
+    if (type === "tEXt") return { key, text: this.latin1(data.subarray(nul + 1)) };
+    if (type === "zTXt") return { key, text: this.latin1(await this.inflate(data.subarray(nul + 2))) };
+    const compressed = data[nul + 1] === 1;
+    let p = nul + 3;
+    p = data.indexOf(0, p) + 1;
+    p = data.indexOf(0, p) + 1;
+    const body = data.subarray(p);
+    const raw = compressed ? await this.inflate(body) : body;
+    return { key, text: new TextDecoder("utf-8").decode(raw) };
+  }
+
+  static latin1(bytes) {
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    return s;
+  }
+
+  static async inflate(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  static async read(file) {
+    const chunks = await this.readTextChunks(await file.arrayBuffer());
+    const meta = { format: "none", prompt: "", negative: "", seed: null, model: "" };
+    if (typeof chunks.parameters === "string") {
+      Object.assign(meta, SdPromptParser.parseA1111(chunks.parameters), { format: "a1111" });
+    } else if (typeof chunks.prompt === "string") {
+      try {
+        Object.assign(meta, SdPromptParser.parseComfy(JSON.parse(chunks.prompt)), { format: "comfyui" });
+      } catch {}
+    }
+    meta.cleanPrompt = SdPromptParser.clean(meta.prompt);
+    return meta;
+  }
+}
+
+class SdPromptParser {
+  static parseA1111(text) {
+    const lines = text.trim().split("\n");
+    let settingsIdx = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].startsWith("Steps:")) { settingsIdx = i; break; }
+    }
+    const body = settingsIdx >= 0 ? lines.slice(0, settingsIdx) : lines;
+    const prompt = [], negative = [];
+    let inNeg = false;
+    for (let line of body) {
+      if (line.startsWith("Negative prompt:")) { inNeg = true; line = line.slice("Negative prompt:".length).trim(); }
+      (inNeg ? negative : prompt).push(line);
+    }
+    const extra = {};
+    const re = /\s*([\w ]+):\s*("(?:\\.|[^\\"])+"|[^,]*)(?:,|$)/g;
+    const settingsLine = settingsIdx >= 0 ? lines[settingsIdx] : "";
+    for (const m of settingsLine.matchAll(re)) {
+      let v = m[2].trim();
+      if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+      if (m[1].trim()) extra[m[1].trim()] = v;
+    }
+    const seed = extra.Seed && /^-?\d+$/.test(extra.Seed) ? Number(extra.Seed) : null;
+    return { prompt: prompt.join("\n").trim(), negative: negative.join("\n").trim(), seed, model: extra.Model || "" };
+  }
+
+  static parseComfy(nodes) {
+    const textKeys = ["text", "text_g", "text_l", "string", "value", "prompt"];
+    const isLink = (v) => Array.isArray(v) && v.length === 2 && String(v[0]) in nodes;
+    const collect = (id, depth = 0, seen = new Set()) => {
+      if (depth > 10 || seen.has(id) || !(id in nodes)) return [];
+      seen.add(id);
+      const out = [];
+      for (const [k, v] of Object.entries(nodes[id].inputs || {})) {
+        if (textKeys.includes(k) && typeof v === "string" && v.trim()) out.push(v.trim());
+        else if (isLink(v)) out.push(...collect(String(v[0]), depth + 1, seen));
+      }
+      return out;
+    };
+    let prompt = "", negative = "", seed = null;
+    for (const id of WorkflowMapper.sortedIds(nodes)) {
+      const inp = nodes[id].inputs || {};
+      if (isLink(inp.positive) && isLink(inp.negative)) {
+        prompt = collect(String(inp.positive[0])).join("\n");
+        negative = collect(String(inp.negative[0])).join("\n");
+        const s = inp.seed ?? inp.noise_seed;
+        seed = Number.isInteger(s) ? s : null;
+        if (prompt) break;
+      }
+    }
+    if (!prompt) {
+      for (const n of Object.values(nodes)) {
+        if ((n.class_type || "").startsWith("CLIPTextEncode") && typeof n.inputs?.text === "string" && n.inputs.text.trim()) {
+          prompt = n.inputs.text.trim();
+          break;
+        }
+      }
+    }
+    let model = "";
+    for (const n of Object.values(nodes)) {
+      const v = n.inputs?.ckpt_name ?? n.inputs?.unet_name;
+      if (typeof v === "string") { model = v; break; }
+    }
+    return { prompt, negative, seed, model };
+  }
+
+  static clean(text) {
+    return (text || "")
+      .replace(/<(lora|lyco|hypernet):[^>]*>/gi, "")
+      .replace(/\bBREAK\b/g, ",")
+      .replace(/:\s*-?\d+(\.\d+)?\s*\)/g, ")")
+      .replace(/[()[\]{}]/g, "")
+      .replace(/\s*,\s*(,\s*)+/g, ", ")
+      .replace(/^[\s,]+|[\s,]+$/g, "");
+  }
+}
+
+// ===== SKILLS =====
+class SkillFormat {
+  static parse(text, fallbackName) {
+    const m = text.replace(/^\uFEFF/, "").match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n?([\s\S]*)$/);
+    const fields = {};
+    let body = text;
+    if (m) {
+      body = m[2];
+      for (const line of m[1].split(/\r?\n/)) {
+        const kv = line.match(/^([\w-]+):\s*(.*)$/);
+        if (kv) fields[kv[1]] = kv[2].trim().replace(/^["']|["']$/g, "");
+      }
+    }
+    return { name: fields.name || fallbackName, description: fields.description || "", body: body.trim() };
+  }
+
+  static serialize(skill) {
+    return `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.body}\n`;
+  }
+}
+
+// ===== LLM CLIENT =====
+class LlmClient {
+  constructor(profile) {
+    this.profile = profile;
+  }
+
+  get base() { return this.profile.baseUrl.replace(/\/+$/, ""); }
+
+  headers() {
+    const h = { "Content-Type": "application/json" };
+    if (this.profile.apiKey) h.Authorization = `Bearer ${this.profile.apiKey}`;
+    return h;
+  }
+
+  async listModels() {
+    const res = await fetch(`${this.base}/models`, { headers: this.headers(), signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return (json.data || []).map((m) => m.id);
+  }
+
+  static async detect() {
+    const found = [];
+    for (const server of USER_SETTINGS.knownLlmServers) {
+      const state = await Net.probe(`${server.url}/models`);
+      if (state === "ok") {
+        const models = await new LlmClient({ baseUrl: server.url }).listModels().catch(() => []);
+        found.push({ ...server, state, models });
+      } else if (state === "cors") {
+        found.push({ ...server, state, models: [] });
+      }
+    }
+    return found;
+  }
+
+  async post(messages, temperature, signal) {
+    const timeout = AbortSignal.timeout(USER_SETTINGS.llmTimeoutMs);
+    const res = await fetch(`${this.base}/chat/completions`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({ model: this.profile.model, messages, temperature: Number(temperature),
+        max_tokens: Number(this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens) }),
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+    });
+    if (!res.ok) throw new Error(`サーバーがエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 400)}`);
+    const json = await res.json();
+    return LlmClient.cleanOutput(json.choices?.[0]?.message?.content || "");
+  }
+
+  chat(system, userText, imageDataUrl, signal) {
+    const content = imageDataUrl
+      ? [{ type: "text", text: userText }, { type: "image_url", image_url: { url: imageDataUrl } }]
+      : userText;
+    return this.post([{ role: "system", content: system }, { role: "user", content }], this.profile.temperature, signal);
+  }
+
+  generatePrompt({ style, skills, meta, imageDataUrl, seconds, current, instruction, signal }) {
+    let system = style.text.replaceAll("{seconds}", String(seconds));
+    if (skills.length) {
+      system += `\n\n${USER_SETTINGS.skillPreamble}\n` +
+        skills.map((s) => `\n<skill name="${s.name}">\n${s.body}\n</skill>`).join("\n");
+    }
+    let user = `Stable Diffusion prompt: ${meta.cleanPrompt || "(none)"}\n` +
+      `Negative prompt (for reference only): ${meta.negative || "(none)"}\n` +
+      `Model: ${meta.model || "unknown"}\nImage size: ${meta.width}x${meta.height}`;
+    if (current) {
+      user += `\n\nCurrent video prompt:\n${current}\n\nRewrite the video prompt following this instruction (it may be written in Japanese): ${instruction}`;
+    }
+    return this.chat(system, user, this.profile.vision ? imageDataUrl : null, signal);
+  }
+
+  translate(text, to, signal) {
+    return this.chat(to === "ja" ? USER_SETTINGS.translateToJa : USER_SETTINGS.translateToEn, text, null, signal);
+  }
+
+  async testVision() {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "rgb(220,20,20)";
+    ctx.fillRect(0, 0, 64, 64);
+    const content = [{ type: "text", text: "What is the main color of this image? Answer with one English word." },
+      { type: "image_url", image_url: { url: canvas.toDataURL("image/png") } }];
+    try {
+      const answer = await this.post([{ role: "user", content }], 0);
+      return /red/i.test(answer);
+    } catch {
+      return false;
+    }
+  }
+
+  static cleanOutput(text) {
+    let t = text.replace(/<think>[\s\S]*?<\/think>/g, "");
+    if (t.includes("</think>")) t = t.split("</think>").slice(1).join("</think>");
+    t = t.trim().replace(/^```\w*\n?|\n?```$/g, "").trim();
+    if (t.length >= 2 && t[0] === t[t.length - 1] && `"'`.includes(t[0])) t = t.slice(1, -1).trim();
+    return t;
+  }
+}
+
+// ===== WORKFLOW MAPPER =====
+class WorkflowMapper {
+  static sortedIds(wf) {
+    const key = (id) => id.split(":").map((p) => (/^\d+$/.test(p) ? p.padStart(8, "0") : p)).join(":");
+    return Object.keys(wf).sort((a, b) => key(a).localeCompare(key(b)));
+  }
+
+  static isLink(v) {
+    return Array.isArray(v) && v.length === 2 && typeof v[0] === "string";
+  }
+
+  static validate(obj) {
+    const m = USER_SETTINGS.messages;
+    if (obj && Array.isArray(obj.nodes) && Array.isArray(obj.links)) throw new UserError(m.workflowUiFormat);
+    const nodes = obj && typeof obj === "object" ? Object.values(obj) : [];
+    if (!nodes.length || !nodes.every((n) => n && typeof n === "object" && typeof n.class_type === "string")) {
+      throw new UserError(m.workflowInvalid);
+    }
+    return obj;
+  }
+
+  static title(wf, id) {
+    return wf[id]._meta?.title || wf[id].class_type;
+  }
+
+  static matchesKind(v, kind) {
+    if (this.isLink(v) || typeof v === "boolean") return false;
+    if (kind === "str") return typeof v === "string";
+    if (kind === "int") return Number.isInteger(v);
+    return typeof v === "number";
+  }
+
+  static candidates(wf, kind) {
+    const out = [];
+    for (const id of this.sortedIds(wf)) {
+      for (const [key, val] of Object.entries(wf[id].inputs || {})) {
+        if (!this.matchesKind(val, kind)) continue;
+        let preview = String(val).replace(/\n/g, " ");
+        if (preview.length > USER_SETTINGS.previewChars) preview = preview.slice(0, USER_SETTINGS.previewChars) + "…";
+        out.push([`${id}|${key}`, `${this.title(wf, id)} › ${key} = ${preview}`]);
+      }
+    }
+    return out;
+  }
+
+  static detect(wf) {
+    const ids = this.sortedIds(wf);
+    const m = Object.fromEntries(USER_SETTINGS.slots.map((s) => [s.key, ""]));
+    const first = (pred) => {
+      for (const id of ids) {
+        for (const [k, v] of Object.entries(wf[id].inputs || {})) {
+          if (!this.isLink(v) && typeof v !== "boolean" && pred(id, k, v)) return `${id}|${k}`;
+        }
+      }
+      return "";
+    };
+    const textOf = (link) => {
+      const id = link[0];
+      if (!wf[id]) return "";
+      for (const k of ["text", "prompt", "string", "value"]) {
+        if (typeof wf[id].inputs?.[k] === "string") return `${id}|${k}`;
+      }
+      return "";
+    };
+    for (const id of ids) {
+      const inp = wf[id].inputs || {};
+      if (this.isLink(inp.positive) && this.isLink(inp.negative)) {
+        m.prompt = textOf(inp.positive);
+        m.negative = textOf(inp.negative);
+        if (m.prompt) break;
+      }
+    }
+    if (!m.prompt) m.prompt = first((id, k, v) => k === "prompt" && typeof v === "string");
+    if (!m.prompt) m.prompt = first((id, k, v) => k === "text" && typeof v === "string" && !/neg|ネガ/i.test(this.title(wf, id)));
+    m.image = first((id, k, v) => k === "image" && typeof v === "string" && wf[id].class_type.startsWith("LoadImage"));
+    m.seed = first((id, k, v) => ["seed", "noise_seed"].includes(k) && Number.isInteger(v));
+    m.frames = first((id, k, v) => ["length", "frames", "num_frames", "video_length"].includes(k) && Number.isInteger(v));
+    m.seconds = m.frames ? "" : first((id, k, v) => typeof v === "number" &&
+      (["duration", "seconds"].includes(k) || /duration|seconds?|秒/i.test(this.title(wf, id))));
+    const frameNode = m.frames ? m.frames.split("|")[0] : null;
+    for (const key of ["width", "height"]) {
+      m[key] = first((id, k, v) => k === key && Number.isInteger(v) && id === frameNode) ||
+        first((id, k, v) => k === key && Number.isInteger(v) && !/upscale|resize|scale/i.test(wf[id].class_type));
+    }
+    return m;
+  }
+
+  static apply(wf, mapping, values) {
+    const out = clone(wf);
+    for (const [slot, target] of Object.entries(mapping)) {
+      if (!target || values[slot] === undefined || values[slot] === null) continue;
+      const sep = target.indexOf("|");
+      const id = target.slice(0, sep), key = target.slice(sep + 1);
+      if (out[id]) out[id].inputs[key] = values[slot];
+    }
+    return out;
+  }
+
+  static classOf(wf, target) {
+    return wf[target.split("|")[0]]?.class_type;
+  }
+
+  static fps(wf) {
+    for (const n of Object.values(wf)) {
+      for (const k of ["fps", "frame_rate"]) {
+        const v = n.inputs?.[k];
+        if (typeof v === "number") return v;
+      }
+    }
+    return USER_SETTINGS.defaultFps;
+  }
+
+  static snap(value, spec) {
+    const lo = spec.min ?? 0, step = spec.step ?? 1;
+    if (!step || step <= 1) return Math.max(lo, Math.round(value));
+    return Math.max(lo, lo + Math.round((value - lo) / step) * step);
+  }
+
+  static summary(mapping) {
+    const found = USER_SETTINGS.slots.filter((s) => mapping[s.key]).map((s) => s.label);
+    const missing = USER_SETTINGS.slots.filter((s) => !mapping[s.key]).map((s) => s.label);
+    let text = `自動で見つけた項目: ${found.join("、") || "なし"}`;
+    if (missing.length) text += `\n使わない項目: ${missing.join("、")}（ワークフロー側の設定のまま動きます）`;
+    if (!mapping.prompt || !mapping.image) text += `\n${USER_SETTINGS.messages.mapNeedPromptImage}「書き込み先の確認・変更」から選んでください。`;
+    return text;
+  }
+}
+
+// ===== COMFYUI CLIENT =====
+class ComfyClient {
+  constructor(url) {
+    this.base = url.replace(/\/+$/, "");
+    this.clientId = uid() + uid();
+  }
+
+  async stats() {
+    const res = await fetch(`${this.base}/system_stats`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  async inputSpec(classType, key) {
+    try {
+      const res = await fetch(`${this.base}/object_info/${encodeURIComponent(classType)}`);
+      const info = (await res.json())[classType].input;
+      for (const group of ["required", "optional"]) {
+        const spec = info[group]?.[key];
+        if (Array.isArray(spec) && spec[1] && typeof spec[1] === "object") return spec[1];
+      }
+    } catch {}
+    return {};
+  }
+
+  async upload(file) {
+    const ext = (file.name.match(/\.\w+$/) || [".png"])[0];
+    const form = new FormData();
+    form.append("image", file, `${USER_SETTINGS.uploadPrefix}${timestamp()}_${uid()}${ext}`);
+    form.append("overwrite", "true");
+    const res = await fetch(`${this.base}/upload/image`, { method: "POST", body: form });
+    if (!res.ok) throw new Error(`画像を送れませんでした（${res.status}）`);
+    const d = await res.json();
+    return d.subfolder ? `${d.subfolder}/${d.name}` : d.name;
+  }
+
+  async queue(workflow) {
+    const res = await fetch(`${this.base}/prompt`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: workflow, client_id: this.clientId }),
+    });
+    if (!res.ok) throw new UserError("ComfyUI がワークフローを受け付けませんでした。\n" + await this.explainRejection(res, workflow));
+    return (await res.json()).prompt_id;
+  }
+
+  async explainRejection(res, workflow) {
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { return text.slice(0, 800); }
+    const lines = [data.error?.message || ""];
+    for (const [id, ne] of Object.entries(data.node_errors || {})) {
+      const title = workflow[id]?._meta?.title || ne.class_type || id;
+      for (const e of ne.errors || []) lines.push(`・ノード「${title}」: ${e.message || ""} ${e.details || ""}`.trim());
+    }
+    let out = lines.filter(Boolean).join("\n");
+    if (out.includes("not in list")) out += "\n" + USER_SETTINGS.messages.modelMissingHint;
+    return out;
+  }
+
+  watchProgress(promptId, onProgress) {
+    let socket;
+    try {
+      socket = new WebSocket(`${this.base.replace(/^http/, "ws")}/ws?clientId=${this.clientId}`);
+      socket.addEventListener("message", (ev) => {
+        if (typeof ev.data !== "string") return;
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === "progress" && (!msg.data.prompt_id || msg.data.prompt_id === promptId)) onProgress(msg.data.value, msg.data.max);
+        } catch {}
+      });
+      socket.addEventListener("error", () => {});
+    } catch {}
+    return () => { try { socket?.close(); } catch {} };
+  }
+
+  async waitFor(promptId, signal, onTick) {
+    const start = Date.now();
+    for (;;) {
+      if (signal.aborted) throw new DOMException("aborted", "AbortError");
+      const res = await fetch(`${this.base}/history/${promptId}`, { signal });
+      const history = await res.json();
+      const entry = history[promptId];
+      if (entry) {
+        const status = entry.status || {};
+        if (status.status_str === "error") {
+          const err = (status.messages || []).find((m) => m[0] === "execution_error");
+          const d = err ? err[1] : {};
+          throw new UserError(`ComfyUI の実行中にエラー（${d.node_type || "?"}）: ${(d.exception_message || "").trim()}`);
+        }
+        const files = ComfyClient.findVideos(entry.outputs || {});
+        if (!files.length) throw new UserError(USER_SETTINGS.messages.workflowNoVideo);
+        return files[files.length - 1];
+      }
+      onTick(Math.round((Date.now() - start) / 1000));
+      await sleep(USER_SETTINGS.pollIntervalMs);
+    }
+  }
+
+  static findVideos(outputs) {
+    const found = [];
+    for (const nodeOut of Object.values(outputs)) {
+      for (const items of Object.values(nodeOut)) {
+        if (!Array.isArray(items)) continue;
+        for (const i of items) {
+          if (i && typeof i === "object" && USER_SETTINGS.videoExtensions.some((e) => String(i.filename || "").toLowerCase().endsWith(e))) found.push(i);
+        }
+      }
+    }
+    return found;
+  }
+
+  async fetchVideo(info) {
+    const q = new URLSearchParams({ filename: info.filename, subfolder: info.subfolder || "", type: info.type || "output" });
+    const res = await fetch(`${this.base}/view?${q}`);
+    if (!res.ok) throw new Error(`動画を受け取れませんでした（${res.status}）`);
+    return res.blob();
+  }
+
+  async cancel(promptId) {
+    await fetch(`${this.base}/queue`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ delete: [promptId] }) }).catch(() => {});
+    await fetch(`${this.base}/interrupt`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt_id: promptId }) }).catch(() => {});
+  }
+
+  freeMemory() {
+    return fetch(`${this.base}/free`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unload_models: true, free_memory: true }) }).catch(() => {});
+  }
+}
+
+// ===== STATUS BAR =====
+class StatusBar {
+  constructor(store) {
+    this.store = store;
+    this.llmPill = $("pill-llm");
+    this.comfyPill = $("pill-comfy");
+  }
+
+  async refresh() {
+    const s = this.store;
+    const llm = s.llm;
+    if (!llm) {
+      this.set(this.llmPill, "down", "文章AI: 未設定");
+    } else {
+      const state = await Net.probe(`${llm.baseUrl.replace(/\/+$/, "")}/models`);
+      if (state === "ok" && !llm.model) this.set(this.llmPill, "warn", "文章AI: モデル未選択");
+      else this.set(this.llmPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
+        `文章AI: ${state === "ok" ? llm.name : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
+      this.llmPill.title = Net.probeMessage(state);
+    }
+    const video = s.video;
+    if (!video) {
+      this.set(this.comfyPill, "warn", "ComfyUI: 未設定");
+    } else {
+      const state = await Net.probe(`${video.comfyUrl.replace(/\/+$/, "")}/system_stats`);
+      this.set(this.comfyPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
+        `ComfyUI: ${state === "ok" ? video.name : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
+      this.comfyPill.title = Net.probeMessage(state);
+    }
+    const needsSetup = !llm || !llm.model || !video;
+    $("setup-banner").hidden = !needsSetup;
+    $("setup-banner-text").textContent = USER_SETTINGS.messages.bannerSetup;
+  }
+
+  set(el, state, text) {
+    el.dataset.state = state;
+    el.textContent = text;
+  }
+}
+
+// ===== MAIN VIEW =====
+class MainView {
+  constructor(store, statusBar, openSettings) {
+    this.store = store;
+    this.statusBar = statusBar;
+    this.openSettings = openSettings;
+    this.listeners = new AbortController();
+    this.file = null;
+    this.meta = null;
+    this.imageDataUrl = null;
+    this.previewUrl = null;
+    this.videoUrl = null;
+    this.videoBlob = null;
+    this.videoExt = ".mp4";
+    this.lastRun = null;
+    this.running = null;
+    this.bind();
+    this.buildQuickButtons();
+    this.refresh();
+  }
+
+  on(el, type, fn) {
+    el.addEventListener(type, fn, { signal: this.listeners.signal });
+  }
+
+  destroy() {
+    this.listeners.abort();
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+    if (this.videoUrl) URL.revokeObjectURL(this.videoUrl);
+  }
+
+  // BINDINGS
+  bind() {
+    const drop = $("dropzone");
+    this.on($("file-input"), "change", (e) => e.target.files[0] && this.loadImage(e.target.files[0]));
+    this.on(drop, "dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    this.on(drop, "dragleave", () => drop.classList.remove("over"));
+    this.on(drop, "drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("over");
+      if (e.dataTransfer.files[0]) this.loadImage(e.dataTransfer.files[0]);
+    });
+    this.on($("sel-llm"), "change", (e) => { this.store.data.llmActive = e.target.value; this.store.save(); this.statusBar.refresh(); });
+    this.on($("sel-video"), "change", (e) => { this.store.data.videoActive = e.target.value; this.store.save(); this.applyVideoProfile(); this.statusBar.refresh(); });
+    this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; });
+    this.on($("run"), "click", () => this.runAll());
+    this.on($("rerun-video"), "click", () => this.runVideoOnly());
+    this.on($("cancel"), "click", () => this.cancel());
+    this.on($("to-ja"), "click", () => this.translate("ja"));
+    this.on($("to-en"), "click", () => this.translate("en"));
+    this.on($("revise"), "click", () => this.revise($("instruction").value));
+    this.on($("instruction"), "keydown", (e) => { if (e.key === "Enter" && !e.isComposing) this.revise($("instruction").value); });
+    this.on($("dl-video"), "click", () => this.videoBlob && downloadBlob(this.videoBlob, `sd2video_${this.lastRun.stamp}${this.videoExt}`));
+    this.on($("dl-prompt"), "click", () => this.downloadPrompt());
+    this.on($("banner-open"), "click", () => this.openSettings());
+  }
+
+  buildQuickButtons() {
+    const box = $("quick");
+    box.replaceChildren(...USER_SETTINGS.quickInstructions.map((q) => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = q.label;
+      this.on(b, "click", () => this.revise(q.text));
+      return b;
+    }));
+  }
+
+  refresh() {
+    const d = this.store.data;
+    fillSelect($("sel-llm"), Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]), d.llmActive);
+    const videos = Object.entries(d.videoProfiles).map(([id, p]) => [id, p.name]);
+    fillSelect($("sel-video"), videos.length ? videos : [["", "（未設定）"]], d.videoActive);
+    const chips = $("skill-chips");
+    d.activeSkills = d.activeSkills.filter((id) => d.skills[id]);
+    chips.replaceChildren(...Object.entries(d.skills).map(([id, s]) => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = s.name;
+      b.title = s.description;
+      b.setAttribute("aria-pressed", String(d.activeSkills.includes(id)));
+      this.on(b, "click", () => {
+        const on = !d.activeSkills.includes(id);
+        d.activeSkills = on ? [...d.activeSkills, id] : d.activeSkills.filter((x) => x !== id);
+        b.setAttribute("aria-pressed", String(on));
+        this.store.save();
+      });
+      return b;
+    }));
+    this.applyVideoProfile();
+  }
+
+  applyVideoProfile() {
+    const v = this.store.video;
+    const m = v?.mapping || {};
+    const lengthOk = !!(m.frames || m.seconds);
+    const seconds = v?.seconds ?? USER_SETTINGS.defaultSeconds;
+    $("seconds").value = seconds;
+    $("seconds-out").textContent = seconds;
+    $("seconds").disabled = !lengthOk && !!v;
+    $("seconds-field").firstChild.textContent = lengthOk || !v ? "動画の長さ: " : `動画の長さ${USER_SETTINGS.messages.lengthLocked}: `;
+    const negOk = !!m.negative;
+    $("negative").disabled = !negOk;
+    $("neg-field").firstChild.textContent = negOk ? USER_SETTINGS.messages.negOpen : USER_SETTINGS.messages.negLocked;
+  }
+
+  // IMAGE
+  async loadImage(file) {
+    this.setStep("image", "active", "");
+    this.status(USER_SETTINGS.messages.readingImage);
+    try {
+      const meta = await PngMetadataReader.read(file);
+      const img = await this.decodeImage(file);
+      meta.width = img.naturalWidth;
+      meta.height = img.naturalHeight;
+      this.file = file;
+      this.meta = meta;
+      this.imageDataUrl = this.toDataUrl(img);
+      $("preview").src = this.previewUrl;
+      $("preview").hidden = false;
+      $("drop-hint").hidden = true;
+      this.showMeta(meta);
+      this.setStep("image", "done", meta.format === "none" ? "メタデータなし" : `${meta.width}×${meta.height}`);
+      this.setStep("prompt", "idle", "");
+      this.setStep("video", "idle", "");
+      this.status(meta.format === "none" ? USER_SETTINGS.messages.noMetadata : "画像を読み込みました。「実行」を押してください。");
+    } catch (err) {
+      this.setStep("image", "error", "");
+      this.status(`画像を読み込めません: ${err.message}`, true);
+    }
+  }
+
+  decodeImage(file) {
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+    this.previewUrl = URL.createObjectURL(file);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("画像として開けません"));
+      img.src = this.previewUrl;
+    });
+  }
+
+  toDataUrl(img) {
+    const scale = Math.min(1, USER_SETTINGS.imageMaxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", USER_SETTINGS.imageJpegQuality);
+  }
+
+  showMeta(meta) {
+    const label = { a1111: "A1111 / Forge", comfyui: "ComfyUI", none: "なし" }[meta.format];
+    $("meta-text").textContent = [
+      `メタデータ: ${label}`, `サイズ: ${meta.width}×${meta.height}`, `モデル: ${meta.model || "-"}`,
+      `シード: ${meta.seed ?? "-"}`, "", "[プロンプト]", meta.prompt || "-", "", "[ネガティブ]", meta.negative || "-",
+    ].join("\n");
+    $("meta-box").hidden = false;
+  }
+
+  // RUN STATE
+  status(text, isError = false) {
+    $("run-status").textContent = text;
+    $("run-status").className = isError ? "err" : "";
+  }
+
+  setStep(step, state, note) {
+    const li = document.querySelector(`#filmstrip li[data-step="${step}"]`);
+    li.dataset.state = state;
+    li.querySelector("small").textContent = note;
+  }
+
+  setProgress(ratio) {
+    $("progress-bar").style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+  }
+
+  setBusy(busy) {
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input"]) $(id).disabled = busy;
+    document.querySelectorAll("#quick button").forEach((b) => { b.disabled = busy; });
+    $("cancel").hidden = !busy;
+  }
+
+  async guard(task) {
+    if (this.running) return;
+    const controller = new AbortController();
+    this.running = { controller, comfy: null, promptId: null };
+    this.setBusy(true);
+    try {
+      await task(controller.signal);
+    } catch (err) {
+      const who = this.running.phase === "video" ? "ComfyUI" : "文章AI";
+      this.status(describeError(err, who), err.name !== "AbortError");
+      if (this.running.phase) this.setStep(this.running.phase, err.name === "AbortError" ? "idle" : "error", "");
+    } finally {
+      this.running = null;
+      this.setBusy(false);
+    }
+  }
+
+  async cancel() {
+    if (!this.running) return;
+    this.running.controller.abort();
+    if (this.running.comfy && this.running.promptId) await this.running.comfy.cancel(this.running.promptId);
+  }
+
+  requireLlm() {
+    const m = USER_SETTINGS.messages;
+    const llm = this.store.llm;
+    if (!llm) throw new UserError(m.needLlm);
+    if (!llm.model) throw new UserError(m.needLlmModel);
+    return new LlmClient(llm);
+  }
+
+  requireVideo() {
+    const v = this.store.video;
+    if (!v) throw new UserError(USER_SETTINGS.messages.needVideo);
+    return v;
+  }
+
+  // PROMPT
+  async makePrompt(signal, current = null, instruction = null) {
+    if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
+    const llm = this.requireLlm();
+    this.running.phase = "prompt";
+    this.setStep("prompt", "active", current ? "修正中" : "作成中");
+    this.status(USER_SETTINGS.messages.generatingPrompt);
+    const en = await llm.generatePrompt({
+      style: this.store.styleFor(this.store.video),
+      skills: this.store.activeSkillObjects(),
+      meta: this.meta, imageDataUrl: this.imageDataUrl, seconds: Number($("seconds").value),
+      current, instruction, signal,
+    });
+    $("prompt-en").value = en;
+    $("prompt-ja").value = "";
+    if (this.store.data.translate) {
+      this.status(USER_SETTINGS.messages.translating);
+      $("prompt-ja").value = await llm.translate(en, "ja", signal);
+    }
+    this.setStep("prompt", "done", current ? "修正済み" : "完成");
+  }
+
+  runAll() {
+    this.guard(async (signal) => {
+      if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
+      this.requireVideo();
+      this.setStep("video", "idle", "");
+      await this.makePrompt(signal);
+      await this.makeVideo(signal);
+    });
+  }
+
+  runVideoOnly() {
+    this.guard(async (signal) => {
+      if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
+      if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
+      await this.makeVideo(signal);
+    });
+  }
+
+  revise(instruction) {
+    this.guard(async (signal) => {
+      if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
+      if (!instruction.trim()) throw new UserError(USER_SETTINGS.messages.needInstruction);
+      await this.makePrompt(signal, $("prompt-en").value, instruction);
+      this.status(USER_SETTINGS.messages.revised);
+    });
+  }
+
+  translate(to) {
+    this.guard(async (signal) => {
+      const src = to === "ja" ? $("prompt-en").value : $("prompt-ja").value;
+      if (!src.trim()) throw new UserError(to === "ja" ? USER_SETTINGS.messages.needPrompt : USER_SETTINGS.messages.needJa);
+      const llm = this.requireLlm();
+      this.running.phase = null;
+      this.status(USER_SETTINGS.messages.translating);
+      const out = await llm.translate(src, to, signal);
+      $(to === "ja" ? "prompt-ja" : "prompt-en").value = out;
+      this.status("翻訳しました。");
+    });
+  }
+
+  // VIDEO
+  async computeValues(comfy, wf, mapping, seconds) {
+    const seedInput = $("seed").value.trim();
+    const seed = seedInput === "" ? Math.floor(Math.random() * USER_SETTINGS.seedMax) : Number(seedInput);
+    const negative = $("negative").value.trim();
+    const values = { prompt: $("prompt-en").value.trim(), negative: negative || null, seed, seconds };
+    if (mapping.frames) {
+      const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.frames), mapping.frames.split("|")[1]);
+      values.frames = WorkflowMapper.snap(seconds * WorkflowMapper.fps(wf), spec);
+    }
+    const short = Number(this.store.video.shortEdge || 0);
+    if (short && mapping.width && mapping.height) {
+      const scale = short / Math.min(this.meta.width, this.meta.height);
+      for (const [key, size] of [["width", this.meta.width * scale], ["height", this.meta.height * scale]]) {
+        const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping[key]), mapping[key].split("|")[1]);
+        values[key] = WorkflowMapper.snap(size, Object.keys(spec).length ? spec : { min: 32, step: 32 });
+      }
+    }
+    return values;
+  }
+
+  async makeVideo(signal) {
+    const v = this.requireVideo();
+    const m = USER_SETTINGS.messages;
+    const comfy = new ComfyClient(v.comfyUrl);
+    this.running.phase = "video";
+    this.running.comfy = comfy;
+    this.setStep("video", "active", "準備中");
+    this.setProgress(0);
+    this.status(m.uploading);
+    const seconds = Number($("seconds").value);
+    const values = await this.computeValues(comfy, v.workflow, v.mapping, seconds);
+    values.image = await comfy.upload(this.file);
+    if (signal.aborted) throw new DOMException("aborted", "AbortError");
+    const promptId = await comfy.queue(WorkflowMapper.apply(v.workflow, v.mapping, values));
+    this.running.promptId = promptId;
+    let steps = "";
+    const stopWatch = comfy.watchProgress(promptId, (value, max) => {
+      steps = `ステップ ${value}/${max}`;
+      this.setProgress(value / max);
+    });
+    try {
+      const info = await comfy.waitFor(promptId, signal, (sec) => {
+        this.setStep("video", "active", `${sec}秒経過`);
+        this.status(`${steps ? m.rendering + "（" + steps + "）" : m.rendering}`);
+      });
+      this.status(m.downloading);
+      const blob = await comfy.fetchVideo(info);
+      this.showVideo(blob, info.filename);
+      this.lastRun = { stamp: timestamp(), values, profile: v.name, seconds, filename: info.filename };
+      $("dl-prompt").disabled = false;
+      this.setProgress(1);
+      this.setStep("video", "done", "完成");
+      this.status(m.done);
+      if (v.freeVram) comfy.freeMemory();
+    } finally {
+      stopWatch();
+    }
+  }
+
+  showVideo(blob, filename) {
+    if (this.videoUrl) URL.revokeObjectURL(this.videoUrl);
+    this.videoBlob = blob;
+    this.videoExt = (filename.match(/\.\w+$/) || [".mp4"])[0];
+    this.videoUrl = URL.createObjectURL(blob);
+    const video = $("video");
+    video.src = this.videoUrl;
+    video.hidden = false;
+    $("screen-empty").hidden = true;
+    $("dl-video").disabled = false;
+  }
+
+  downloadPrompt() {
+    if (!this.lastRun) return;
+    const d = this.store.data;
+    const data = {
+      prompt_en: $("prompt-en").value, prompt_ja: $("prompt-ja").value,
+      written_values: { ...this.lastRun.values, prompt: undefined },
+      seconds: this.lastRun.seconds, video_profile: this.lastRun.profile, comfy_filename: this.lastRun.filename,
+      llm_profile: this.store.llm?.name, llm_model: this.store.llm?.model,
+      skills: this.store.activeSkillObjects().map((s) => s.name),
+      prompt_style: this.store.styleFor(this.store.video)?.name,
+      source_image: this.file?.name, source_metadata: this.meta,
+    };
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `sd2video_${this.lastRun.stamp}.json`);
+  }
+}
+
+// ===== SETTINGS VIEW =====
+class SettingsView {
+  constructor(store, onChange) {
+    this.store = store;
+    this.onChange = onChange;
+    this.dialog = $("settings");
+    this.listeners = new AbortController();
+    this.editing = { llm: null, video: null, skill: null, style: null };
+    this.pendingWorkflow = null;
+    this.bind();
+    this.fillGuide();
+  }
+
+  on(el, type, fn) {
+    el.addEventListener(type, fn, { signal: this.listeners.signal });
+  }
+
+  destroy() {
+    this.listeners.abort();
+  }
+
+  open(pane = null) {
+    this.loadAll();
+    if (pane) this.showPane(pane);
+    if (!this.dialog.open) this.dialog.showModal();
+  }
+
+  bind() {
+    this.on($("close-settings"), "click", () => this.dialog.close());
+    this.on(this.dialog, "close", () => this.onChange());
+    document.querySelectorAll(".tabs button").forEach((b) => this.on(b, "click", () => this.showPane(b.dataset.pane)));
+    document.querySelectorAll("[data-copy]").forEach((b) => this.on(b, "click", () => {
+      navigator.clipboard.writeText($(b.dataset.copy).textContent);
+      b.textContent = "コピーしました";
+    }));
+    this.on($("run-diag"), "click", () => this.diagnose());
+
+    this.on($("llm-pick"), "change", (e) => this.loadLlm(e.target.value));
+    this.on($("llm-new"), "click", () => this.loadLlm(null));
+    this.on($("llm-detect"), "click", () => this.detectLlm());
+    this.on($("llm-fetch"), "click", () => this.fetchModels());
+    this.on($("llm-vtest"), "click", () => this.testVision());
+    this.on($("llm-temp"), "input", (e) => { $("llm-temp-out").textContent = e.target.value; });
+    this.on($("llm-save"), "click", () => this.saveLlm());
+    this.on($("llm-del"), "click", () => this.deleteEntry("llmProfiles", "llmActive", this.editing.llm, $("llm-msg"), () => this.loadAll()));
+
+    this.on($("vid-pick"), "change", (e) => this.loadVideo(e.target.value));
+    this.on($("vid-new"), "click", () => this.loadVideo(null));
+    this.on($("vid-test"), "click", () => this.testComfy());
+    this.on($("wf-file"), "change", (e) => e.target.files[0] && this.loadWorkflowFile(e.target.files[0]));
+    this.bindDrop($("wf-drop"), (f) => this.loadWorkflowFile(f));
+    this.on($("vid-save"), "click", () => this.saveVideo());
+    this.on($("vid-del"), "click", () => this.deleteEntry("videoProfiles", "videoActive", this.editing.video, $("vid-msg"), () => this.loadAll()));
+
+    this.on($("skill-pick"), "change", (e) => this.loadSkill(e.target.value));
+    this.on($("skill-new"), "click", () => this.loadSkill(null));
+    this.on($("skill-file"), "change", (e) => this.importSkills([...e.target.files]));
+    this.on($("skill-export"), "click", () => this.exportSkill());
+    this.on($("skill-save"), "click", () => this.saveSkill());
+    this.on($("skill-del"), "click", () => this.deleteEntry("skills", null, this.editing.skill, $("skill-msg"), () => this.loadAll(), true));
+
+    this.on($("style-pick"), "change", (e) => this.loadStyle(e.target.value));
+    this.on($("style-new"), "click", () => this.loadStyle(null));
+    this.on($("style-save"), "click", () => this.saveStyle());
+    this.on($("style-del"), "click", () => this.deleteEntry("styles", null, this.editing.style, $("style-msg"), () => this.loadAll()));
+
+    this.on($("opt-translate"), "change", (e) => { this.store.data.translate = e.target.checked; this.store.save(); });
+    this.on($("export-settings"), "click", () => downloadBlob(new Blob([JSON.stringify(this.store.data, null, 2)],
+      { type: "application/json" }), `sd2video_settings_${timestamp()}.json`));
+    this.on($("import-settings"), "change", (e) => e.target.files[0] && this.importSettings(e.target.files[0]));
+    this.on($("reset-settings"), "click", () => {
+      if (!confirm(USER_SETTINGS.messages.resetConfirm)) return;
+      this.store.reset();
+      this.store.save();
+      this.loadAll();
+      setMsg($("backup-msg"), USER_SETTINGS.messages.deleted, "ok");
+    });
+  }
+
+  bindDrop(zone, onFile) {
+    this.on(zone, "dragover", (e) => { e.preventDefault(); zone.classList.add("over"); });
+    this.on(zone, "dragleave", () => zone.classList.remove("over"));
+    this.on(zone, "drop", (e) => {
+      e.preventDefault();
+      zone.classList.remove("over");
+      if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+    });
+  }
+
+  showPane(name) {
+    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
+    document.querySelectorAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== name; });
+  }
+
+  loadAll() {
+    const d = this.store.data;
+    this.loadLlm(d.llmProfiles[this.editing.llm] ? this.editing.llm : d.llmActive);
+    this.loadVideo(d.videoProfiles[this.editing.video] ? this.editing.video : d.videoActive || null);
+    this.loadSkill(d.skills[this.editing.skill] ? this.editing.skill : Object.keys(d.skills)[0] || null);
+    this.loadStyle(d.styles[this.editing.style] ? this.editing.style : Object.keys(d.styles)[0] || null);
+    $("opt-translate").checked = d.translate;
+  }
+
+  pickerEntries(collection) {
+    return Object.entries(collection).map(([id, x]) => [id, x.name]);
+  }
+
+  // GUIDE
+  fillGuide() {
+    const origin = location.origin.startsWith("http") ? location.origin : "*";
+    $("cors-comfy").textContent = `--enable-cors-header ${origin}`;
+    $("origin-1").textContent = origin;
+    $("origin-2").textContent = origin;
+  }
+
+  async diagnose() {
+    const out = $("diag-out");
+    out.replaceChildren();
+    const add = (label, state) => {
+      const p = document.createElement("p");
+      p.className = "diag";
+      p.textContent = `${state === "ok" ? "🟢" : state === "cors" ? "🟡" : "🔴"} ${label}: ${Net.probeMessage(state)}`;
+      out.appendChild(p);
+    };
+    const llm = this.store.llm;
+    if (llm) add(`文章AI（${llm.baseUrl}）`, await Net.probe(`${llm.baseUrl.replace(/\/+$/, "")}/models`));
+    const video = this.store.video;
+    const comfyUrl = video?.comfyUrl || USER_SETTINGS.defaultComfyUrl;
+    add(`ComfyUI（${comfyUrl}）`, await Net.probe(`${comfyUrl.replace(/\/+$/, "")}/system_stats`));
+  }
+
+  // GENERIC DELETE
+  deleteEntry(collectionKey, activeKey, id, msgEl, reload, allowEmpty = false) {
+    const d = this.store.data;
+    const coll = d[collectionKey];
+    if (!id || !coll[id]) return;
+    if (!allowEmpty && collectionKey !== "videoProfiles" && Object.keys(coll).length <= 1) {
+      setMsg(msgEl, USER_SETTINGS.messages.lastOne, "err");
+      return;
+    }
+    const name = coll[id].name;
+    delete coll[id];
+    if (activeKey && d[activeKey] === id) d[activeKey] = Object.keys(coll)[0] || "";
+    this.store.save();
+    reload();
+    setMsg(msgEl, `「${name}」を${USER_SETTINGS.messages.deleted}`, "ok");
+  }
+
+  // LLM
+  loadLlm(id) {
+    const d = this.store.data;
+    this.editing.llm = id && d.llmProfiles[id] ? id : null;
+    fillSelect($("llm-pick"), [...this.pickerEntries(d.llmProfiles), ...(this.editing.llm ? [] : [["", "（新しい設定）"]])], this.editing.llm || "");
+    const p = d.llmProfiles[this.editing.llm] || { name: "", baseUrl: USER_SETTINGS.defaultLlmUrl, apiKey: "", model: "",
+      vision: true, temperature: USER_SETTINGS.defaultTemperature, maxTokens: USER_SETTINGS.defaultMaxTokens };
+    $("llm-name").value = p.name;
+    $("llm-url").value = p.baseUrl;
+    $("llm-key").value = p.apiKey;
+    $("llm-model").value = p.model;
+    $("llm-vision").checked = p.vision;
+    $("llm-temp").value = p.temperature;
+    $("llm-temp-out").textContent = p.temperature;
+    $("llm-maxtok").value = p.maxTokens || USER_SETTINGS.defaultMaxTokens;
+    setMsg($("llm-msg"), "");
+  }
+
+  llmFromForm() {
+    return { name: $("llm-name").value.trim(), baseUrl: $("llm-url").value.trim(), apiKey: $("llm-key").value,
+      model: $("llm-model").value.trim(), vision: $("llm-vision").checked, temperature: Number($("llm-temp").value),
+      maxTokens: Number($("llm-maxtok").value) || USER_SETTINGS.defaultMaxTokens };
+  }
+
+  setModelList(models) {
+    $("llm-model-list").replaceChildren(...models.map((m) => new Option(m, m)));
+    if (models.length && !models.includes($("llm-model").value)) $("llm-model").value = models[0];
+  }
+
+  async detectLlm() {
+    const msg = $("llm-msg");
+    setMsg(msg, "探しています…");
+    const found = await LlmClient.detect();
+    const ok = found.filter((f) => f.state === "ok");
+    if (ok.length) {
+      $("llm-url").value = ok[0].url;
+      if (!$("llm-name").value.trim()) $("llm-name").value = ok[0].name;
+      this.setModelList(ok[0].models);
+      setMsg(msg, `${ok[0].name}（${ok[0].url}）が見つかりました。モデル ${ok[0].models.length} 件。モデルを確認して「保存して使う」を押してください。`, "ok");
+    } else if (found.length) {
+      setMsg(msg, `${found[0].name}（${found[0].url}）は起動していますが、${USER_SETTINGS.messages.probeCors}`, "err");
+    } else {
+      setMsg(msg, USER_SETTINGS.messages.llmNotFound, "err");
+    }
+  }
+
+  async fetchModels() {
+    const msg = $("llm-msg");
+    try {
+      const models = await new LlmClient(this.llmFromForm()).listModels();
+      this.setModelList(models);
+      setMsg(msg, `モデル ${models.length} 件を取得しました。入力欄をクリックすると一覧から選べます。`, "ok");
+    } catch (err) {
+      setMsg(msg, Net.probeMessage(await Net.probe(`${this.llmFromForm().baseUrl.replace(/\/+$/, "")}/models`)), "err");
+    }
+  }
+
+  async testVision() {
+    const msg = $("llm-msg");
+    const p = this.llmFromForm();
+    if (!p.model) { setMsg(msg, USER_SETTINGS.messages.needLlmModel, "err"); return; }
+    setMsg(msg, "テストしています…");
+    const ok = await new LlmClient(p).testVision();
+    $("llm-vision").checked = ok;
+    setMsg(msg, ok ? USER_SETTINGS.messages.visionOk : USER_SETTINGS.messages.visionNg, ok ? "ok" : "err");
+  }
+
+  saveLlm() {
+    const p = this.llmFromForm();
+    if (!p.name || !p.baseUrl || !p.model) { setMsg($("llm-msg"), "「名前」「サーバーURL」「モデル」はすべて必要です。", "err"); return; }
+    const id = this.editing.llm || uid();
+    this.store.data.llmProfiles[id] = p;
+    this.store.data.llmActive = id;
+    this.store.data.seenGuide = true;
+    this.store.save();
+    this.loadLlm(id);
+    setMsg($("llm-msg"), `「${p.name}」を${USER_SETTINGS.messages.saved}メイン画面でこの設定を使います。`, "ok");
+  }
+
+  // VIDEO
+  loadVideo(id) {
+    const d = this.store.data;
+    this.editing.video = id && d.videoProfiles[id] ? id : null;
+    fillSelect($("vid-pick"), [...this.pickerEntries(d.videoProfiles), ...(this.editing.video ? [] : [["", "（新しい設定）"]])], this.editing.video || "");
+    fillSelect($("vid-style"), this.pickerEntries(d.styles));
+    const v = d.videoProfiles[this.editing.video];
+    this.pendingWorkflow = v ? { workflow: v.workflow, name: v.workflowName } : null;
+    $("vid-name").value = v?.name || "";
+    $("vid-url").value = v?.comfyUrl || USER_SETTINGS.defaultComfyUrl;
+    $("vid-style").value = v?.styleId || Object.keys(d.styles)[0];
+    $("vid-seconds").value = v?.seconds ?? USER_SETTINGS.defaultSeconds;
+    $("vid-short").value = v?.shortEdge ?? 0;
+    $("vid-free").checked = v?.freeVram ?? true;
+    $("wf-hint").firstChild.textContent = v ? `登録済み: ${v.workflowName}` : "API形式のワークフローJSONをドロップ";
+    this.renderMapping(v?.workflow || null, v?.mapping || {});
+    setMsg($("wf-msg"), v ? WorkflowMapper.summary(v.mapping) : "");
+    setMsg($("vid-msg"), "");
+  }
+
+  renderMapping(wf, mapping) {
+    const grid = $("map-grid");
+    grid.replaceChildren(...USER_SETTINGS.slots.map((slot) => {
+      const label = document.createElement("label");
+      label.className = "field";
+      label.textContent = slot.label;
+      const select = document.createElement("select");
+      select.dataset.slot = slot.key;
+      fillSelect(select, [["", "（使わない）"], ...(wf ? WorkflowMapper.candidates(wf, slot.kind) : [])], mapping[slot.key] || "");
+      label.appendChild(select);
+      return label;
+    }));
+  }
+
+  mappingFromForm() {
+    const m = {};
+    $("map-grid").querySelectorAll("select").forEach((s) => { m[s.dataset.slot] = s.value; });
+    return m;
+  }
+
+  async loadWorkflowFile(file) {
+    const msg = $("wf-msg");
+    try {
+      let parsed;
+      try { parsed = JSON.parse(await readFileText(file)); } catch { throw new UserError(USER_SETTINGS.messages.workflowInvalid); }
+      const wf = WorkflowMapper.validate(parsed);
+      const mapping = WorkflowMapper.detect(wf);
+      this.pendingWorkflow = { workflow: wf, name: file.name };
+      this.renderMapping(wf, mapping);
+      $("wf-hint").firstChild.textContent = `読み込み済み: ${file.name}`;
+      const isH3 = Object.values(wf).some((n) => n.class_type.includes("MiniMaxH3"));
+      if (isH3 && this.store.data.styles.h3) $("vid-style").value = "h3";
+      if (!$("vid-name").value.trim()) $("vid-name").value = isH3 ? "MiniMax H3" : file.name.replace(/\.json$/i, "");
+      setMsg(msg, WorkflowMapper.summary(mapping) + "\n内容を確認して「保存して使う」を押してください。", mapping.prompt && mapping.image ? "ok" : "err");
+      if (!mapping.prompt || !mapping.image) $("map-box").open = true;
+    } catch (err) {
+      setMsg(msg, describeError(err, "ワークフロー"), "err");
+    }
+  }
+
+  async testComfy() {
+    const msg = $("vid-msg");
+    const url = $("vid-url").value.trim();
+    try {
+      const stats = await new ComfyClient(url).stats();
+      const dev = (stats.devices || [{}])[0];
+      setMsg(msg, `接続OK: ComfyUI ${stats.system?.comfyui_version || "?"} / ${dev.name || "?"}（VRAM ${((dev.vram_total || 0) / 1024 ** 3).toFixed(1)} GB）`, "ok");
+    } catch {
+      setMsg(msg, Net.probeMessage(await Net.probe(`${url.replace(/\/+$/, "")}/system_stats`)), "err");
+    }
+  }
+
+  saveVideo() {
+    const msg = $("vid-msg");
+    const name = $("vid-name").value.trim();
+    if (!name) { setMsg(msg, USER_SETTINGS.messages.nameRequired, "err"); return; }
+    if (!this.pendingWorkflow) { setMsg(msg, "ワークフロー（API形式のJSON）を読み込んでください。", "err"); return; }
+    const mapping = this.mappingFromForm();
+    if (!mapping.prompt || !mapping.image) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); $("map-box").open = true; return; }
+    const id = this.editing.video || uid();
+    this.store.data.videoProfiles[id] = {
+      name, comfyUrl: $("vid-url").value.trim() || USER_SETTINGS.defaultComfyUrl,
+      workflow: this.pendingWorkflow.workflow, workflowName: this.pendingWorkflow.name, mapping,
+      styleId: $("vid-style").value, seconds: Number($("vid-seconds").value) || USER_SETTINGS.defaultSeconds,
+      shortEdge: Number($("vid-short").value) || 0, freeVram: $("vid-free").checked,
+    };
+    this.store.data.videoActive = id;
+    this.store.data.seenGuide = true;
+    this.store.save();
+    this.loadVideo(id);
+    setMsg(msg, `「${name}」を${USER_SETTINGS.messages.saved}メイン画面でこの設定を使います。`, "ok");
+  }
+
+  // SKILLS
+  loadSkill(id) {
+    const d = this.store.data;
+    this.editing.skill = id && d.skills[id] ? id : null;
+    fillSelect($("skill-pick"), [...this.pickerEntries(d.skills), ...(this.editing.skill ? [] : [["", "（新しいスキル）"]])], this.editing.skill || "");
+    const s = d.skills[this.editing.skill] || { name: "", description: "", body: "" };
+    $("skill-name").value = s.name;
+    $("skill-desc").value = s.description;
+    $("skill-body").value = s.body;
+    setMsg($("skill-msg"), "");
+  }
+
+  async importSkills(files) {
+    const names = [];
+    let lastId = null;
+    for (const file of files) {
+      const folder = (file.webkitRelativePath || "").split("/").slice(-2, -1)[0];
+      const fallback = /^skill\.md$/i.test(file.name) && folder ? folder : file.name.replace(/\.md$/i, "");
+      const skill = SkillFormat.parse(await readFileText(file), fallback);
+      if (!skill.body) continue;
+      const existing = Object.entries(this.store.data.skills).find(([, s]) => s.name === skill.name);
+      lastId = existing ? existing[0] : uid();
+      this.store.data.skills[lastId] = skill;
+      names.push(skill.name);
+    }
+    this.store.save();
+    if (lastId) this.loadSkill(lastId);
+    setMsg($("skill-msg"), names.length ? `読み込みました: ${names.join("、")}` : "読み込めるスキルがありませんでした。", names.length ? "ok" : "err");
+    $("skill-file").value = "";
+  }
+
+  exportSkill() {
+    const s = { name: $("skill-name").value.trim(), description: $("skill-desc").value.trim(), body: $("skill-body").value.trim() };
+    if (!s.name) { setMsg($("skill-msg"), USER_SETTINGS.messages.nameRequired, "err"); return; }
+    downloadBlob(new Blob([SkillFormat.serialize(s)], { type: "text/markdown" }), "SKILL.md");
+  }
+
+  saveSkill() {
+    const s = { name: $("skill-name").value.trim(), description: $("skill-desc").value.trim(), body: $("skill-body").value.trim() };
+    if (!s.name || !s.body) { setMsg($("skill-msg"), "名前と指示の内容の両方が必要です。", "err"); return; }
+    const id = this.editing.skill || uid();
+    this.store.data.skills[id] = s;
+    this.store.save();
+    this.loadSkill(id);
+    setMsg($("skill-msg"), `「${s.name}」を${USER_SETTINGS.messages.saved}`, "ok");
+  }
+
+  // STYLES
+  loadStyle(id) {
+    const d = this.store.data;
+    this.editing.style = id && d.styles[id] ? id : null;
+    fillSelect($("style-pick"), [...this.pickerEntries(d.styles), ...(this.editing.style ? [] : [["", "（新しい形式）"]])], this.editing.style || "");
+    const s = d.styles[this.editing.style] || { name: "", text: "" };
+    $("style-name").value = s.name;
+    $("style-text").value = s.text;
+    setMsg($("style-msg"), "");
+  }
+
+  saveStyle() {
+    const s = { name: $("style-name").value.trim(), text: $("style-text").value };
+    if (!s.name || !s.text.trim()) { setMsg($("style-msg"), "名前と指示文の両方が必要です。", "err"); return; }
+    const id = this.editing.style || uid();
+    this.store.data.styles[id] = s;
+    this.store.save();
+    this.loadStyle(id);
+    setMsg($("style-msg"), `「${s.name}」を${USER_SETTINGS.messages.saved}`, "ok");
+  }
+
+  // BACKUP
+  async importSettings(file) {
+    try {
+      this.store.replace(JSON.parse(await readFileText(file)));
+      this.loadAll();
+      setMsg($("backup-msg"), USER_SETTINGS.messages.importDone, "ok");
+    } catch (err) {
+      setMsg($("backup-msg"), err instanceof UserError ? err.message : USER_SETTINGS.messages.importBad, "err");
+    }
+    $("import-settings").value = "";
+  }
+}
+
+// ===== APP =====
+class App {
+  constructor() {
+    this.store = new SettingsStore();
+    this.statusBar = new StatusBar(this.store);
+    this.settings = new SettingsView(this.store, () => this.onSettingsChanged());
+    this.main = new MainView(this.store, this.statusBar, () => this.settings.open());
+    this.listeners = new AbortController();
+    const signal = this.listeners.signal;
+    $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
+    $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
+    $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
+    this.statusBar.refresh();
+    if (!this.store.data.seenGuide) this.settings.open("guide");
+  }
+
+  onSettingsChanged() {
+    this.main.refresh();
+    this.statusBar.refresh();
+  }
+
+  destroy() {
+    this.listeners.abort();
+    this.main.destroy();
+    this.settings.destroy();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  window.sd2video = new App();
+});
+</script>
+</body>
+</html>
