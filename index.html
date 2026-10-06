@@ -136,8 +136,22 @@ label.check input { margin-top: 5px; }
 .msg { font-size: 14px; margin: 8px 0; white-space: pre-wrap; }
 .msg.ok { color: var(--ok); }
 .msg.err { color: var(--danger); }
-details > summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 500; }
-details > summary:hover { color: var(--ink); }
+details { border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface-2); }
+details > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  font-size: 14px; font-weight: 700; color: var(--ink); border-radius: var(--radius-m);
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before {
+  content: ""; width: 8px; height: 8px; flex: none; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg); transition: transform .15s;
+}
+details[open] > summary::before { transform: rotate(45deg); }
+details > summary::after { content: "開く"; margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+details[open] > summary::after { content: "閉じる"; }
+details > summary:hover { background: var(--accent-soft); color: var(--on-accent-soft); }
+details > :not(summary) { margin-left: 14px; margin-right: 14px; }
+details[open] { padding-bottom: 12px; }
 code { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
 
 /* ===== LAYOUT ===== */
@@ -183,40 +197,64 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .seg button:last-child { border-right: none; }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 #frame-actions button { padding: 6px 12px; font-size: 13px; }
+.opt-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; }
+.opt-grid .field-label { margin: 0; }
+.dropzone.small { min-height: 120px; margin-top: 10px; }
+#last-canvas { display: block; max-width: 100%; max-height: 200px; border-radius: 4px; }
 .frame-info { font-size: 13px; color: var(--muted); margin: 10px 0 0; white-space: pre-wrap; }
 .frame-info strong { color: var(--ink); font-size: 15px; }
 
 /* ===== FILMSTRIP ===== */
-.filmstrip {
-  list-style: none; margin: 0; padding: 16px 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-  background: var(--film); border-radius: var(--radius-m); position: relative;
-}
-.filmstrip::before, .filmstrip::after {
-  content: ""; position: absolute; left: 8px; right: 8px; height: 6px;
-  background-image: linear-gradient(90deg, transparent 0 6px, var(--film-ink) 6px 14px, transparent 14px 20px);
-  background-size: 20px 6px; opacity: .22; border-radius: 2px;
-}
-.filmstrip::before { top: 4px; }
-.filmstrip::after { bottom: 4px; }
+.status-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.filmstrip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .filmstrip li {
-  border-radius: 4px; padding: 10px 8px; text-align: center; font-weight: 700; font-size: 14px;
-  background: var(--film-cell); color: var(--film-ink); transition: background .25s, color .25s;
+  display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 999px;
+  background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); transition: background .2s, color .2s;
 }
-.filmstrip li small { display: block; font-weight: 400; font-size: 12px; min-height: 1.5em; }
-.filmstrip li[data-state="active"] { background: var(--film-active); color: var(--film-active-ink); box-shadow: inset 0 0 0 1px var(--lamp); animation: flicker 1.4s ease-in-out infinite; }
-.filmstrip li[data-state="done"] { background: var(--lamp); color: var(--on-lamp); }
-.filmstrip li[data-state="error"] { background: var(--film-error); color: var(--film-error-ink); }
-@keyframes flicker { 50% { filter: brightness(1.15); } }
-@media (prefers-reduced-motion: reduce) { .filmstrip li[data-state="active"] { animation: none; } * { transition: none !important; } }
-.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.filmstrip li { position: relative; }
+.filmstrip li + li { margin-left: 14px; }
+.filmstrip li + li::before { content: "›"; position: absolute; left: -15px; top: 50%; transform: translateY(-55%); color: var(--muted); font-weight: 400; font-size: 16px; }
+.filmstrip li small { font-weight: 400; font-size: 12px; }
+.filmstrip li small:empty { display: none; }
+.filmstrip li[data-state="active"] { background: var(--warn-soft); color: var(--on-warn-soft); border-color: var(--lamp); }
+.filmstrip li[data-state="done"] { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent); }
+.filmstrip li[data-state="error"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+.progress { height: 4px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .progress > div { height: 100%; width: 0; background: var(--lamp); transition: width .3s; }
-#run-status { margin: 0; font-size: 14px; min-height: 1.6em; white-space: pre-wrap; }
+#run-status { margin: 0; font-size: 13px; min-height: 1.5em; white-space: pre-wrap; }
+.video-panel { display: flex; flex-direction: column; gap: 12px; }
+.video-panel .gallery { margin-top: 0; }
+.run-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: end; }
+.count-field { margin: 0; }
+.count-field select { padding: 13px 10px; font-size: 16px; }
 #run-status.err { color: var(--danger); }
 
 /* ===== SCREEN ===== */
 .screen { background: var(--film); border-radius: var(--radius-l); min-height: 260px; display: grid; place-items: center; overflow: hidden; }
 .screen video { width: 100%; max-height: 70vh; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 14px; padding: 24px; text-align: center; }
+.gallery-head { display: flex; align-items: baseline; gap: 10px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 12px; }
+.gallery:empty { display: none; }
+.job { border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
+.job[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.job-thumb { position: relative; display: block; width: 100%; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
+.job-thumb:hover:not(:disabled) { background: var(--film); }
+.job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.job-thumb:disabled { cursor: default; opacity: 1; }
+.job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .15s; }
+.job[data-state="done"] .job-thumb:hover .play, .job[data-state="done"] .job-thumb:focus-visible .play { opacity: 1; }
+.job-badge { position: absolute; left: 8px; top: 8px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 10px; background: var(--film-cell); color: var(--film-ink); }
+.job[data-state="running"] .job-badge { background: var(--film-active); color: var(--film-active-ink); }
+.job[data-state="done"] .job-badge { background: var(--lamp); color: var(--on-lamp); }
+.job[data-state="error"] .job-badge { background: var(--film-error); color: var(--film-error-ink); }
+.job-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.job-title { font-weight: 700; font-size: 13px; }
+.job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.job-status.err { color: var(--danger); }
+.job .progress { height: 4px; }
+.job-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.job-actions button { padding: 3px 10px; font-size: 12px; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
 
@@ -230,25 +268,61 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
 .dlg-head { flex: none; display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .dlg-head h2 { margin: 0; font-size: 18px; }
 .dlg-head button { margin-left: auto; }
+.dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: flex-end; padding: 10px 20px; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 13px; color: var(--muted); }
+.dlg-foot a { color: var(--accent); font-weight: 700; }
+.dlg-foot a:hover { color: var(--accent-hover); }
 .dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-.tabs { border-right: 1px solid var(--line); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--surface-2); }
-.tabs button { justify-content: flex-start; border: none; text-align: left; background: none; color: var(--muted); padding: 9px 12px; border-radius: var(--radius-s); }
-.tabs button:hover:not(:disabled) { background: var(--surface); color: var(--ink); }
-.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--lamp); }
-.pane { padding: 22px 26px; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; }
+.tabs { border-right: 1px solid var(--line); padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--surface-2); }
+.tab-group { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); padding: 14px 12px 4px; }
+.tab-group:first-child { padding-top: 4px; }
+.tab-group:not(:first-child) { border-top: 1px solid var(--line-strong); margin-top: 10px; padding-top: 12px; }
+.tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; color: var(--ink); padding: 8px 12px; border-radius: var(--radius-s); }
+.tabs button:hover:not(:disabled) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.pane { padding: 24px 28px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+.pane::after { content: ""; flex: none; height: 8px; }
+.pane-head h3 { margin: 0 0 4px; font-size: 20px; }
+.lead a, .note a { color: var(--accent); font-weight: 700; }
+.lead a:hover, .note a:hover { color: var(--accent-hover); }
+.lead { margin: 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
+.card { border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px 18px; background: var(--surface); }
+.card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 15px; font-weight: 700; }
+.card-title .num { width: 24px; height: 24px; border-radius: 50%; background: var(--film); color: var(--lamp); display: grid; place-items: center; font-size: 13px; flex: none; }
+.sub-title { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-size: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.badge { font-size: 12px; font-weight: 500; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; }
+.cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: card; }
+.cards > .card { counter-increment: card; position: relative; padding-left: 56px; }
+.cards > .card::before {
+  content: counter(card); position: absolute; left: 18px; top: 15px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--film); color: var(--lamp); display: grid; place-items: center; font-weight: 700; font-size: 13px;
+}
+.cards .card-title { margin-bottom: 6px; min-height: 26px; }
+.note.sub { font-size: 12px; margin-bottom: 0; }
+.copyline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 10px; }
+.copyline code { padding: 6px 10px; font-size: 13px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+.kv dt { font-weight: 700; }
+.kv dd { margin: 0; color: var(--muted); }
+.inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.pane-actions {
+  position: sticky; bottom: 0; z-index: 2; margin: auto -28px 0; padding: 12px 28px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: var(--surface); border-top: 1px solid var(--line);
+}
+.pane-actions .msg { flex: 1 1 100%; margin: 0; }
+.pane-actions .msg:empty { display: none; }
+.danger-zone { border-color: var(--danger); }
+#diag-out:not(:empty) { margin-top: 12px; }
 @media (max-width: 700px) {
   .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .tabs { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); }
+  .tabs { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); padding: 8px; }
+  .tab-group { display: none; }
   .tabs button { flex: none; }
-  .tabs button[aria-selected="true"] { box-shadow: inset 0 -3px 0 var(--lamp); }
-  .pane { padding: 18px 16px; }
+  .pane { padding: 18px 16px 0; }
+  .pane-actions { margin: auto -16px 0; padding: 12px 16px; }
+  .inline-field { grid-template-columns: 1fr; }
 }
-.pane h3 { margin: 0 0 6px; font-size: 18px; }
-.pane h4 { margin: 22px 0 6px; font-size: 15px; }
-.pane ol.steps { padding-left: 1.4em; }
-.pane ol.steps li { margin-bottom: 14px; }
-.picker { display: flex; gap: 8px; margin: 12px 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-.picker select { flex: 1; }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 14px 18px; border-radius: var(--radius-m); background: var(--surface-2); border: 1px solid var(--line); }
+.picker .field { margin: 0; }
 .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 @media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
 .diag { font-size: 14px; margin: 6px 0; }
@@ -307,14 +381,32 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
       <div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div>
       <p class="frame-info" id="frame-info" aria-live="polite"></p>
     </section>
+    <section class="subbox" aria-labelledby="popt-title">
+      <h2 class="box-title" id="popt-title">プロンプトの指定</h2>
+      <div class="opt-grid" id="prompt-options"></div>
+      <p class="frame-info" id="mode-info" aria-live="polite"></p>
+      <div id="last-box" hidden>
+        <div class="dropzone small" id="last-drop">
+          <input type="file" id="last-input" accept="image/png,image/*" aria-label="最後のフレームの画像を選ぶ">
+          <canvas id="last-canvas" hidden></canvas>
+          <span class="hint" id="last-hint"><strong>最後のフレームにする画像をドロップ（省略可）</strong>入れないときは最初の画像を最後のフレームにも使います</span>
+        </div>
+        <div class="row" style="margin-top:8px"><button id="last-clear" hidden>最後の画像を外す</button></div>
+      </div>
+    </section>
     <details id="meta-box" hidden>
       <summary>画像の情報（メタデータ）</summary>
       <pre id="meta-text"></pre>
     </details>
-    <label class="field">文章AI<select id="sel-llm"></select></label>
-    <label class="field">動画の設定<select id="sel-video"></select></label>
+    <section class="subbox" aria-labelledby="engine-title">
+      <h2 class="box-title" id="engine-title">使うAI</h2>
+      <label class="field" id="sel-llm-field">文章AIの接続先<select id="sel-llm"></select></label>
+      <label class="field" style="margin-bottom:4px">文章AIのモデル<select id="sel-model"></select></label>
+      <p class="note" id="sel-model-note" style="margin:0 0 10px"></p>
+      <label class="field" id="sel-video-field">動画の設定<select id="sel-video"></select></label>
+    </section>
     <div>
-      <div class="note" style="margin:0 0 6px">スキル（押すとON/OFF）</div>
+      <div class="note" id="skill-chips-label" style="margin:0 0 6px">スキル（押すとON/OFF）</div>
       <div class="skill-chips" id="skill-chips"></div>
       <p class="note" id="skill-default-note" style="margin:8px 0 0"></p>
     </div>
@@ -326,29 +418,26 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
       <label class="field" style="margin-top:10px">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
       <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローの設定のまま）<textarea id="negative" rows="3"></textarea></label>
     </details>
-    <button class="run big" id="run">実行</button>
+    <div class="run-row">
+      <label class="field count-field">本数<select id="run-count"></select></label>
+      <button class="run big" id="run">実行</button>
+    </div>
+    <p class="note" style="margin:-8px 0 0">同じ画像とプロンプトで、指定した本数の動画を作ります。</p>
     <button id="cancel" hidden>中止する</button>
   </section>
 
   <section class="col-output">
-    <div class="panel">
-      <ol class="filmstrip" id="filmstrip">
+    <div class="panel status-panel">
+      <ol class="filmstrip" id="filmstrip" aria-label="進み具合">
         <li data-step="image" data-state="idle">画像<small></small></li>
         <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
         <li data-step="video" data-state="idle">動画<small></small></li>
       </ol>
-      <div class="progress" style="margin-top:12px"><div id="progress-bar"></div></div>
-      <p id="run-status" role="status" style="margin-top:8px"></p>
-    </div>
-    <div class="screen" id="screen">
-      <p class="empty" id="screen-empty">できあがった動画がここに表示されます</p>
-      <video id="video" controls loop autoplay playsinline hidden></video>
-    </div>
-    <div class="row">
-      <button id="dl-video" disabled>動画を保存</button>
-      <button id="dl-prompt" disabled>プロンプトを保存</button>
+      <div class="progress"><div id="progress-bar"></div></div>
+      <p id="run-status" role="status"></p>
     </div>
     <div class="panel">
+      <h2 class="box-title">プロンプト</h2>
       <div class="pair">
         <label class="field">英語プロンプト（動画にはこちらを使います）<textarea id="prompt-en" rows="9"></textarea></label>
         <label class="field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="9"></textarea></label>
@@ -357,58 +446,88 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         <button id="to-ja">英語 → 日本語を更新</button>
         <button id="to-en">日本語 → 英語に反映</button>
       </div>
-      <div class="note" style="margin-bottom:6px">AIに修正してもらう</div>
-      <div class="row" id="quick" style="margin-bottom:8px"></div>
+      <label class="field" for="instruction" style="margin-bottom:6px">AIに修正してもらう（指示を書いて「AIで修正」）</label>
       <div class="row" style="margin-bottom:14px">
-        <input type="text" class="grow" id="instruction" placeholder="自由な指示（例: 髪が風で大きくなびくように）">
+        <input type="text" class="grow" id="instruction" placeholder="例: 髪が風で大きくなびくように">
         <button id="revise">AIで修正</button>
       </div>
       <button class="primary" id="rerun-video">このプロンプトで動画を作り直す</button>
     </div>
+    <section class="panel video-panel" aria-labelledby="gallery-title">
+      <div class="gallery-head"><h2 class="box-title" id="gallery-title" style="margin:0">動画</h2><span class="note" id="gallery-count" style="margin:0"></span></div>
+      <div class="screen" id="screen">
+        <p class="empty" id="screen-empty">できあがった動画がここに表示されます。下のパネルをクリックすると再生します。</p>
+        <video id="video" controls loop autoplay playsinline hidden></video>
+      </div>
+      <div class="row">
+        <button id="dl-video" disabled>この動画を保存</button>
+        <button id="dl-prompt" disabled>この動画のプロンプトを保存</button>
+        <span class="note" id="player-label" style="margin:0"></span>
+      </div>
+      <p class="note" id="gallery-empty" style="margin:0">「実行」を押すと、指定した本数の動画がここに並びます。パネルをクリックすると再生します。</p>
+      <div class="gallery" id="gallery"></div>
+    </section>
   </section>
 </main>
 
 <dialog id="settings" aria-labelledby="settings-title">
   <div class="dlg-head"><h2 id="settings-title">設定</h2><button id="close-settings">閉じる</button></div>
   <div class="dlg-body">
-    <nav class="tabs" role="tablist">
+    <nav class="tabs" role="tablist" aria-label="設定の項目">
+      <div class="tab-group" aria-hidden="true">使い方</div>
       <button role="tab" data-pane="guide" aria-selected="true">はじめに</button>
       <button role="tab" data-pane="flow">動画ができるまで</button>
-      <button role="tab" data-pane="llm">文章AI（LLM）</button>
+      <div class="tab-group" aria-hidden="true">接続</div>
+      <button role="tab" data-pane="llm">文章AI</button>
       <button role="tab" data-pane="video">動画（ComfyUI）</button>
+      <div class="tab-group" aria-hidden="true">プロンプトの調整</div>
       <button role="tab" data-pane="skills">スキル</button>
       <button role="tab" data-pane="styles">プロンプト形式</button>
-      <button role="tab" data-pane="backup">バックアップ・その他</button>
+      <div class="tab-group" aria-hidden="true">その他</div>
+      <button role="tab" data-pane="backup">バックアップ</button>
     </nav>
 
     <section class="pane" data-pane="guide">
-      <h3>はじめての準備</h3>
-      <p class="note">このページは、あなたのPCで動いている ComfyUI と ローカルLLM に、ブラウザから直接つなぎます。画像やプロンプトが外部のサーバーに送られることはありません。設定はこのブラウザの中だけに保存されます。</p>
-      <ol class="steps">
-        <li><strong>ComfyUI に「このページからの接続」を許可する</strong><br>
-          Stability Matrix で ComfyUI のカードの歯車アイコンを開き、一番下の「Extra Launch Arguments」に次の1行を<strong>そのまま</strong>貼り付けて保存します（前後に空白を入れない）。<br>
-          <code id="cors-comfy"></code> <button class="link" data-copy="cors-comfy">コピー</button>
-          <div class="note">保存したら、ComfyUI を一度「停止」してから「Launch」で起動し直してください。保存だけでは反映されません。<br>Stability Matrix 以外の場合:<br>ポータブル版: 起動用の <code>run_nvidia_gpu.bat</code> をメモ帳で開き、<code>main.py</code> の後ろ（同じ行）に追記して保存。<br>デスクトップ版: 設定のサーバー設定に CORS ヘッダーの項目があります（表記はバージョンにより異なります）。値に <code id="origin-1"></code> を入れます。</div>
+      <header class="pane-head"><h3>はじめに</h3><p class="lead">最初の1回だけ、次の準備をします。このページはあなたのPCの ComfyUI とローカルLLMにブラウザから直接つなぐので、画像や設定が外部に送られることはありません。</p></header>
+      <ol class="cards">
+        <li class="card">
+          <h4 class="card-title">ComfyUI に接続を許可する</h4>
+          <p class="note">Stability Matrix で ComfyUI のカードの歯車アイコンを開き、一番下の「Extra Launch Arguments」に次の1行を<strong>そのまま</strong>貼り付けて保存します。</p>
+          <div class="copyline"><code id="cors-comfy"></code><button data-copy="cors-comfy">コピー</button></div>
+          <p class="note">保存したら ComfyUI を一度「停止」してから「Launch」で起動し直します（保存だけでは反映されません）。</p>
+          <p class="note sub">ポータブル版: <code>run_nvidia_gpu.bat</code> の <code>main.py</code> の後ろ（同じ行）に追記。デスクトップ版: サーバー設定の CORS ヘッダーの項目に <code id="origin-1"></code> を入力。</p>
         </li>
-        <li><strong>ローカルLLMのサーバーを起動し、CORS を有効にする</strong><br>
-          <div class="note">Bionic: 設定 →「ローカルモデルAPI」で「ローカルAPIサーバー」と「CORS」をオン。<br>
-          LM Studio: 「Developer」→ サーバーを起動 → サーバー設定の「Enable CORS」をオン。<br>
-          Ollama: 環境変数 <code>OLLAMA_ORIGINS</code> に <code id="origin-2"></code> を設定して起動し直します。</div>
+        <li class="card">
+          <h4 class="card-title">文章AIのサーバーを起動して、CORS をオンにする</h4>
+          <dl class="kv">
+            <dt>Bionic</dt><dd>設定 →「ローカルモデルAPI」で「ローカルAPIサーバー」と「CORS」をオン</dd>
+            <dt>LM Studio</dt><dd>「Developer」でサーバーを起動し、「Enable CORS」をオン</dd>
+            <dt>Ollama</dt><dd>環境変数 <code>OLLAMA_ORIGINS</code> に <code id="origin-2"></code> を設定して起動し直す</dd>
+          </dl>
         </li>
-        <li><strong>ブラウザは Chrome または Edge を使う</strong><br>
-          <div class="note">初回の接続時に「ローカルネットワーク上のデバイスへのアクセス」の確認が出たら「許可」を押してください。Safari では動かない場合があります。</div>
+        <li class="card">
+          <h4 class="card-title">Chrome か Edge で開く</h4>
+          <p class="note" style="margin:0">初回に「ローカルネットワーク上のデバイスへのアクセス」の確認が出たら「許可」を押します。</p>
         </li>
-        <li><strong>「文章AI（LLM）」タブ</strong>で「自動で探す」→ モデルを選んで保存</li>
-        <li><strong>「動画（ComfyUI）」タブ</strong>で ComfyUI のURLを確認して保存（MiniMax H3 のワークフローは最初から入っています。別のワークフローを使うときだけ登録します）</li>
+        <li class="card">
+          <h4 class="card-title">「文章AI」タブでモデルを選んで保存</h4>
+          <p class="note" style="margin:0">「自動で探す」を押すと、起動中のサーバーとモデルの一覧が出ます。</p>
+        </li>
+        <li class="card">
+          <h4 class="card-title">「動画（ComfyUI）」タブで URL を確認して保存</h4>
+          <p class="note" style="margin:0">MiniMax H3 のワークフローは最初から入っています。別のワークフローを使うときだけ登録します。</p>
+        </li>
       </ol>
-      <h4>接続の診断</h4>
-      <button id="run-diag">いまの設定で接続を確認</button>
-      <div id="diag-out"></div>
+      <div class="card">
+        <h4 class="card-title">接続を確認する</h4>
+        <p class="note">準備ができたら押してください。両方 🟢 になれば完了です。</p>
+        <button class="primary" id="run-diag">いまの設定で接続を確認</button>
+        <div id="diag-out"></div>
+      </div>
     </section>
 
     <section class="pane" data-pane="flow" hidden>
-      <h3>動画ができるまで</h3>
-      <p class="note">「実行」を押してから動画が表示されるまでに、裏側で起きていることを順番に並べました。色のついたラベルは「どこで処理されているか」です。どれもあなたのPCの中で行われ、外部のサーバーには送られません。</p>
+      <header class="pane-head"><h3>動画ができるまで</h3><p class="lead">「実行」を押してから動画が表示されるまでに、裏側で起きていることを順番に並べました。色のついたラベルは「どこで処理されているか」です。どれもあなたのPCの中で行われ、外部のサーバーには送られません。</p></header>
       <ol class="timeline">
         <li>
           <div class="tl-head"><span class="where browser">ブラウザ</span><strong>画像を読み込む</strong></div>
@@ -420,7 +539,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         </li>
         <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>動画用のプロンプトを書いてもらう</strong></div>
-          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、メタデータ、整えた画像（画像対応モデルのとき）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
+          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、「プロンプトの指定」（モード・BGM・声・動き）、メタデータ、整えた画像（画像対応モデルのとき。FL2VA なら最後の画像も）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>日本語訳を作る（設定でONのとき）</strong></div>
@@ -432,130 +551,151 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         </li>
         <li>
           <div class="tl-head"><span class="where browser">ブラウザ</span><strong>ワークフローに値を書き込む</strong></div>
-          <p>登録したワークフロー（JSON）のコピーに、プロンプト・画像のファイル名・シード・動画の長さ・縦横比とメガピクセル（解像度セレクターがない場合は幅と高さ）を書き込みます。登録した元のJSONは書き換わりません。</p>
+          <p>登録したワークフロー（JSON）のコピーに、プロンプト・画像のファイル名・シード・動画の長さ・縦横比とメガピクセル（解像度セレクターがない場合は幅と高さ）を書き込みます。L2VA のときは画像を「最後のフレーム」の入力につなぎ替え、FL2VA のときは最後の画像を読み込むノードを追加します。登録した元のJSONは書き換わりません。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>順番待ちのあと、動画を生成する</strong></div>
-          <p>ComfyUI がモデルを読み込み、ノイズから少しずつ映像（MiniMax H3 なら音声も）を作っていきます。いちばん時間がかかる手順で、進み具合は画面上部のバーに表示されます。</p>
+          <p>ComfyUI がモデルを読み込み、ノイズから少しずつ映像（MiniMax H3 なら音声も）を作っていきます。いちばん時間がかかる手順です。「本数」で2本以上を選ぶと、同じ画像とプロンプトの依頼がその本数だけ ComfyUI の順番待ちに並び、1本ずつ順に作られます（シードは毎回変わるので、違う動きの動画になります）。進み具合は「生成した動画」のパネルに表示されます。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>できた動画を受け取って表示する</strong></div>
-          <p>完成した動画ファイルを ComfyUI の output フォルダから受け取り、画面で再生します。「動画を保存」でダウンロードできます。</p>
+          <p>完成した動画ファイルを ComfyUI の output フォルダから受け取り、「生成した動画」にパネルとして並べます。パネルをクリックすると再生し、「この動画を保存」でダウンロードできます。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where comfy">ComfyUI</span><strong>GPUメモリを片付ける（設定でONのとき）</strong></div>
           <p>文章AIと動画モデルが同じGPUを取り合わないように、ComfyUI が使っていたGPUメモリを解放します。</p>
         </li>
       </ol>
-      <h4>やり直すときに動く手順</h4>
-      <p class="note">「AIで修正」は手順3〜4だけ、「このプロンプトで動画を作り直す」は手順5〜9だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p>
+      <div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「AIで修正」は手順3〜4だけ、「このプロンプトで動画を作り直す」は手順5〜9だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
-      <h3>文章AI（LLM）</h3>
-      <p class="note">OpenAI互換のサーバー（LM Studio / Bionic、Ollama、llama.cpp など）に対応しています。複数登録して、メイン画面で切り替えられます。</p>
-      <div class="picker"><select id="llm-pick" aria-label="編集する設定"></select><button id="llm-new">＋ 新規</button></div>
-      <div class="row" style="margin-bottom:12px"><button id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">サーバーを起動してから押してください</span></div>
-      <label class="field">名前（自由）<input type="text" id="llm-name"></label>
-      <label class="field">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
-      <div class="row" style="align-items:flex-end;margin-bottom:12px">
-        <label class="field grow" style="margin:0">モデル<input type="text" id="llm-model" list="llm-model-list"><datalist id="llm-model-list"></datalist></label>
-        <button id="llm-fetch">モデル一覧を取得</button>
+      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、Ollama など）の接続先です。複数登録して、メイン画面で切り替えられます。</p></header>
+      <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button></div>
+      <div class="card">
+        <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
+        <div class="row" style="margin-bottom:14px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
+        <label class="field">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
+        <label class="field" style="margin-bottom:0">名前（メイン画面に表示されます）<input type="text" id="llm-name"></label>
       </div>
-      <div class="row" style="margin-bottom:6px">
-        <label class="check" style="margin:0"><input type="checkbox" id="llm-vision"> 画像もAIに見せる（画像対応モデルのみ）</label>
-        <button id="llm-vtest">画像対応をテスト</button>
+      <div class="card">
+        <h4 class="card-title"><span class="num">2</span>モデルを選ぶ</h4>
+        <div class="inline-field">
+          <label class="field" style="margin:0">モデル<select id="llm-model"></select></label>
+          <button id="llm-fetch">一覧を更新</button>
+        </div>
+        <label class="field" id="llm-model-custom-field" style="margin:12px 0 0" hidden>モデル名<input type="text" id="llm-model-custom" placeholder="例: qwen2.5-vl-7b-instruct"></label>
+        <div class="row" style="margin-top:14px">
+          <label class="check" style="margin:0"><input type="checkbox" id="llm-vision"> 画像もAIに見せる（画像対応モデルのみ）</label>
+          <button id="llm-vtest">画像対応をテスト</button>
+        </div>
       </div>
-      <details style="margin:12px 0">
-        <summary>上級者向け</summary>
-        <label class="field" style="margin-top:10px">APIキー（ローカルなら空欄でOK）<input type="password" id="llm-key" autocomplete="off"></label>
+      <div class="card">
+        <h4 class="card-title"><span class="num">3</span>細かい調整 <span class="badge">変更しなくても動きます</span></h4>
         <label class="field">発想の自由度（温度）: <output id="llm-temp-out"></output><input type="range" id="llm-temp" min="0" max="1.5" step="0.05"></label>
-        <label class="field">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
-      </details>
-      <div class="row"><button class="primary" id="llm-save">保存して使う</button><button class="danger" id="llm-del">削除</button></div>
-      <p class="msg" id="llm-msg"></p>
+        <div class="map-grid">
+          <label class="field" style="margin:0">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
+          <label class="field" style="margin:0">APIキー（ローカルなら空欄）<input type="password" id="llm-key" autocomplete="off"></label>
+        </div>
+      </div>
+      <div class="pane-actions"><button class="primary" id="llm-save">保存して使う</button><button class="danger" id="llm-del">この設定を削除</button><p class="msg" id="llm-msg"></p></div>
     </section>
 
     <section class="pane" data-pane="video" hidden>
-      <h3>動画（ComfyUI）</h3>
-      <p class="note">ComfyUI でふだん動いている画像→動画のワークフロー（MiniMax H3、Wan など）をそのまま使います。MiniMax H3 のワークフローは最初から「MiniMax H3（既定）」として入っています。</p>
-      <div class="picker"><select id="vid-pick" aria-label="編集する設定"></select><button id="vid-new">＋ 新規</button></div>
-      <label class="field">名前（例: MiniMax H3）<input type="text" id="vid-name"></label>
-      <div class="row" style="align-items:flex-end;margin-bottom:12px">
-        <label class="field grow" style="margin:0">ComfyUI のURL<input type="url" id="vid-url" placeholder="http://127.0.0.1:8188"></label>
-        <button id="vid-test">接続テスト</button>
+      <header class="pane-head"><h3>動画（ComfyUI）</h3><p class="lead">動画を作る ComfyUI の接続先とワークフローです。MiniMax H3 は「MiniMax H3（既定）」として最初から入っています。</p></header>
+      <div class="picker"><label class="field">編集する設定<select id="vid-pick"></select></label><button id="vid-new">＋ 新しく追加</button></div>
+      <div class="card">
+        <h4 class="card-title"><span class="num">1</span>ComfyUI に接続</h4>
+        <div class="inline-field">
+          <label class="field" style="margin:0">ComfyUI のURL<input type="url" id="vid-url" placeholder="http://127.0.0.1:8188"></label>
+          <button id="vid-test">接続テスト</button>
+        </div>
+        <label class="field" style="margin:14px 0 0">名前（メイン画面に表示されます）<input type="text" id="vid-name"></label>
       </div>
-      <h4>ワークフローの登録</h4>
-      <ol class="note" style="padding-left:1.4em">
-        <li>ComfyUI でワークフローを開き、一度ちゃんと動画が作れることを確認</li>
-        <li>メニューの「ワークフロー」→「エクスポート (API)」（Export (API)）で JSON を保存</li>
-        <li>その JSON を下で選ぶ → 書き込み先が自動で選ばれます</li>
-      </ol>
-      <div class="row" style="margin-bottom:12px"><button id="wf-default">既定のワークフロー（MiniMax H3）を読み込む</button></div>
-      <label class="dropzone" id="wf-drop" style="min-height:90px">
-        <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
-        <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
-      </label>
-      <p class="msg" id="wf-msg"></p>
-      <details id="map-box">
-        <summary>書き込み先の確認・変更（自動検出が違うときだけ）</summary>
-        <div class="map-grid" id="map-grid" style="margin-top:10px"></div>
-      </details>
-      <h4>動画の作り方</h4>
-      <label class="field">プロンプト形式<select id="vid-style"></select></label>
-      <div class="map-grid">
-        <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
+      <div class="card">
+        <h4 class="card-title"><span class="num">2</span>ワークフロー</h4>
+        <p class="note">ComfyUI で一度ちゃんと動画が作れたワークフローを、メニューの「ワークフロー」→「エクスポート (API)」で書き出して、ここに入れます。</p>
+        <label class="dropzone" id="wf-drop" style="min-height:90px">
+          <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
+          <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
+        </label>
+        <div class="row" style="margin-top:10px"><button id="wf-default">既定のワークフロー（MiniMax H3）を使う</button></div>
+        <p class="msg" id="wf-msg"></p>
+        <div id="map-box">
+          <h5 class="sub-title">書き込み先 <span class="badge">自動で選ばれます</span></h5>
+          <p class="note">アプリが値を書き込むノードです。自動で選ばれた結果が違うときだけ変更します。</p>
+          <div class="map-grid" id="map-grid"></div>
+        </div>
       </div>
-      <p class="note">動画の縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
-      <label class="check"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ。次の生成は少し遅くなります）</label>
-      <div class="row"><button class="primary" id="vid-save">保存して使う</button><button class="danger" id="vid-del">削除</button></div>
-      <p class="msg" id="vid-msg"></p>
+      <div class="card">
+        <h4 class="card-title"><span class="num">3</span>動画の作り方</h4>
+        <div class="map-grid">
+          <label class="field">プロンプト形式<select id="vid-style"></select></label>
+          <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
+        </div>
+        <label class="check" style="margin:0"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ）</label>
+        <p class="note" style="margin:10px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
+      </div>
+      <div class="pane-actions"><button class="primary" id="vid-save">保存して使う</button><button class="danger" id="vid-del">この設定を削除</button><p class="msg" id="vid-msg"></p></div>
     </section>
 
     <section class="pane" data-pane="skills" hidden>
-      <h3>スキル</h3>
-      <p class="note">プロンプトを作るときに文章AIへ追加で渡す指示です。Agent Skills 形式（SKILL.md）の読み込み・書き出しができ、Bionic などで使っている SKILL.md もそのまま読み込めます。使うスキルはメイン画面で選びます。</p>
-      <div class="picker"><select id="skill-pick" aria-label="編集するスキル"></select><button id="skill-new">＋ 新規</button></div>
-      <div class="row" style="margin-bottom:14px">
-        <label class="filebtn">
-          <input type="file" id="skill-file" accept=".md,text/markdown" multiple aria-label="SKILL.mdを読み込む">
-          SKILL.md を読み込む（複数可）
-        </label>
-        <button id="skill-export">SKILL.md として書き出し</button>
+      <header class="pane-head"><h3>スキル</h3><p class="lead">ふだんは MiniMax H3 公式の「h3-prompt-writing」（<a id="official-skill-link" target="_blank" rel="noopener">公式ページ ↗</a>）を元にした既定のスキルが自動で使われるので、ここは触らなくて大丈夫です。自分用のスキルを使いたいときだけ、読み込むか新しく追加してください。追加したスキルはメイン画面にボタンで表示され、ONにすると既定のスキルの代わりに使われます。</p></header>
+      <div class="picker"><label class="field">編集するスキル<select id="skill-pick"></select></label><button id="skill-new">＋ 新しく追加</button></div>
+      <div class="card">
+        <h4 class="card-title">ファイルで読み込む・書き出す</h4>
+        <p class="note">Agent Skills 形式（SKILL.md）に対応しています。Bionic などで使っている SKILL.md もそのまま読み込めます。</p>
+        <div class="row">
+          <label class="filebtn"><input type="file" id="skill-file" accept=".md,text/markdown" multiple aria-label="SKILL.mdを読み込む">SKILL.md を読み込む</label>
+          <button id="skill-export">このスキルを書き出す</button>
+        </div>
       </div>
-      <label class="field">名前<input type="text" id="skill-name"></label>
-      <label class="field">説明（一覧に表示されます）<input type="text" id="skill-desc"></label>
-      <label class="field">指示の内容<textarea id="skill-body" rows="12"></textarea></label>
-      <div class="row"><button class="primary" id="skill-save">保存</button><button id="skill-restore" hidden>既定の内容に戻す</button><button class="danger" id="skill-del">削除</button></div>
-      <p class="msg" id="skill-msg"></p>
+      <div class="card">
+        <h4 class="card-title">内容</h4>
+        <div class="map-grid">
+          <label class="field">名前<input type="text" id="skill-name"></label>
+          <label class="field">説明<input type="text" id="skill-desc"></label>
+        </div>
+        <label class="field" style="margin:0">指示の内容<textarea id="skill-body" rows="12"></textarea></label>
+      </div>
+      <div class="pane-actions"><button class="primary" id="skill-save">保存</button><button id="skill-restore" hidden>既定の内容に戻す</button><button class="danger" id="skill-del">このスキルを削除</button><p class="msg" id="skill-msg"></p></div>
     </section>
 
     <section class="pane" data-pane="styles" hidden>
-      <h3>プロンプト形式</h3>
-      <p class="note">動画モデルごとの基本の書き方です（文章AIへの指示文）。<code>{seconds}</code> は動画の秒数に置き換わります。動画の設定ごとにどれを使うか選べます。</p>
-      <div class="picker"><select id="style-pick" aria-label="編集する形式"></select><button id="style-new">＋ 新規</button></div>
-      <label class="field">名前<input type="text" id="style-name"></label>
-      <label class="field">指示文<textarea id="style-text" rows="16"></textarea></label>
-      <div class="row"><button class="primary" id="style-save">保存</button><button id="style-restore" hidden>既定の内容に戻す</button><button class="danger" id="style-del">削除</button></div>
-      <p class="msg" id="style-msg"></p>
+      <header class="pane-head"><h3>プロンプト形式</h3><p class="lead">動画モデルごとの基本の書き方（文章AIへの指示文）です。MiniMax H3 は公式ガイドに沿った既定の形式が使われるので、ふだんは触らなくて大丈夫です。<code>{seconds}</code> は動画の秒数に置き換わります。</p></header>
+      <div class="picker"><label class="field">編集する形式<select id="style-pick"></select></label><button id="style-new">＋ 新しく追加</button></div>
+      <div class="card">
+        <label class="field">名前<input type="text" id="style-name"></label>
+        <label class="field" style="margin:0">指示文<textarea id="style-text" rows="16"></textarea></label>
+      </div>
+      <div class="pane-actions"><button class="primary" id="style-save">保存</button><button id="style-restore" hidden>既定の内容に戻す</button><button class="danger" id="style-del">この形式を削除</button><p class="msg" id="style-msg"></p></div>
     </section>
 
     <section class="pane" data-pane="backup" hidden>
-      <h3>バックアップ・その他</h3>
-      <label class="check"><input type="checkbox" id="opt-translate"> プロンプトを作ったら日本語訳も自動で作る</label>
-      <h4>設定の書き出し・読み込み</h4>
-      <p class="note">別のブラウザやPCに設定を移すときに使います。書き出したファイルには APIキーも含まれるため、他人に渡すときは注意してください。</p>
-      <div class="row">
-        <button id="export-settings">設定を書き出す</button>
-        <label class="filebtn">
-          <input type="file" id="import-settings" accept=".json" aria-label="設定を読み込む">
-          設定を読み込む
-        </label>
+      <header class="pane-head"><h3>バックアップ</h3><p class="lead">設定の移動や初期化をします。</p></header>
+      <div class="card">
+        <h4 class="card-title">日本語訳</h4>
+        <label class="check" style="margin:0"><input type="checkbox" id="opt-translate"> プロンプトを作ったら日本語訳も自動で作る</label>
       </div>
-      <h4>初期化</h4>
-      <button class="danger" id="reset-settings">すべての設定を消して最初に戻す</button>
-      <p class="msg" id="backup-msg"></p>
+      <div class="card">
+        <h4 class="card-title">設定の書き出し・読み込み</h4>
+        <p class="note">別のブラウザやPCに設定を移すときに使います。書き出したファイルには APIキーも含まれるので、人に渡すときは注意してください。</p>
+        <div class="row">
+          <button id="export-settings">設定を書き出す</button>
+          <label class="filebtn"><input type="file" id="import-settings" accept=".json" aria-label="設定を読み込む">設定を読み込む</label>
+        </div>
+      </div>
+      <div class="card danger-zone">
+        <h4 class="card-title">初期化</h4>
+        <p class="note">登録したワークフロー・スキル・文章AIの設定がすべて消えます。元に戻せません。</p>
+        <button class="danger" id="reset-settings">すべての設定を消して最初に戻す</button>
+        <p class="msg" id="backup-msg"></p>
+      </div>
     </section>
+  </div>
+  <div class="dlg-foot">
+    <span>作った動画を人と共有するなら</span>
+    <a id="share-app-link" target="_blank" rel="noopener">Prompt Reel Images を開く ↗</a>
   </div>
 </dialog>
 
@@ -567,11 +707,16 @@ const USER_SETTINGS = {
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   settingsVersion: 1,
-  defaultsRevision: 3,
+  defaultsRevision: 5,
+  legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d"], skill: ["f6e1e724", "647fe80d"] },
+  retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
+  legacyWorkflowNames: ["既定（MiniMax H3 画像→動画）"],
+  officialSkillUrl: "https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing",
+  h3Seconds: { min: 4, max: 15 },
   defaultVideoId: "h3default",
   defaultSkillId: "h3writing",
   defaultVideoName: "MiniMax H3（既定）",
-  defaultWorkflowName: "既定（MiniMax H3 画像→動画）",
+  defaultWorkflowName: "MiniMax H3 公式テンプレート（画像→動画）",
   h3ClassPrefix: "MiniMaxH3",
   frame: {
     aspects: [
@@ -619,15 +764,52 @@ const USER_SETTINGS = {
   previewChars: 40,
   uploadPrefix: "stillmotion_",
   videoExtensions: [".mp4", ".webm", ".mkv", ".mov", ".gif", ".webp"],
-  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep line breaks, timing notation, and field names or labels such as \"integrated_multimodal_description:\" and \"Audio:\" exactly as they are (do not translate them). Output only the translation.",
-  translateToEn: "Translate the following Japanese text into natural English suitable as a video-generation prompt. Keep line breaks, timing notation, and field names or labels such as \"integrated_multimodal_description:\" and \"Audio:\" exactly as they are. Output only the English text.",
+  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep these exactly as they are, untranslated: the first line if it starts with \"For the target video\" or \"How the reference pictures align\", the field names (integrated_multimodal_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), <Picture 1>, N/A, and everything inside <d>...</d>. Keep line breaks. Output only the translation.",
+  translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), <Picture 1>, N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
+  promptOptions: {
+    header: "Generation settings (these take priority over everything above):",
+    h3Only: ["mode", "music", "voice"],
+    instructionLines: {
+      I2VA: "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.",
+      FL2VA: "How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the {S}-second mark of the target video.",
+      L2VA: "How the reference pictures align with the target video — <Picture 1> (from [Shot 1]) aligns with the {S}-second mark of the target video.",
+    },
+    instructionPattern: /^\s*(For the target video,|How the reference pictures align)[^\n]*\n*/,
+    firstLineRule: "The very first line of the prompt must be exactly: {line} Then one blank line, then the three core fields.",
+    groups: [
+      { key: "mode", label: "モード", default: "I2VA", choices: [
+        ["I2VA", "I2VA", "Mode: I2VA. <Picture 1> is the actual first frame at 0.00 seconds and belongs to [Shot 1]. Establish its style, subjects, composition and scene anchors first, then develop forward: first-frame anchor → action onset → continuous development → result or reaction."],
+        ["FL2VA", "FL2VA", "Mode: FL2VA. Picture 1 is the opening frame and Picture 2 is the final frame. Use a single shot ([Shot 1] only) and supply the motion path that connects them instead of describing two static images: first-frame state → observable intermediate changes → progressively narrowing differences → last-frame state, reached at the very end."],
+        ["L2VA", "L2VA", "Mode: L2VA. <Picture 1> is the FINAL frame and belongs to the last shot. Use a single shot ([Shot 1] only): plausible preceding state → explicit action and transition path → gradual convergence → landing exactly on the composition of <Picture 1> at the end."],
+      ] },
+      { key: "music", label: "BGM", default: "on", choices: [
+        ["on", "あり", "Non-diegetic music: yes. In non_diegetic_music, describe instrumentation, tempo, rhythm and dynamic changes in 1–3 sentences, without abstract mood words."],
+        ["off", "なし", "Non-diegetic music: none. non_diegetic_music must be exactly N/A."],
+      ] },
+      { key: "voice", label: "人物の声", default: "off", choices: [
+        ["on", "あり", "Voices: characters may speak. Give each speaker a stable ID such as (S1), describe the voice when the speaker first appears, and write short natural lines you invent yourself inside <d>[Japanese] ...</d> (use another language tag only if the picture clearly suggests it)."],
+        ["off", "なし", "Voices: none. No character speaks, sings or uses an off-screen voice; use no speaker IDs and no <d> tags. Non-verbal sounds such as breathing may appear only in overall_soundscape."],
+      ] },
+      { key: "motion", label: "動き", default: "normal", choices: [
+        ["subtle", "控えめ", "Motion: subtle. Keep subject motion small and gentle; use a static shot or camera motion with small amplitude at slow speed."],
+        ["normal", "ふつう", "Motion: natural. Use natural, moderate subject motion; describe camera motion without amplitude or speed words unless needed."],
+        ["big", "大げさ", "Motion: exaggerated. Use large, energetic subject motion and expressive reactions; use camera motion with large amplitude at fast speed."],
+      ] },
+    ],
+    modeInfo: {
+      I2VA: "画像を最初のフレームにして、その続きを動かします。",
+      FL2VA: "1枚目を最初、2枚目を最後のフレームにして、その間をつなぐ動画を作ります。最後の画像を入れないときは最初の画像を最後にも使うので、元の姿に戻る（ループする）動画になります。",
+      L2VA: "画像を最後のフレームにして、そこへたどり着く動画を作ります。",
+    },
+    lastSameAsFirst: "Picture 2 is identical to Picture 1: the clip must return to the opening pose and composition at the end, so that it loops seamlessly.",
+    notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声の指定は使いません（動きの指定だけ反映します）。",
+  },
+  customModelValue: "__custom__",
+  shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
+  maxRunCount: 8,
+  jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
+  jobThumbMaxSide: 360,
   skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
-  quickInstructions: [
-    { label: "動きを大きく", text: "Make the motion bigger and more dynamic." },
-    { label: "ゆっくり穏やかに", text: "Make the motion slower, calmer and more subtle." },
-    { label: "カメラを固定", text: "Use a static camera with no camera movement." },
-    { label: "音楽なし", text: "Remove music; keep only natural ambient sound and sound effects. If there is a non_diegetic_music field, set it to \"none\"." },
-  ],
   slots: [
     { key: "prompt", label: "プロンプト", kind: "str" },
     { key: "negative", label: "ネガティブプロンプト", kind: "str" },
@@ -641,18 +823,39 @@ const USER_SETTINGS = {
     { key: "seconds", label: "秒数", kind: "num" },
   ],
   defaultStyles: {
-    h3: { name: "MiniMax H3 I2VA（公式形式・音声つき）", text: `You write prompts for the MiniMax H3 video model in I2VA mode (image to video with native audio).
-The video starts exactly on the given still image (the first frame) and develops forward from it for about {seconds} seconds.
-Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided.
-Write in English using exactly these three fields, in this order, each starting on a new line with the field name followed by a colon:
-integrated_multimodal_description:
-overall_soundscape:
-non_diegetic_music:
-- integrated_multimodal_description: begin from the first frame (same character, outfit and place; no new characters), then describe what happens over time with timing that adds up to {seconds} seconds (for example "0-2s: ...", "2-5s: ..."). Cover composition, subjects, environment, actions, one clear camera move, and the sound tied to each action.
-- overall_soundscape: ambient sound and sound effects for the whole clip.
-- non_diegetic_music: background music (genre, instruments, mood), or "none".
-No speech or dialogue unless the instruction asks for it; keep any dialogue or visible text in its original language.
-Do not use tag lists, weights, or quality words such as "masterpiece". Output only the prompt.` },
+    h3: { name: "MiniMax H3", text: `You write prompts for the MiniMax H3 audio-video model, following the official H3 prompt-writing guide for the base keyframe modes (I2VA / FL2VA / L2VA).
+The target video lasts {seconds} seconds. The input mode, the required first line, and the audio and motion settings are given under "Generation settings" at the end; follow them exactly.
+Infer the scene from the supplied picture(s) and the Stable Diffusion prompt (comma-separated tags). Never copy tags, weights or quality words into the output.
+
+FINAL PROMPT STRUCTURE (output nothing else):
+<the required first line from the generation settings>
+
+integrated_multimodal_description: [Shot 1] ...
+
+overall_soundscape: ...
+
+non_diegetic_music: ...
+
+integrated_multimodal_description is the main body, written along the timeline:
+- Start [Shot 1] with the overall style and initial composition derived from the picture, e.g. "[Shot 1] 2D-animated, a medium shot frames ...". Common styles: Cinematic, live-action, 2D-animated, 3D CG, claymation, watercolor, vintage film.
+- Keep character identity, clothing, colors, key objects and spatial relationships consistent with the picture(s).
+- Every detail must correspond to something visible or audible: subject appearance and position, scene and key props, actions and reactions, shot changes, speech, and synchronized diegetic sound.
+- Do not add a timestamp to [Shot 1]. Each later shot starts with a strictly increasing cut time inside the duration, e.g. "[Shot 2] At 00:03.500, the camera cuts to ...". Cut only to introduce new information; for a small change in distance or angle use camera motion instead.
+- Camera motion = motion type + optional amplitude + optional speed, written as a natural sentence inside the shot, e.g. "The camera pushes in with small amplitude at slow speed toward the folded letter." Motion types: zoom in / zoom out, push in / pull out, pan left / pan right, truck left / truck right, tilt up / tilt down, pedestal up / pedestal down, arc shot, tracking shot, static shot, shake slightly / shake strongly, POV, roll clockwise / roll counterclockwise. Amplitude: with small amplitude / with large amplitude. Speed: at slow speed / at fast speed. Omit them for medium amplitude and normal speed.
+- Speakers (only when voices are allowed): a stable ID such as (S1); describe the voice when the speaker first appears; only the language tag and the spoken words go inside <d>, e.g. The girl with a bright, clear voice (S1) says: <d>[Japanese] おはよう！</d>
+- Text actually visible on screen goes in double quotation marks, verbatim.
+
+overall_soundscape: 1–4 English sentences in one paragraph covering ambient sound, physical action sounds and non-verbal human sounds (footsteps, fabric, breathing, laughter). Do not repeat dialogue or diegetic music. Use N/A only for complete silence.
+non_diegetic_music: 1–3 English sentences on instrumentation, tempo, rhythm and dynamic changes, without abstract mood words; or N/A.
+
+Example (I2VA):
+For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.
+
+integrated_multimodal_description: [Shot 1] Live-action, cinematic, the young woman shown in <Picture 1> remains beside the rain-covered train window, preserving her appearance, clothing, seat position, and the carriage layout. The camera trucks right with small amplitude at slow speed as she lifts her gaze from the folded letter toward the passing city lights. She folds the letter along its existing crease.
+
+overall_soundscape: The train wheels produce a steady metallic rhythm beneath a low ventilation hum. Rain ticks against the window while paper rustles softly in her hands.
+
+non_diegetic_music: Sustained cello notes at a slow tempo with widely spaced piano tones, gradually decreasing in volume.` },
     wan: { name: "Wan 2.2 など（音声なし）", text: `You write prompts for an image-to-video model (such as Wan 2.2) that has no audio.
 The video starts from the given still image as its first frame and lasts about {seconds} seconds.
 Infer the situation from the Stable Diffusion prompt (comma-separated tags) and the image if provided, then write ONE paragraph of natural English (60-120 words) that describes:
@@ -663,27 +866,28 @@ Infer the situation from the Stable Diffusion prompt (comma-separated tags) and 
 Do not use tag lists, weights, or quality tags such as "masterpiece". Output only the prompt text, with no preface, quotes, or markdown.` },
   },
   defaultSkills: {
-    h3writing: { name: "h3-prompt-writing", description: "MiniMax H3 公式スキル（I2VA用・既定）", body: `You are writing a MiniMax H3 video generation prompt. Source: MiniMax-AI/MiniMax-H3 skills/h3-prompt-writing.
+    h3writing: { name: "h3-prompt-writing", description: "MiniMax H3 公式スキル（既定）", body: `Official MiniMax H3 skill "h3-prompt-writing" (MiniMax-AI/MiniMax-H3, skills/h3-prompt-writing), adapted for the base keyframe modes. The prompt format above summarizes its guide references/base-en.txt.
+
 Workflow:
-1. The input mode is I2VA (from first frame): start from the supplied first frame and develop forward from it.
-2. Structure the output using these fields in order: integrated_multimodal_description, overall_soundscape, non_diegetic_music.
-3. Preserve exact field names, section order, labels, and timing notation.
+1. Identify the input mode from the generation settings: I2VA, FL2VA, or L2VA.
+2. Follow the final prompt structure of the base modes: the required alignment instruction as the first line, one blank line, then integrated_multimodal_description, overall_soundscape, and non_diegetic_music in that order.
+3. Preserve the exact field names, section order, labels, and timing notation.
+
+Base modes:
+- I2VA: start from the first frame and develop forward from it.
+- FL2VA: describe the continuous path between the first and last frames.
+- L2VA: infer a plausible opening and converge to the supplied last frame.
+
 Output rules:
-- Write the sections in English; preserve dialogue, lyrics, and visible scene text in their original language.
+- Write rewrite sections in English; preserve dialogue, lyrics, and visible scene text in their original language.
 - Describe each shot by composition, subjects, environment, actions, camera, sound, and the exact point where referenced content appears.
-- Avoid plot summaries, unresolved reference labels, and timing that does not match the requested duration.` },
-    anime: { name: "anime-motion", description: "アニメ・イラスト調の画像向けの動き", body: `The source image is an anime or illustration style picture.
-- Keep the 2D illustrated look; do not describe it as photorealistic.
-- Prefer expressive but clean motion typical of anime: hair and clothes swaying, blinking, small gestures, sparkles or petals in the air.
-- Avoid complex physics or large changes to the character's pose and proportions.` },
-    cinematic: { name: "cinematic-camera", description: "映画のようなカメラワークと光", body: `Direct the shot like a film cinematographer.
-- Choose one deliberate camera move that reveals the subject (slow dolly in, low-angle push, lateral tracking, or slow orbit).
-- Mention lens feel and depth of field (e.g. shallow focus, soft background bokeh).
-- Describe motivated lighting changes such as drifting light, flickering neon, or sun flare.` },
-    subtle: { name: "subtle-loop", description: "控えめな動き（ループ・壁紙向け）", body: `Make a calm, subtle animation suitable for a seamless loop or a live wallpaper.
-- Keep the subject mostly in the same pose; use breathing, blinking, gentle hair and cloth movement.
-- Environment motion should be soft and continuous (floating particles, slow clouds, rippling water).
-- Use a static camera or an extremely slow push-in.` },
+- Avoid plot summaries, unresolved reference labels, and timing that does not match the requested duration.
+
+Tips for better results:
+- Always match the total duration of the description to the requested video length (4–15 seconds).
+- Keep reference labels consistent (e.g. <Picture 1>) across every section.
+- Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".
+- When using keyframes (I2VA / FL2VA / L2VA), clearly state how the first and/or last frame connects to the timeline.` },
   },
   defaultWorkflow: {
     "92": {
@@ -713,7 +917,7 @@ Output rules:
     },
     "115": {
       "inputs": {
-        "aspect_ratio": "16:9 (Widescreen)",
+        "aspect_ratio": "1:1 (Square)",
         "megapixels": 0.4,
         "multiple": 32
       },
@@ -722,9 +926,32 @@ Output rules:
         "title": "解像度セレクター"
       }
     },
+    "119": {
+      "inputs": {
+        "upscale_method": "nearest-exact",
+        "megapixels": 0.9,
+        "resolution_steps": 32
+      },
+      "class_type": "ImageScaleToTotalPixels",
+      "_meta": {
+        "title": "画像を総ピクセルにスケール"
+      }
+    },
+    "120": {
+      "inputs": {
+        "image": [
+          "119",
+          0
+        ]
+      },
+      "class_type": "GetImageSize",
+      "_meta": {
+        "title": "画像サイズ取得"
+      }
+    },
     "105:11": {
       "inputs": {
-        "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+        "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
       },
       "class_type": "VAELoader",
       "_meta": {
@@ -772,6 +999,33 @@ Output rules:
         "title": "VAEデコード"
       }
     },
+    "105:17": {
+      "inputs": {
+        "sampler_name": "res_multistep"
+      },
+      "class_type": "KSamplerSelect",
+      "_meta": {
+        "title": "Kサンプラー選択"
+      }
+    },
+    "105:9": {
+      "inputs": {
+        "scheduler": "simple",
+        "steps": [
+          "105:123",
+          0
+        ],
+        "denoise": 1,
+        "model": [
+          "105:122",
+          0
+        ]
+      },
+      "class_type": "BasicScheduler",
+      "_meta": {
+        "title": "基本スケジューラー"
+      }
+    },
     "105:14": {
       "inputs": {
         "noise": [
@@ -800,6 +1054,43 @@ Output rules:
         "title": "カスタムサンプラー（高度）"
       }
     },
+    "105:16": {
+      "inputs": {
+        "model": [
+          "105:122",
+          0
+        ],
+        "conditioning": [
+          "105:104",
+          0
+        ]
+      },
+      "class_type": "BasicGuider",
+      "_meta": {
+        "title": "基本ガイダー"
+      }
+    },
+    "105:6": {
+      "inputs": {
+        "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      },
+      "class_type": "UNETLoader",
+      "_meta": {
+        "title": "拡散モデルを読み込む"
+      }
+    },
+    "105:13": {
+      "inputs": {
+        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "type": "minimax",
+        "device": "default"
+      },
+      "class_type": "CLIPLoader",
+      "_meta": {
+        "title": "CLIPを読み込む"
+      }
+    },
     "105:15": {
       "inputs": {
         "noise_seed": 0
@@ -807,6 +1098,26 @@ Output rules:
       "class_type": "RandomNoise",
       "_meta": {
         "title": "ランダムノイズ"
+      }
+    },
+    "105:91": {
+      "inputs": {
+        "fps": 24,
+        "bit_depth": 8,
+        "color_space": "sRGB",
+        "codec": "none",
+        "images": [
+          "105:10",
+          0
+        ],
+        "audio": [
+          "105:23",
+          0
+        ]
+      },
+      "class_type": "CreateVideo",
+      "_meta": {
+        "title": "動画を作成"
       }
     },
     "105:104": {
@@ -825,8 +1136,8 @@ Output rules:
           1
         ],
         "clip": [
-          "105:125",
-          1
+          "105:13",
+          0
         ],
         "vae": [
           "105:11",
@@ -864,110 +1175,85 @@ Output rules:
         "title": "Float (duration)"
       }
     },
-    "105:6": {
+    "105:121": {
       "inputs": {
-        "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
-        "weight_dtype": "default"
-      },
-      "class_type": "UNETLoader",
-      "_meta": {
-        "title": "拡散モデルを読み込む"
-      }
-    },
-    "105:16": {
-      "inputs": {
+        "lora_name": "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors",
+        "strength_model": 1,
         "model": [
-          "105:125",
-          0
-        ],
-        "conditioning": [
-          "105:104",
+          "105:6",
           0
         ]
       },
-      "class_type": "BasicGuider",
+      "class_type": "LoraLoaderModelOnly",
       "_meta": {
-        "title": "基本ガイダー"
+        "title": "LoRAローダーモデルのみ"
       }
     },
-    "105:13": {
+    "105:122": {
       "inputs": {
-        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
-        "type": "minimax",
-        "device": "default"
-      },
-      "class_type": "CLIPLoader",
-      "_meta": {
-        "title": "CLIPを読み込む"
-      }
-    },
-    "105:91": {
-      "inputs": {
-        "fps": 24,
-        "bit_depth": 8,
-        "color_space": "sRGB",
-        "codec": "none",
-        "images": [
-          "105:10",
+        "switch": [
+          "105:126",
           0
         ],
-        "audio": [
-          "105:23",
+        "on_false": [
+          "105:6",
+          0
+        ],
+        "on_true": [
+          "105:121",
           0
         ]
       },
-      "class_type": "CreateVideo",
+      "class_type": "ComfySwitchNode",
       "_meta": {
-        "title": "動画を作成"
+        "title": "If/Else Switch (Model)"
       }
     },
-    "105:9": {
+    "105:123": {
       "inputs": {
-        "scheduler": "simple",
-        "steps": 8,
-        "denoise": 1,
-        "model": [
+        "switch": [
+          "105:126",
+          0
+        ],
+        "on_false": [
+          "105:124",
+          0
+        ],
+        "on_true": [
           "105:125",
           0
         ]
       },
-      "class_type": "BasicScheduler",
+      "class_type": "ComfySwitchNode",
       "_meta": {
-        "title": "基本スケジューラー"
+        "title": "If/Else Switch (Steps)"
       }
     },
-    "105:17": {
+    "105:124": {
       "inputs": {
-        "sampler_name": "euler"
+        "value": 20
       },
-      "class_type": "KSamplerSelect",
+      "class_type": "PrimitiveInt",
       "_meta": {
-        "title": "Kサンプラー選択"
+        "title": "整数"
       }
     },
     "105:125": {
       "inputs": {
-        "PowerLoraLoaderHeaderWidget": {
-          "type": "PowerLoraLoaderHeaderWidget"
-        },
-        "lora_1": {
-          "on": true,
-          "lora": "minimax_h3_turbo_v4_step600_ema_pruned_comfyui.safetensors",
-          "strength": 1
-        },
-        "➕ Add Lora": "",
-        "model": [
-          "105:6",
-          0
-        ],
-        "clip": [
-          "105:13",
-          0
-        ]
+        "value": 8
       },
-      "class_type": "Power Lora Loader (rgthree)",
+      "class_type": "PrimitiveInt",
       "_meta": {
-        "title": "Power Lora Loader (rgthree)"
+        "title": "整数"
+      }
+    },
+    "105:126": {
+      "inputs": {
+        "value": false
+      },
+      "class_type": "PrimitiveBoolean",
+      "_meta": {
+        "title": "Boolean (Enable Lightning LoRA)"
       }
     }
   },
@@ -1012,8 +1298,8 @@ Output rules:
     lengthLocked: "（このワークフローでは変更できません）",
     negLocked: "ネガティブプロンプト（このワークフローでは使いません）",
     negOpen: "ネガティブプロンプト（空欄ならワークフローの設定のまま）",
-    skillDefaultInUse: "スキルがOFFのときは、既定のスキル「{name}」を使います（MiniMax H3 のワークフローのとき）。",
-    skillDefaultSkipped: "選んだスキルを使います（既定のスキル「{name}」より優先）。",
+    skillDefaultInUse: "スキル: MiniMax H3 公式の「{name}」を使います。",
+    skillDefaultSkipped: "選んだスキルを使います（公式の「{name}」の代わりに使われます）。",
     skillDefaultNotH3: "このワークフローは MiniMax H3 ではないため、既定のスキルは使いません。",
     frameSize: "{w}×{h} で生成します",
     frameSource: "（元の画像 {sw}×{sh}、{aspect} の型で処理）",
@@ -1023,6 +1309,20 @@ Output rules:
     frameNoImage: "画像を入れると、この型に合わせて切り抜き（または余白を追加）します。",
     frameWorkflow: "動画の大きさはワークフローの設定のまま作ります（画像は加工せずに送ります）。",
     frameNoSizeSlot: "このワークフローには縦横比・大きさの書き込み先がないため、画像の加工だけ行います。",
+    modeUnsupported: "このワークフローの動画ノードには「最後のフレーム（last_frame）」の入力がないため、{mode} は使えません。I2VA に戻すか、FL2VA / L2VA に対応したワークフローを登録してください。",
+    modeNeedsFirst: "このワークフローの動画ノードは最初のフレームが必須のため、L2VA は使えません。",
+    sizeMismatch: "完成しましたが、動画の大きさが {vw}×{vh} で、指定した {w}×{h} と縦横比が違います。「設定」→「動画（ComfyUI）」の「書き込み先」で、縦横比（解像度セレクター）か幅・高さが選ばれているか確認してください。",
+    sizeMismatchShort: "縦横比が指定と違います（{vw}×{vh}）",
+    jobDone: "動画 #{n} が完成しました。パネルをクリックすると再生します。",
+    jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
+    jobFailed: "動画 #{n} は作れませんでした: {err}",
+    mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
+    mainModelNone: "（「設定」→「文章AI」で接続してください）",
+    modelNotListed: "（いまのサーバーの一覧にありません）",
+    modelSaved: "（保存済み）",
+    modelNone: "（「一覧を更新」でモデルを取得）",
+    modelCustom: "一覧にない名前を入力する…",
+    modelsFetched: "モデル {n} 件を取得しました。プルダウンから選んでください。",
     restored: "既定の内容に戻しました（まだ保存されていません。「保存」を押すと確定します）。",
     defaultWorkflowLoaded: "既定のワークフロー（MiniMax H3）を読み込みました。モデルファイル名が ComfyUI 側と同じか確認して「保存して使う」を押してください。",
   },
@@ -1040,6 +1340,15 @@ const timestamp = () => {
 };
 
 class UserError extends Error {}
+
+function textHash(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -1144,11 +1453,26 @@ class SettingsStore {
     const vid = USER_SETTINGS.defaultVideoId;
     const builtin = data.videoProfiles[vid];
     if (!builtin) data.videoProfiles[vid] = SettingsStore.defaultVideoProfile();
-    else if (builtin.workflowName === USER_SETTINGS.defaultWorkflowName) {
+    else if ([USER_SETTINGS.defaultWorkflowName, ...USER_SETTINGS.legacyWorkflowNames].includes(builtin.workflowName)) {
       const fresh = SettingsStore.defaultVideoProfile();
       builtin.workflow = fresh.workflow;
       builtin.mapping = fresh.mapping;
+      builtin.workflowName = fresh.workflowName;
     }
+    for (const profile of Object.values(data.videoProfiles)) {
+      const detected = WorkflowMapper.detect(profile.workflow);
+      profile.mapping ??= {};
+      for (const slot of USER_SETTINGS.slots) {
+        if (profile.mapping[slot.key] === undefined) profile.mapping[slot.key] = detected[slot.key];
+      }
+    }
+    const legacy = USER_SETTINGS.legacyDefaultHashes;
+    if (data.styles.h3 && legacy.style.includes(textHash(data.styles.h3.text))) data.styles.h3 = clone(USER_SETTINGS.defaultStyles.h3);
+    if (data.skills[sid] && legacy.skill.includes(textHash(data.skills[sid].body))) data.skills[sid] = clone(USER_SETTINGS.defaultSkills[sid]);
+    for (const [id, hash] of Object.entries(USER_SETTINGS.retiredDefaultSkills)) {
+      if (data.skills[id] && textHash(data.skills[id].body) === hash) delete data.skills[id];
+    }
+    data.activeSkills = (data.activeSkills || []).filter((id) => data.skills[id]);
     if (!data.videoProfiles[data.videoActive]) data.videoActive = vid;
     data.defaultsRevision = USER_SETTINGS.defaultsRevision;
     return data;
@@ -1416,26 +1740,28 @@ class LlmClient {
     return LlmClient.cleanOutput(json.choices?.[0]?.message?.content || "");
   }
 
-  chat(system, userText, imageDataUrl, signal) {
-    const content = imageDataUrl
-      ? [{ type: "text", text: userText }, { type: "image_url", image_url: { url: imageDataUrl } }]
+  chat(system, userText, images, signal) {
+    const content = images?.length
+      ? [{ type: "text", text: userText }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))]
       : userText;
     return this.post([{ role: "system", content: system }, { role: "user", content }], this.profile.temperature, signal);
   }
 
-  generatePrompt({ style, skills, meta, imageDataUrl, seconds, current, instruction, signal }) {
+  generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal }) {
     let system = style.text.replaceAll("{seconds}", String(seconds));
     if (skills.length) {
       system += `\n\n${USER_SETTINGS.skillPreamble}\n` +
         skills.map((s) => `\n<skill name="${s.name}">\n${s.body}\n</skill>`).join("\n");
     }
+    if (settingsText) system += `\n\n${settingsText}`;
     let user = `Stable Diffusion prompt: ${meta.cleanPrompt || "(none)"}\n` +
       `Negative prompt (for reference only): ${meta.negative || "(none)"}\n` +
       `Model: ${meta.model || "unknown"}\nImage size: ${meta.width}x${meta.height}`;
+    if (lastMeta) user += `\nLast frame Stable Diffusion prompt: ${lastMeta.cleanPrompt || "(none)"}`;
     if (current) {
       user += `\n\nCurrent video prompt:\n${current}\n\nRewrite the video prompt following this instruction (it may be written in Japanese): ${instruction}`;
     }
-    return this.chat(system, user, this.profile.vision ? imageDataUrl : null, signal);
+    return this.chat(system, user, this.profile.vision ? images : null, signal);
   }
 
   translate(text, to, signal) {
@@ -1572,6 +1898,29 @@ class WorkflowMapper {
     return out;
   }
 
+  static frameNode(wf, imageTarget) {
+    const imageNode = imageTarget ? imageTarget.split("|")[0] : null;
+    for (const id of this.sortedIds(wf)) {
+      const link = wf[id].inputs?.first_frame;
+      if (this.isLink(link) && (!imageNode || link[0] === imageNode)) return id;
+    }
+    return null;
+  }
+
+  static applyMode(wf, frameId, mode, lastImageName) {
+    const inputs = wf[frameId].inputs;
+    if (mode === "L2VA") {
+      inputs.last_frame = inputs.first_frame;
+      delete inputs.first_frame;
+    } else if (mode === "FL2VA") {
+      const numeric = Object.keys(wf).map((k) => Number(k)).filter(Number.isInteger);
+      const newId = String(Math.max(0, ...numeric) + 1);
+      wf[newId] = { class_type: "LoadImage", inputs: { image: lastImageName }, _meta: { title: "最後のフレーム" } };
+      inputs.last_frame = [newId, 0];
+    }
+    return wf;
+  }
+
   static classOf(wf, target) {
     return wf[target.split("|")[0]]?.class_type;
   }
@@ -1627,6 +1976,16 @@ class ComfyClient {
     return {};
   }
 
+  async inputNames(classType) {
+    try {
+      const res = await fetch(`${this.base}/object_info/${encodeURIComponent(classType)}`);
+      const info = (await res.json())[classType].input;
+      return { required: Object.keys(info.required || {}), optional: Object.keys(info.optional || {}) };
+    } catch {
+      return null;
+    }
+  }
+
   async upload(file) {
     const ext = (file.name.match(/\.\w+$/) || [".png"])[0];
     const form = new FormData();
@@ -1662,7 +2021,7 @@ class ComfyClient {
     return out;
   }
 
-  watchProgress(promptId, onProgress) {
+  watchProgress(promptId, onProgress, onStart = () => {}) {
     let socket;
     try {
       socket = new WebSocket(`${this.base.replace(/^http/, "ws")}/ws?clientId=${this.clientId}`);
@@ -1671,6 +2030,7 @@ class ComfyClient {
         try {
           const msg = JSON.parse(ev.data);
           if (msg.type === "progress" && (!msg.data.prompt_id || msg.data.prompt_id === promptId)) onProgress(msg.data.value, msg.data.max);
+          if ((msg.type === "execution_start" || msg.type === "executing") && msg.data?.prompt_id === promptId) onStart();
         } catch {}
       });
       socket.addEventListener("error", () => {});
@@ -1851,18 +2211,18 @@ class MainView {
     this.file = null;
     this.meta = null;
     this.img = null;
+    this.last = null;
     this.focus = { x: 0.5, y: 0.5 };
     this.drag = null;
     this.previewUrl = null;
-    this.videoUrl = null;
-    this.videoBlob = null;
-    this.videoExt = ".mp4";
-    this.lastRun = null;
     this.running = null;
+    this.jobs = [];
+    this.jobSeq = 0;
+    this.selectedJob = null;
     this.initUiState();
     this.bind();
-    this.buildQuickButtons();
     this.buildFrameControls();
+    this.buildPromptOptions();
     this.refresh();
   }
 
@@ -1875,6 +2235,11 @@ class MainView {
     if (!cfg.megapixels.includes(Number(ui.megapixels))) ui.megapixels = cfg.defaultMegapixels;
     if (!cfg.aspects.some(([v]) => v === ui.aspect)) ui.aspect = cfg.defaultAspect;
     if (!cfg.fits.some(([v]) => v === ui.fit)) ui.fit = cfg.defaultFit;
+    ui.runCount = Math.min(Math.max(Number(ui.runCount) || 1, 1), USER_SETTINGS.maxRunCount);
+    ui.promptOptions ??= {};
+    for (const g of USER_SETTINGS.promptOptions.groups) {
+      if (!g.choices.some(([v]) => v === ui.promptOptions[g.key])) ui.promptOptions[g.key] = g.default;
+    }
     $("seed").value = ui.seed ?? "";
     $("negative").value = ui.negative ?? "";
   }
@@ -1891,7 +2256,11 @@ class MainView {
   destroy() {
     this.listeners.abort();
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-    if (this.videoUrl) URL.revokeObjectURL(this.videoUrl);
+    for (const job of this.jobs) {
+      job.controller.abort();
+      if (job.url) URL.revokeObjectURL(job.url);
+    }
+    if (this.last) URL.revokeObjectURL(this.last.url);
   }
 
   // BINDINGS
@@ -1905,7 +2274,16 @@ class MainView {
       drop.classList.remove("over");
       if (e.dataTransfer.files[0]) this.loadImage(e.dataTransfer.files[0]);
     });
-    this.on($("sel-llm"), "change", (e) => { this.store.data.llmActive = e.target.value; this.store.save(); this.statusBar.refresh(); });
+    this.on($("sel-llm"), "change", (e) => { this.store.data.llmActive = e.target.value; this.store.save(); this.statusBar.refresh(); this.loadModels(); });
+    this.on($("sel-model"), "change", (e) => {
+      const llm = this.store.llm;
+      if (!llm || !e.target.value) return;
+      llm.model = e.target.value;
+      this.store.save();
+      this.statusBar.refresh();
+    });
+    this.on($("run-count"), "change", (e) => { this.saveUi({ runCount: Number(e.target.value) }); this.updateRunLabels(); });
+    this.on($("last-clear"), "click", () => this.clearLastImage());
     this.on($("sel-video"), "change", (e) => {
       this.store.data.videoActive = e.target.value;
       delete this.store.ui.seconds;
@@ -1913,6 +2291,7 @@ class MainView {
       this.applyVideoProfile();
       this.updateSkillNote();
       this.updateFrame();
+      this.updatePromptOptions();
       this.statusBar.refresh();
     });
     this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); });
@@ -1923,6 +2302,15 @@ class MainView {
     this.on($("change-image"), "click", () => $("file-input").click());
     this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5 }; this.drawPreview(); });
     this.bindCanvas();
+    const lastDrop = $("last-drop");
+    this.on($("last-input"), "change", (e) => e.target.files[0] && this.loadLastImage(e.target.files[0]));
+    this.on(lastDrop, "dragover", (e) => { e.preventDefault(); e.stopPropagation(); lastDrop.classList.add("over"); });
+    this.on(lastDrop, "dragleave", () => lastDrop.classList.remove("over"));
+    this.on(lastDrop, "drop", (e) => {
+      e.preventDefault();
+      lastDrop.classList.remove("over");
+      if (e.dataTransfer.files[0]) this.loadLastImage(e.dataTransfer.files[0]);
+    });
     this.on($("run"), "click", () => this.runAll());
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
@@ -1930,28 +2318,26 @@ class MainView {
     this.on($("to-en"), "click", () => this.translate("en"));
     this.on($("revise"), "click", () => this.revise($("instruction").value));
     this.on($("instruction"), "keydown", (e) => { if (e.key === "Enter" && !e.isComposing) this.revise($("instruction").value); });
-    this.on($("dl-video"), "click", () => this.videoBlob && downloadBlob(this.videoBlob, `${USER_SETTINGS.fileNamePrefix}${this.lastRun.stamp}${this.videoExt}`));
-    this.on($("dl-prompt"), "click", () => this.downloadPrompt());
+    this.on($("dl-video"), "click", () => {
+      const job = this.selectedJob;
+      if (job?.blob) downloadBlob(job.blob, `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`);
+    });
+    this.on($("dl-prompt"), "click", () => this.selectedJob && this.downloadPrompt(this.selectedJob));
     this.on($("banner-open"), "click", () => this.openSettings());
-  }
-
-  buildQuickButtons() {
-    const box = $("quick");
-    box.replaceChildren(...USER_SETTINGS.quickInstructions.map((q) => {
-      const b = document.createElement("button");
-      b.className = "chip";
-      b.textContent = q.label;
-      this.on(b, "click", () => this.revise(q.text));
-      return b;
-    }));
   }
 
   refresh() {
     const d = this.store.data;
     this.initUiState();
-    fillSelect($("sel-llm"), Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]), d.llmActive);
+    const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]);
+    fillSelect($("sel-llm"), llms, d.llmActive);
+    $("sel-llm-field").hidden = llms.length <= 1;
     const videos = Object.entries(d.videoProfiles).map(([id, p]) => [id, p.name]);
     fillSelect($("sel-video"), videos.length ? videos : [["", "（未設定）"]], d.videoActive);
+    $("sel-video-field").hidden = videos.length <= 1;
+    fillSelect($("run-count"), Array.from({ length: USER_SETTINGS.maxRunCount }, (_, i) => [String(i + 1), `${i + 1}本`]), String(this.store.ui.runCount));
+    this.updateRunLabels();
+    this.loadModels();
     const chips = $("skill-chips");
     d.activeSkills = d.activeSkills.filter((id) => d.skills[id]);
     chips.replaceChildren(...Object.entries(d.skills).filter(([id]) => id !== USER_SETTINGS.defaultSkillId).map(([id, s]) => {
@@ -1972,10 +2358,39 @@ class MainView {
     this.applyVideoProfile();
     this.updateSkillNote();
     this.updateFrame();
+    this.updatePromptOptions();
+  }
+
+  async loadModels() {
+    const m = USER_SETTINGS.messages;
+    const llm = this.store.llm;
+    const token = (this.modelToken = (this.modelToken || 0) + 1);
+    const current = llm?.model || "";
+    fillSelect($("sel-model"), current ? [[current, current]] : [["", m.mainModelNone]], current);
+    $("sel-model-note").textContent = "";
+    if (!llm?.baseUrl) return;
+    try {
+      const models = await new LlmClient(llm).listModels();
+      if (token !== this.modelToken) return;
+      const options = models.map((name) => [name, name]);
+      if (current && !models.includes(current)) options.unshift([current, `${current}${m.modelNotListed}`]);
+      fillSelect($("sel-model"), options.length ? options : [["", m.mainModelNone]], current);
+    } catch {
+      if (token === this.modelToken) $("sel-model-note").textContent = m.mainModelError;
+    }
+  }
+
+  updateRunLabels() {
+    const n = this.store.ui.runCount;
+    $("run").textContent = n > 1 ? `実行（${n}本）` : "実行";
+    $("rerun-video").textContent = n > 1 ? `このプロンプトで動画を作り直す（${n}本）` : "このプロンプトで動画を作り直す";
   }
 
   updateSkillNote() {
     const m = USER_SETTINGS.messages;
+    const hasOwn = Object.keys(this.store.data.skills).some((id) => id !== USER_SETTINGS.defaultSkillId);
+    $("skill-chips-label").hidden = !hasOwn;
+    $("skill-chips").hidden = !hasOwn;
     const def = this.store.data.skills[USER_SETTINGS.defaultSkillId];
     const note = $("skill-default-note");
     note.hidden = !def;
@@ -1991,7 +2406,10 @@ class MainView {
     const v = this.store.video;
     const m = v?.mapping || {};
     const lengthOk = !!(m.frames || m.seconds);
-    const seconds = this.store.ui.seconds ?? v?.seconds ?? USER_SETTINGS.defaultSeconds;
+    const range = this.isH3() ? USER_SETTINGS.h3Seconds : { min: 1, max: 15 };
+    const seconds = Math.min(Math.max(this.store.ui.seconds ?? v?.seconds ?? USER_SETTINGS.defaultSeconds, range.min), range.max);
+    $("seconds").min = range.min;
+    $("seconds").max = range.max;
     $("seconds").value = seconds;
     $("seconds-out").textContent = seconds;
     $("seconds").disabled = !lengthOk && !!v;
@@ -2022,7 +2440,7 @@ class MainView {
       this.showMeta(meta);
       this.setStep("image", "done", meta.format === "none" ? "メタデータなし" : `${meta.width}×${meta.height}`);
       this.setStep("prompt", "idle", "");
-      this.setStep("video", "idle", "");
+      this.renderJobs();
       this.status(meta.format === "none" ? USER_SETTINGS.messages.noMetadata : "画像を読み込みました。「実行」を押してください。");
     } catch (err) {
       this.setStep("image", "error", "");
@@ -2065,8 +2483,7 @@ class MainView {
     }));
   }
 
-  workflowMultiple() {
-    const v = this.store.video;
+  workflowMultiple(v = this.store.video) {
     const target = v?.mapping?.aspect;
     const multiple = target ? v.workflow[target.split("|")[0]]?.inputs?.multiple : null;
     return Number.isInteger(multiple) && multiple > 0 ? multiple : USER_SETTINGS.frame.sizeMultiple;
@@ -2124,6 +2541,7 @@ class MainView {
     $("frame-info").textContent = lines.join("\n");
     $("reset-focus").hidden = !needsCrop;
     this.drawPreview();
+    this.drawLastPreview();
   }
 
   drawPreview() {
@@ -2200,6 +2618,130 @@ class MainView {
     return FrameFitter.render(this.img, size, this.store.ui.fit, this.focus);
   }
 
+  // PROMPT OPTIONS
+  buildPromptOptions() {
+    const box = $("prompt-options");
+    box.replaceChildren(...USER_SETTINGS.promptOptions.groups.flatMap((g) => {
+      const label = document.createElement("div");
+      label.className = "field-label";
+      label.id = `popt-${g.key}`;
+      label.textContent = g.label;
+      const seg = document.createElement("div");
+      seg.className = "seg";
+      seg.setAttribute("role", "group");
+      seg.setAttribute("aria-labelledby", label.id);
+      seg.append(...g.choices.map(([value, text]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.group = g.key;
+        b.dataset.value = value;
+        b.textContent = text;
+        this.on(b, "click", () => {
+          this.saveUi({ promptOptions: { ...this.store.ui.promptOptions, [g.key]: value } });
+          this.updatePromptOptions();
+        });
+        return b;
+      }));
+      return [label, seg];
+    }));
+  }
+
+  isH3() {
+    const video = this.store.video;
+    return !video || WorkflowMapper.isH3(video.workflow);
+  }
+
+  promptOptions() {
+    const chosen = { ...this.store.ui.promptOptions };
+    if (!this.isH3()) {
+      chosen.mode = "I2VA";
+      for (const key of USER_SETTINGS.promptOptions.h3Only) if (key !== "mode") delete chosen[key];
+    }
+    return chosen;
+  }
+
+  instructionLine(seconds = Number($("seconds").value)) {
+    const cfg = USER_SETTINGS.promptOptions;
+    return cfg.instructionLines[this.promptOptions().mode].replace("{S}", seconds.toFixed(2));
+  }
+
+  withInstruction(text) {
+    if (!this.isH3() || !text.trim()) return text;
+    const body = text.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trimStart();
+    return `${this.instructionLine()}\n\n${body}`;
+  }
+
+  settingsText() {
+    const cfg = USER_SETTINGS.promptOptions;
+    const chosen = this.promptOptions();
+    const lines = cfg.groups.filter((g) => chosen[g.key] && (this.isH3() || !cfg.h3Only.includes(g.key)))
+      .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2]);
+    if (this.isH3()) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
+    if (chosen.mode === "FL2VA" && !this.last) lines.push(cfg.lastSameAsFirst);
+    return `${cfg.header}\n${lines.map((l) => `- ${l}`).join("\n")}`;
+  }
+
+  updatePromptOptions() {
+    const cfg = USER_SETTINGS.promptOptions;
+    const h3 = this.isH3();
+    const ui = this.store.ui.promptOptions;
+    document.querySelectorAll("#prompt-options button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(ui[b.dataset.group] === b.dataset.value));
+      b.disabled = !h3 && cfg.h3Only.includes(b.dataset.group);
+    });
+    const mode = this.promptOptions().mode;
+    $("mode-info").textContent = h3 ? cfg.modeInfo[mode] : cfg.notH3;
+    $("last-box").hidden = mode !== "FL2VA";
+  }
+
+  async loadLastImage(file) {
+    try {
+      const meta = await PngMetadataReader.read(file);
+      const url = URL.createObjectURL(file);
+      const img = await new Promise((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("画像として開けません"));
+        el.src = url;
+      });
+      if (this.last) URL.revokeObjectURL(this.last.url);
+      meta.width = img.naturalWidth;
+      meta.height = img.naturalHeight;
+      this.last = { file, meta, img, url };
+      $("last-canvas").hidden = false;
+      $("last-hint").hidden = true;
+      $("last-clear").hidden = false;
+      this.drawLastPreview();
+    } catch (err) {
+      this.status(`画像を読み込めません: ${err.message}`, true);
+    }
+    $("last-input").value = "";
+  }
+
+  clearLastImage() {
+    if (this.last) URL.revokeObjectURL(this.last.url);
+    this.last = null;
+    $("last-canvas").hidden = true;
+    $("last-hint").hidden = false;
+    $("last-clear").hidden = true;
+  }
+
+  lastFrame(size) {
+    if (!this.last) return null;
+    return FrameFitter.render(this.last.img, size || { width: this.last.meta.width, height: this.last.meta.height },
+      this.store.ui.fit, { x: 0.5, y: 0.5 });
+  }
+
+  drawLastPreview() {
+    if (!this.last) return;
+    const canvas = $("last-canvas");
+    const size = this.frameSize();
+    const frame = this.lastFrame(size);
+    canvas.width = frame.width;
+    canvas.height = frame.height;
+    canvas.getContext("2d").drawImage(frame, 0, 0);
+  }
+
   showMeta(meta) {
     const label = { a1111: "A1111 / Forge", comfyui: "ComfyUI", none: "なし" }[meta.format];
     $("meta-text").textContent = [
@@ -2226,8 +2768,9 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels"]) $(id).disabled = busy;
-    document.querySelectorAll("#quick button").forEach((b) => { b.disabled = busy; });
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels", "last-input", "last-clear", "run-count"]) $(id).disabled = busy;
+    if (!busy) this.updatePromptOptions();
+    else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
     if (!busy) this.updateFrame();
     else {
       $("aspect").disabled = true;
@@ -2282,19 +2825,25 @@ class MainView {
     this.status(USER_SETTINGS.messages.generatingPrompt);
     const size = this.frameSize();
     const frame = this.fittedFrame(size);
-    const imageDataUrl = frame ? this.toDataUrl(frame, frame.width, frame.height) : this.toDataUrl(this.img, this.meta.width, this.meta.height);
+    const images = [frame ? this.toDataUrl(frame, frame.width, frame.height) : this.toDataUrl(this.img, this.meta.width, this.meta.height)];
+    const fl2va = this.promptOptions().mode === "FL2VA";
+    if (fl2va && this.last) {
+      const last = this.lastFrame(size);
+      images.push(this.toDataUrl(last, last.width, last.height));
+    }
     const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
     const en = await llm.generatePrompt({
       style: this.store.styleFor(this.store.video),
       skills: this.store.activeSkillObjects(),
-      meta, imageDataUrl, seconds: Number($("seconds").value),
+      meta, images, settingsText: this.settingsText(), lastMeta: fl2va && this.last ? this.last.meta : null,
+      seconds: Number($("seconds").value),
       current, instruction, signal,
     });
-    $("prompt-en").value = en;
+    $("prompt-en").value = this.withInstruction(en);
     $("prompt-ja").value = "";
     if (this.store.data.translate) {
       this.status(USER_SETTINGS.messages.translating);
-      $("prompt-ja").value = await llm.translate(en, "ja", signal);
+      $("prompt-ja").value = await llm.translate($("prompt-en").value, "ja", signal);
     }
     this.setStep("prompt", "done", current ? "修正済み" : "完成");
   }
@@ -2303,9 +2852,8 @@ class MainView {
     this.guard(async (signal) => {
       if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
       this.requireVideo();
-      this.setStep("video", "idle", "");
       await this.makePrompt(signal);
-      await this.makeVideo(signal);
+      this.startJobs();
     });
   }
 
@@ -2313,7 +2861,7 @@ class MainView {
     this.guard(async (signal) => {
       if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
       if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
-      await this.makeVideo(signal);
+      this.startJobs();
     });
   }
 
@@ -2334,31 +2882,157 @@ class MainView {
       this.running.phase = null;
       this.status(USER_SETTINGS.messages.translating);
       const out = await llm.translate(src, to, signal);
-      $(to === "ja" ? "prompt-ja" : "prompt-en").value = out;
+      $(to === "ja" ? "prompt-ja" : "prompt-en").value = to === "en" ? this.withInstruction(out) : out;
       this.status("翻訳しました。");
     });
   }
 
-  // VIDEO
-  async sizeStep(comfy, wf, mapping) {
-    const multiple = this.workflowMultiple();
+  // VIDEO JOBS
+  startJobs() {
+    const v = this.requireVideo();
+    const m = USER_SETTINGS.messages;
+    const ui = this.store.ui;
+    const options = this.promptOptions();
+    const total = ui.runCount;
+    const seedBase = $("seed").value.trim();
+    $("prompt-en").value = this.withInstruction($("prompt-en").value);
+    const shared = {
+      profile: clone(v), prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
+      seconds: Number($("seconds").value), negative: $("negative").value.trim(),
+      aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
+      img: this.img, meta: this.meta, file: this.file, last: options.mode === "FL2VA" && this.last ? { ...this.last } : null, options,
+      skills: this.store.activeSkillObjects().map((s) => s.name), style: this.store.styleFor(v)?.name,
+      llm: this.store.llm?.name, llmModel: this.store.llm?.model,
+    };
+    shared.thumb = this.jobThumb(shared);
+    const batch = [];
+    for (let i = 0; i < total; i++) {
+      batch.push({
+        ...shared, id: ++this.jobSeq, stamp: timestamp(), state: "preparing", note: "", progress: 0, warning: "", warningLong: "",
+        controller: new AbortController(), comfy: null, promptId: null, blob: null, url: null, ext: ".mp4", filename: "",
+        seedInput: seedBase === "" ? "" : String(Number(seedBase) + i), batchIndex: i + 1, batchTotal: total,
+        values: null, size: null, lastImage: null,
+      });
+    }
+    this.jobs.unshift(...batch.reverse());
+    this.renderJobs();
+    this.status(m.jobStarted.replace("{n}", total > 1 ? `${batch[batch.length - 1].id}〜#${batch[0].id}` : batch[0].id));
+    for (const job of batch.reverse()) this.runJob(job);
+  }
+
+  jobThumb(job) {
+    const size = job.megapixels
+      ? FrameFitter.targetSize(job.megapixels, FrameFitter.ratioOf(job.aspect), 1)
+      : { width: job.meta.width, height: job.meta.height };
+    const scale = Math.min(1, USER_SETTINGS.jobThumbMaxSide / Math.max(size.width, size.height));
+    const small = { width: Math.round(size.width * scale), height: Math.round(size.height * scale) };
+    return FrameFitter.render(job.img, small, job.fit, job.focus).toDataURL("image/jpeg", USER_SETTINGS.imageJpegQuality);
+  }
+
+  async runJob(job) {
+    const m = USER_SETTINGS.messages;
+    try {
+      await this.executeJob(job);
+      this.setJob(job, { state: "done", note: "", progress: 1 });
+      this.status(job.warningLong || m.jobDone.replace("{n}", job.id), !!job.warning);
+      if (!this.selectedJob?.url) this.selectJob(job);
+    } catch (err) {
+      const canceled = err.name === "AbortError" || job.state === "canceled";
+      const text = canceled ? "" : describeError(err, "ComfyUI");
+      this.setJob(job, { state: canceled ? "canceled" : "error", note: text });
+      if (!canceled) this.status(m.jobFailed.replace("{n}", job.id).replace("{err}", text), true);
+    } finally {
+      const busySameServer = this.jobs.some((j) => this.isPending(j) && j.profile.comfyUrl === job.profile.comfyUrl);
+      if (job.profile.freeVram && job.comfy && job.state === "done" && !busySameServer) job.comfy.freeMemory();
+    }
+  }
+
+  isPending(job) {
+    return ["preparing", "queued", "running"].includes(job.state);
+  }
+
+  async executeJob(job) {
+    const m = USER_SETTINGS.messages;
+    const v = job.profile;
+    const signal = job.controller.signal;
+    const comfy = new ComfyClient(v.comfyUrl);
+    job.comfy = comfy;
+    const step = await this.sizeStep(comfy, v);
+    const size = job.megapixels ? FrameFitter.targetSize(job.megapixels, FrameFitter.ratioOf(job.aspect), step) : null;
+    job.size = size;
+    const values = await this.computeValues(comfy, job, size);
+    job.values = values;
+    const workflow = WorkflowMapper.apply(v.workflow, v.mapping, values);
+    const mode = job.options.mode;
+    const frameId = mode === "I2VA" ? null : WorkflowMapper.frameNode(workflow, v.mapping.image);
+    if (mode !== "I2VA") {
+      const names = frameId ? await comfy.inputNames(workflow[frameId].class_type) : { required: [], optional: [] };
+      if (names && ![...names.required, ...names.optional].includes("last_frame")) throw new UserError(m.modeUnsupported.replace("{mode}", mode));
+      if (names && mode === "L2VA" && names.required.includes("first_frame")) throw new UserError(m.modeNeedsFirst);
+    }
+    const baseName = (job.file.name || "image").replace(/\.\w+$/, "");
+    const first = size ? FrameFitter.render(job.img, size, job.fit, job.focus) : null;
+    values.image = await comfy.upload(first ? await FrameFitter.toFile(first, baseName) : job.file);
+    const [imageNode, imageKey] = v.mapping.image.split("|");
+    workflow[imageNode].inputs[imageKey] = values.image;
+    let lastName = null;
+    if (mode === "FL2VA" && job.last) {
+      const lastSize = size || { width: job.last.meta.width, height: job.last.meta.height };
+      const lastFrame = FrameFitter.render(job.last.img, lastSize, job.fit, { x: 0.5, y: 0.5 });
+      lastName = await comfy.upload(await FrameFitter.toFile(lastFrame, `${baseName}_last`));
+      job.lastImage = job.last.file.name;
+    } else if (mode === "FL2VA") {
+      lastName = values.image;
+      job.lastImage = `${job.file.name}（最初の画像と同じ）`;
+    }
+    if (frameId) WorkflowMapper.applyMode(workflow, frameId, mode, lastName);
+    if (signal.aborted) throw new DOMException("aborted", "AbortError");
+    job.promptId = await comfy.queue(workflow);
+    this.setJob(job, { state: "queued", note: "" });
+    let steps = "";
+    const stopWatch = comfy.watchProgress(job.promptId, (value, max) => {
+      steps = `ステップ ${value}/${max}`;
+      this.setJob(job, { state: "running", progress: value / max, note: steps });
+    }, () => { if (job.state === "queued") this.setJob(job, { state: "running" }); });
+    try {
+      const info = await comfy.waitFor(job.promptId, signal, (sec) => {
+        if (job.state === "running") this.setJob(job, { note: `${steps ? steps + " / " : ""}${sec}秒経過` });
+      });
+      this.setJob(job, { note: m.downloading });
+      job.blob = await comfy.fetchVideo(info);
+      job.filename = info.filename;
+      job.ext = (info.filename.match(/\.\w+$/) || [".mp4"])[0];
+      job.url = URL.createObjectURL(job.blob);
+      const actual = size ? await this.videoSize(job.url) : null;
+      if (actual && Math.abs(actual.width / actual.height - size.width / size.height) / (size.width / size.height) >= USER_SETTINGS.frame.sameRatioTolerance) {
+        const fill = (t) => t.replace("{vw}", actual.width).replace("{vh}", actual.height).replace("{w}", size.width).replace("{h}", size.height);
+        job.warning = fill(m.sizeMismatchShort);
+        job.warningLong = fill(m.sizeMismatch);
+      }
+    } finally {
+      stopWatch();
+    }
+  }
+
+  async sizeStep(comfy, v) {
+    const multiple = this.workflowMultiple(v);
+    const mapping = v.mapping;
     if (mapping.aspect || !mapping.width) return multiple;
-    const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.width), mapping.width.split("|")[1]);
+    const spec = await comfy.inputSpec(WorkflowMapper.classOf(v.workflow, mapping.width), mapping.width.split("|")[1]);
     return Math.max(multiple, Number(spec.step) || 1);
   }
 
-  async computeValues(comfy, wf, mapping, seconds, size) {
-    const seedInput = $("seed").value.trim();
-    const seed = seedInput === "" ? Math.floor(Math.random() * USER_SETTINGS.seedMax) : Number(seedInput);
-    const negative = $("negative").value.trim();
-    const values = { prompt: $("prompt-en").value.trim(), negative: negative || null, seed, seconds };
+  async computeValues(comfy, job, size) {
+    const { workflow: wf, mapping } = job.profile;
+    const seed = job.seedInput === "" ? Math.floor(Math.random() * USER_SETTINGS.seedMax) : Number(job.seedInput);
+    const values = { prompt: job.prompt, negative: job.negative || null, seed, seconds: job.seconds };
     if (mapping.frames) {
       const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.frames), mapping.frames.split("|")[1]);
-      values.frames = WorkflowMapper.snap(seconds * WorkflowMapper.fps(wf), spec);
+      values.frames = WorkflowMapper.snap(job.seconds * WorkflowMapper.fps(wf), spec);
     }
     if (size && mapping.aspect && mapping.megapixels) {
-      values.aspect = this.store.ui.aspect;
-      values.megapixels = Number(this.store.ui.megapixels);
+      values.aspect = job.aspect;
+      values.megapixels = job.megapixels;
     } else if (size && mapping.width && mapping.height) {
       values.width = size.width;
       values.height = size.height;
@@ -2366,74 +3040,139 @@ class MainView {
     return values;
   }
 
-  async makeVideo(signal) {
-    const v = this.requireVideo();
-    const m = USER_SETTINGS.messages;
-    const comfy = new ComfyClient(v.comfyUrl);
-    this.running.phase = "video";
-    this.running.comfy = comfy;
-    this.setStep("video", "active", "準備中");
-    this.setProgress(0);
-    this.status(m.uploading);
-    const seconds = Number($("seconds").value);
-    const size = this.frameSize(await this.sizeStep(comfy, v.workflow, v.mapping));
-    const values = await this.computeValues(comfy, v.workflow, v.mapping, seconds, size);
-    const frame = this.fittedFrame(size);
-    const baseName = (this.file.name || "image").replace(/\.\w+$/, "");
-    values.image = await comfy.upload(frame ? await FrameFitter.toFile(frame, baseName) : this.file);
-    if (signal.aborted) throw new DOMException("aborted", "AbortError");
-    const promptId = await comfy.queue(WorkflowMapper.apply(v.workflow, v.mapping, values));
-    this.running.promptId = promptId;
-    let steps = "";
-    const stopWatch = comfy.watchProgress(promptId, (value, max) => {
-      steps = `ステップ ${value}/${max}`;
-      this.setProgress(value / max);
+  videoSize(url) {
+    return new Promise((resolve) => {
+      const probe = document.createElement("video");
+      const finish = (size) => {
+        probe.removeAttribute("src");
+        probe.load();
+        resolve(size);
+      };
+      probe.muted = true;
+      probe.preload = "metadata";
+      probe.onerror = () => finish(null);
+      probe.onloadedmetadata = () => finish(probe.videoWidth && probe.videoHeight ? { width: probe.videoWidth, height: probe.videoHeight } : null);
+      probe.src = url;
     });
-    try {
-      const info = await comfy.waitFor(promptId, signal, (sec) => {
-        this.setStep("video", "active", `${sec}秒経過`);
-        this.status(`${steps ? m.rendering + "（" + steps + "）" : m.rendering}`);
-      });
-      this.status(m.downloading);
-      const blob = await comfy.fetchVideo(info);
-      this.showVideo(blob, info.filename);
-      this.lastRun = { stamp: timestamp(), values, profile: v.name, seconds, filename: info.filename,
-        frame: size ? { ...size, aspect: this.store.ui.aspect, fit: this.store.ui.fit } : null };
-      $("dl-prompt").disabled = false;
-      this.setProgress(1);
-      this.setStep("video", "done", "完成");
-      this.status(m.done);
-      if (v.freeVram) comfy.freeMemory();
-    } finally {
-      stopWatch();
-    }
   }
 
-  showVideo(blob, filename) {
-    if (this.videoUrl) URL.revokeObjectURL(this.videoUrl);
-    this.videoBlob = blob;
-    this.videoExt = (filename.match(/\.\w+$/) || [".mp4"])[0];
-    this.videoUrl = URL.createObjectURL(blob);
+  setJob(job, patch) {
+    Object.assign(job, patch);
+    this.renderJobs();
+  }
+
+  async cancelJob(job) {
+    if (!this.isPending(job)) return;
+    this.setJob(job, { state: "canceled", note: "" });
+    job.controller.abort();
+    if (job.comfy && job.promptId) await job.comfy.cancel(job.promptId);
+  }
+
+  removeJob(job) {
+    if (this.isPending(job)) return;
+    if (job.url) URL.revokeObjectURL(job.url);
+    this.jobs = this.jobs.filter((j) => j !== job);
+    if (this.selectedJob === job) this.selectJob(null);
+    else this.renderJobs();
+  }
+
+  selectJob(job) {
+    this.selectedJob = job;
     const video = $("video");
-    video.src = this.videoUrl;
-    video.hidden = false;
-    $("screen-empty").hidden = true;
-    $("dl-video").disabled = false;
+    if (job?.url) {
+      video.src = job.url;
+      video.hidden = false;
+      $("screen-empty").hidden = true;
+      video.play().catch(() => {});
+    } else {
+      video.removeAttribute("src");
+      video.load();
+      video.hidden = true;
+      $("screen-empty").hidden = false;
+    }
+    $("dl-video").disabled = !job?.blob;
+    $("dl-prompt").disabled = !job;
+    $("player-label").textContent = job ? `#${job.id} を表示中` : "";
+    this.renderJobs();
   }
 
-  downloadPrompt() {
-    if (!this.lastRun) return;
-    const d = this.store.data;
-    const data = {
-      prompt_en: $("prompt-en").value, prompt_ja: $("prompt-ja").value,
-      written_values: { ...this.lastRun.values, prompt: undefined },
-      seconds: this.lastRun.seconds, frame: this.lastRun.frame, video_profile: this.lastRun.profile, comfy_filename: this.lastRun.filename,
-      llm_profile: this.store.llm?.name, llm_model: this.store.llm?.model,
-      skills: this.store.activeSkillObjects().map((s) => s.name),
-      prompt_style: this.store.styleFor(this.store.video)?.name,
-      source_image: this.file?.name, source_metadata: this.meta,
+  renderJobs() {
+    const pending = this.jobs.filter((j) => this.isPending(j));
+    const running = this.jobs.find((j) => j.state === "running");
+    $("gallery-empty").hidden = this.jobs.length > 0;
+    $("gallery-count").textContent = this.jobs.length
+      ? `${this.jobs.length}件${pending.length ? `（うち生成待ち・生成中 ${pending.length}件）` : ""}` : "";
+    if (pending.length) {
+      this.setStep("video", "active", running ? `#${running.id} 生成中・残り${pending.length}件` : `${pending.length}件 順番待ち`);
+    } else {
+      this.setStep("video", this.jobs.some((j) => j.state === "done") ? "done" : "idle", this.jobs.length ? `${this.jobs.length}件` : "");
+    }
+    this.setProgress(running ? running.progress : 0);
+    $("gallery").replaceChildren(...this.jobs.map((job) => this.jobCard(job)));
+  }
+
+  jobCard(job) {
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
     };
-    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}${this.lastRun.stamp}.json`);
+    const card = el("article", "job");
+    card.dataset.state = job.state;
+    card.setAttribute("aria-current", String(job === this.selectedJob));
+    const thumb = el("button", "job-thumb");
+    thumb.disabled = job.state !== "done";
+    thumb.setAttribute("aria-label", `#${job.id} を再生`);
+    const img = el("img");
+    img.src = job.thumb;
+    img.alt = "";
+    thumb.append(img, el("span", "job-badge", USER_SETTINGS.jobStates[job.state]), el("span", "play", "▶"));
+    thumb.addEventListener("click", () => this.selectJob(job));
+    const body = el("div", "job-body");
+    const batch = job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : "";
+    body.append(el("div", "job-title", `#${job.id}${batch}　${job.aspect.split(" ")[0]} / ${job.seconds}秒 / ${job.options.mode}`));
+    if (this.isPending(job)) {
+      const bar = el("div", "progress");
+      const fill = el("div");
+      fill.style.width = `${job.progress * 100}%`;
+      bar.append(fill);
+      body.append(bar);
+    }
+    const note = job.warning || job.note || (job.state === "queued" ? "前の動画が終わるのを待っています" : "");
+    if (note) {
+      const line = el("div", `job-status${job.state === "error" || job.warning ? " err" : ""}`, note);
+      line.title = job.warningLong || note;
+      body.append(line);
+    }
+    const actions = el("div", "job-actions");
+    const action = (label, fn, cls = "") => {
+      const b = el("button", cls, label);
+      b.addEventListener("click", fn);
+      actions.append(b);
+    };
+    if (this.isPending(job)) {
+      action("中止", () => this.cancelJob(job), "danger");
+    } else {
+      action("プロンプト", () => this.downloadPrompt(job));
+      action("削除", () => this.removeJob(job));
+    }
+    body.append(actions);
+    card.append(thumb, body);
+    return card;
+  }
+
+  downloadPrompt(job) {
+    const data = {
+      prompt_en: job.prompt, prompt_ja: job.promptJa,
+      written_values: job.values ? { ...job.values, prompt: undefined } : null,
+      seconds: job.seconds, frame: job.size ? { ...job.size, aspect: job.aspect, fit: job.fit } : null,
+      prompt_options: job.options, last_image: job.lastImage, state: job.state,
+      video_profile: job.profile.name, comfy_filename: job.filename,
+      llm_profile: job.llm, llm_model: job.llmModel, skills: job.skills, prompt_style: job.style,
+      source_image: job.file?.name, source_metadata: job.meta,
+    };
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}.json`);
   }
 }
 
@@ -2478,6 +3217,7 @@ class SettingsView {
     this.on($("llm-new"), "click", () => this.loadLlm(null));
     this.on($("llm-detect"), "click", () => this.detectLlm());
     this.on($("llm-fetch"), "click", () => this.fetchModels());
+    this.on($("llm-model"), "change", () => this.updateModelCustom());
     this.on($("llm-vtest"), "click", () => this.testVision());
     this.on($("llm-temp"), "input", (e) => { $("llm-temp-out").textContent = e.target.value; });
     this.on($("llm-save"), "click", () => this.saveLlm());
@@ -2546,8 +3286,8 @@ class SettingsView {
     $("opt-translate").checked = d.translate;
   }
 
-  pickerEntries(collection) {
-    return Object.entries(collection).map(([id, x]) => [id, x.name]);
+  pickerEntries(collection, defaultId = null) {
+    return Object.entries(collection).map(([id, x]) => [id, id === defaultId ? `${x.name}（既定・公式）` : x.name]);
   }
 
   // GUIDE
@@ -2601,7 +3341,9 @@ class SettingsView {
     $("llm-name").value = p.name;
     $("llm-url").value = p.baseUrl;
     $("llm-key").value = p.apiKey;
-    $("llm-model").value = p.model;
+    $("llm-model-custom").value = "";
+    this.setModelList([], p.model);
+    if (p.baseUrl) this.fetchModels(true);
     $("llm-vision").checked = p.vision;
     $("llm-temp").value = p.temperature;
     $("llm-temp-out").textContent = p.temperature;
@@ -2611,13 +3353,28 @@ class SettingsView {
 
   llmFromForm() {
     return { name: $("llm-name").value.trim(), baseUrl: $("llm-url").value.trim(), apiKey: $("llm-key").value,
-      model: $("llm-model").value.trim(), vision: $("llm-vision").checked, temperature: Number($("llm-temp").value),
+      model: this.selectedModel(), vision: $("llm-vision").checked, temperature: Number($("llm-temp").value),
       maxTokens: Number($("llm-maxtok").value) || USER_SETTINGS.defaultMaxTokens };
   }
 
-  setModelList(models) {
-    $("llm-model-list").replaceChildren(...models.map((m) => new Option(m, m)));
-    if (models.length && !models.includes($("llm-model").value)) $("llm-model").value = models[0];
+  selectedModel() {
+    const value = $("llm-model").value;
+    return (value === USER_SETTINGS.customModelValue ? $("llm-model-custom").value : value).trim();
+  }
+
+  setModelList(models, keep = this.selectedModel()) {
+    const m = USER_SETTINGS.messages;
+    const options = models.map((name) => [name, name]);
+    if (keep && !models.includes(keep)) options.unshift([keep, `${keep}${models.length ? m.modelNotListed : m.modelSaved}`]);
+    if (!options.length) options.push(["", m.modelNone]);
+    options.push([USER_SETTINGS.customModelValue, m.modelCustom]);
+    fillSelect($("llm-model"), options, keep || options[0][0]);
+    this.updateModelCustom();
+  }
+
+  updateModelCustom() {
+    const custom = $("llm-model").value === USER_SETTINGS.customModelValue;
+    $("llm-model-custom-field").hidden = !custom;
   }
 
   async detectLlm() {
@@ -2628,7 +3385,7 @@ class SettingsView {
     if (ok.length) {
       $("llm-url").value = ok[0].url;
       if (!$("llm-name").value.trim()) $("llm-name").value = ok[0].name;
-      this.setModelList(ok[0].models);
+      this.setModelList(ok[0].models, ok[0].models.includes(this.selectedModel()) ? this.selectedModel() : ok[0].models[0]);
       setMsg(msg, `${ok[0].name}（${ok[0].url}）が見つかりました。モデル ${ok[0].models.length} 件。モデルを確認して「保存して使う」を押してください。`, "ok");
     } else if (found.length) {
       setMsg(msg, `${found[0].name}（${found[0].url}）は起動していますが、${USER_SETTINGS.messages.probeCors}`, "err");
@@ -2637,14 +3394,16 @@ class SettingsView {
     }
   }
 
-  async fetchModels() {
+  async fetchModels(quiet = false) {
     const msg = $("llm-msg");
+    const form = this.llmFromForm();
     try {
-      const models = await new LlmClient(this.llmFromForm()).listModels();
-      this.setModelList(models);
-      setMsg(msg, `モデル ${models.length} 件を取得しました。入力欄をクリックすると一覧から選べます。`, "ok");
+      const models = await new LlmClient(form).listModels();
+      if (this.llmFromForm().baseUrl !== form.baseUrl) return;
+      this.setModelList(models, form.model || models[0]);
+      if (!quiet) setMsg(msg, USER_SETTINGS.messages.modelsFetched.replace("{n}", models.length), "ok");
     } catch (err) {
-      setMsg(msg, Net.probeMessage(await Net.probe(`${this.llmFromForm().baseUrl.replace(/\/+$/, "")}/models`)), "err");
+      if (!quiet) setMsg(msg, Net.probeMessage(await Net.probe(`${form.baseUrl.replace(/\/+$/, "")}/models`)), "err");
     }
   }
 
@@ -2675,7 +3434,7 @@ class SettingsView {
     const d = this.store.data;
     this.editing.video = id && d.videoProfiles[id] ? id : null;
     fillSelect($("vid-pick"), [...this.pickerEntries(d.videoProfiles), ...(this.editing.video ? [] : [["", "（新しい設定）"]])], this.editing.video || "");
-    fillSelect($("vid-style"), this.pickerEntries(d.styles));
+    fillSelect($("vid-style"), this.pickerEntries(d.styles, "h3"));
     const v = d.videoProfiles[this.editing.video];
     this.pendingWorkflow = v ? { workflow: v.workflow, name: v.workflowName } : null;
     $("vid-name").value = v?.name || "";
@@ -2723,7 +3482,6 @@ class SettingsView {
       if (isH3 && this.store.data.styles.h3) $("vid-style").value = "h3";
       if (!$("vid-name").value.trim()) $("vid-name").value = isH3 ? "MiniMax H3" : file.name.replace(/\.json$/i, "");
       setMsg(msg, WorkflowMapper.summary(mapping) + "\n内容を確認して「保存して使う」を押してください。", mapping.prompt && mapping.image ? "ok" : "err");
-      if (!mapping.prompt || !mapping.image) $("map-box").open = true;
     } catch (err) {
       setMsg(msg, describeError(err, "ワークフロー"), "err");
     }
@@ -2758,7 +3516,7 @@ class SettingsView {
     if (!name) { setMsg(msg, USER_SETTINGS.messages.nameRequired, "err"); return; }
     if (!this.pendingWorkflow) { setMsg(msg, "ワークフロー（API形式のJSON）を読み込んでください。", "err"); return; }
     const mapping = this.mappingFromForm();
-    if (!mapping.prompt || !mapping.image) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); $("map-box").open = true; return; }
+    if (!mapping.prompt || !mapping.image) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); $("map-box").scrollIntoView({ block: "center" }); return; }
     const id = this.editing.video || uid();
     this.store.data.videoProfiles[id] = {
       name, comfyUrl: $("vid-url").value.trim() || USER_SETTINGS.defaultComfyUrl,
@@ -2777,12 +3535,13 @@ class SettingsView {
   loadSkill(id) {
     const d = this.store.data;
     this.editing.skill = id && d.skills[id] ? id : null;
-    fillSelect($("skill-pick"), [...this.pickerEntries(d.skills), ...(this.editing.skill ? [] : [["", "（新しいスキル）"]])], this.editing.skill || "");
+    fillSelect($("skill-pick"), [...this.pickerEntries(d.skills, USER_SETTINGS.defaultSkillId), ...(this.editing.skill ? [] : [["", "（新しいスキル）"]])], this.editing.skill || "");
     const s = d.skills[this.editing.skill] || { name: "", description: "", body: "" };
     $("skill-name").value = s.name;
     $("skill-desc").value = s.description;
     $("skill-body").value = s.body;
     $("skill-restore").hidden = !USER_SETTINGS.defaultSkills[this.editing.skill];
+    $("skill-del").hidden = this.editing.skill === USER_SETTINGS.defaultSkillId;
     setMsg($("skill-msg"), "");
   }
 
@@ -2825,11 +3584,12 @@ class SettingsView {
   loadStyle(id) {
     const d = this.store.data;
     this.editing.style = id && d.styles[id] ? id : null;
-    fillSelect($("style-pick"), [...this.pickerEntries(d.styles), ...(this.editing.style ? [] : [["", "（新しい形式）"]])], this.editing.style || "");
+    fillSelect($("style-pick"), [...this.pickerEntries(d.styles, "h3"), ...(this.editing.style ? [] : [["", "（新しい形式）"]])], this.editing.style || "");
     const s = d.styles[this.editing.style] || { name: "", text: "" };
     $("style-name").value = s.name;
     $("style-text").value = s.text;
     $("style-restore").hidden = !USER_SETTINGS.defaultStyles[this.editing.style];
+    $("style-del").hidden = this.editing.style === "h3";
     setMsg($("style-msg"), "");
   }
 
@@ -2884,6 +3644,8 @@ class App {
     const signal = this.listeners.signal;
     $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
     $("open-flow").addEventListener("click", () => this.settings.open("flow"), { signal });
+    $("share-app-link").href = USER_SETTINGS.shareAppUrl;
+    $("official-skill-link").href = USER_SETTINGS.officialSkillUrl;
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
     this.statusBar.refresh();
