@@ -206,7 +206,18 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .prop-top .prop-label { padding-top: 3px; }
 .prop-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .prop-label output { color: var(--ink); font-weight: 700; }
-#seconds-field { grid-template-columns: 76px minmax(0, 1fr); }
+.wfp-head { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; }
+.wfp-head button { margin-left: auto; min-height: 22px; padding: 0 8px; font-size: 11px; }
+.wfp-group { margin-top: 6px; }
+.wfp-title { font-size: 11px; font-weight: 700; color: var(--muted); margin: 0 0 3px; }
+.wfp-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 3px; }
+.wfp-row .prop-label { white-space: normal; line-height: 1.25; }
+.wfp-row.changed .prop-label { color: var(--accent-text); font-weight: 700; }
+.wfp-row.changed .prop-label::after { content: " ●"; }
+.wfp-row input[type="checkbox"] { justify-self: start; margin: 0; }
+.wfp-row select, .wfp-row input { min-height: 24px; padding: 1px 6px; font-size: 12px; }
+.wfp-lora { border-left: 2px solid var(--line-strong); padding-left: 6px; margin-bottom: 4px; }
+#seconds-field, #crop-zoom-field { grid-template-columns: 76px minmax(0, 1fr); }
 .side-foot { flex: none; padding: 8px 10px; background: var(--head); border-top: 1px solid var(--line); }
 
 /* 右: 作業エリア */
@@ -476,7 +487,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           </div>
           <div class="row" id="frame-actions" hidden>
             <button id="change-image">別の画像</button>
-            <button id="reset-focus">切り抜きを中央に</button>
+            <button id="reset-focus">切り抜きをリセット</button>
           </div>
           <details id="meta-box" hidden>
             <summary>画像の情報（メタデータ）</summary>
@@ -491,6 +502,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="prop"><span class="prop-label">縦横比</span><select id="aspect" aria-label="縦横比"></select></div>
           <div class="prop"><span class="prop-label">大きさ</span><select id="megapixels" aria-label="大きさ（メガピクセル）"></select></div>
           <div class="prop"><span class="prop-label" id="fit-label">合わせ方</span><div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div></div>
+          <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き <output id="crop-zoom-out">100</output>%</span>
+            <input type="range" id="crop-zoom" min="25" max="100" step="1" value="100" aria-label="切り抜きの大きさ（%）">
+          </label>
           <p class="frame-info" id="frame-info" aria-live="polite"></p>
         </div>
       </section>
@@ -529,6 +543,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <summary>詳しい設定</summary>
             <div class="prop"><span class="prop-label">シード</span><input type="number" id="seed" min="0" placeholder="空欄 = 毎回ランダム" aria-label="シード"></div>
             <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローのまま）<textarea id="negative" rows="2"></textarea></label>
+            <div class="wfp-head"><span>ワークフローの設定</span><button id="wfp-reset" hidden>ワークフローの値に戻す</button></div>
+            <p class="note" id="wfp-note"></p>
+            <div id="wf-params"></div>
           </details>
         </div>
       </section>
@@ -861,6 +878,345 @@ const USER_SETTINGS = {
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   storagePrefixes: ["sd2video."],
+  // 既定（公式テンプレート）のほかに、最初から選べるワークフロー
+  extraVideoProfiles: [
+    {
+      id: "h3lora", name: "MiniMax H3 + LoRA（要 rgthree）", workflowName: "MiniMax H3 + LoRA（作者カスタム）",
+      workflow: {
+        "92": {
+          "inputs": {
+            "filename_prefix": "video/MiniMax_H3",
+            "format": "auto",
+            "format.codec": "auto",
+            "codec": "auto",
+            "video": [
+              "105:91",
+              0
+            ]
+          },
+          "class_type": "SaveVideo",
+          "_meta": {
+            "title": "ビデオを保存"
+          }
+        },
+        "114": {
+          "inputs": {
+            "image": ""
+          },
+          "class_type": "LoadImage",
+          "_meta": {
+            "title": "画像を読み込む"
+          }
+        },
+        "115": {
+          "inputs": {
+            "aspect_ratio": "16:9 (Widescreen)",
+            "megapixels": 0.4,
+            "multiple": 32
+          },
+          "class_type": "ResolutionSelector",
+          "_meta": {
+            "title": "解像度セレクター"
+          }
+        },
+        "119": {
+          "inputs": {
+            "upscale_method": "nearest-exact",
+            "megapixels": 1,
+            "resolution_steps": 32
+          },
+          "class_type": "ImageScaleToTotalPixels",
+          "_meta": {
+            "title": "画像を総ピクセルにスケール"
+          }
+        },
+        "120": {
+          "inputs": {
+            "image": [
+              "119",
+              0
+            ]
+          },
+          "class_type": "GetImageSize",
+          "_meta": {
+            "title": "画像サイズ取得"
+          }
+        },
+        "105:11": {
+          "inputs": {
+            "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+          },
+          "class_type": "VAELoader",
+          "_meta": {
+            "title": "VAEを読み込む"
+          }
+        },
+        "105:24": {
+          "inputs": {
+            "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+          },
+          "class_type": "VAELoader",
+          "_meta": {
+            "title": "VAEを読み込む"
+          }
+        },
+        "105:23": {
+          "inputs": {
+            "samples": [
+              "105:14",
+              0
+            ],
+            "vae": [
+              "105:24",
+              0
+            ]
+          },
+          "class_type": "VAEDecodeAudio",
+          "_meta": {
+            "title": "VAEデコード音声"
+          }
+        },
+        "105:10": {
+          "inputs": {
+            "samples": [
+              "105:14",
+              0
+            ],
+            "vae": [
+              "105:11",
+              0
+            ]
+          },
+          "class_type": "VAEDecode",
+          "_meta": {
+            "title": "VAEデコード"
+          }
+        },
+        "105:14": {
+          "inputs": {
+            "noise": [
+              "105:15",
+              0
+            ],
+            "guider": [
+              "105:16",
+              0
+            ],
+            "sampler": [
+              "105:17",
+              0
+            ],
+            "sigmas": [
+              "105:9",
+              0
+            ],
+            "latent_image": [
+              "105:104",
+              1
+            ]
+          },
+          "class_type": "SamplerCustomAdvanced",
+          "_meta": {
+            "title": "カスタムサンプラー（高度）"
+          }
+        },
+        "105:15": {
+          "inputs": {
+            "noise_seed": 0
+          },
+          "class_type": "RandomNoise",
+          "_meta": {
+            "title": "ランダムノイズ"
+          }
+        },
+        "105:104": {
+          "inputs": {
+            "prompt": "",
+            "width": [
+              "115",
+              0
+            ],
+            "height": [
+              "115",
+              1
+            ],
+            "length": [
+              "105:107",
+              1
+            ],
+            "clip": [
+              "105:125",
+              1
+            ],
+            "vae": [
+              "105:11",
+              0
+            ],
+            "first_frame": [
+              "114",
+              0
+            ]
+          },
+          "class_type": "MiniMaxH3ImageToVideo",
+          "_meta": {
+            "title": "MiniMax H3 画像から動画へ"
+          }
+        },
+        "105:107": {
+          "inputs": {
+            "expression": "max(5, round(a * 24)) + (5 - (max(5, round(a * 24)) % 17)) % 17",
+            "values.a": [
+              "105:111",
+              0
+            ]
+          },
+          "class_type": "ComfyMathExpression",
+          "_meta": {
+            "title": "数式"
+          }
+        },
+        "105:111": {
+          "inputs": {
+            "value": 5
+          },
+          "class_type": "PrimitiveFloat",
+          "_meta": {
+            "title": "Float (duration)"
+          }
+        },
+        "105:6": {
+          "inputs": {
+            "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+            "weight_dtype": "default"
+          },
+          "class_type": "UNETLoader",
+          "_meta": {
+            "title": "拡散モデルを読み込む"
+          }
+        },
+        "105:16": {
+          "inputs": {
+            "model": [
+              "105:125",
+              0
+            ],
+            "conditioning": [
+              "105:104",
+              0
+            ]
+          },
+          "class_type": "BasicGuider",
+          "_meta": {
+            "title": "基本ガイダー"
+          }
+        },
+        "105:13": {
+          "inputs": {
+            "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+            "type": "minimax",
+            "device": "default"
+          },
+          "class_type": "CLIPLoader",
+          "_meta": {
+            "title": "CLIPを読み込む"
+          }
+        },
+        "105:91": {
+          "inputs": {
+            "fps": 24,
+            "bit_depth": 8,
+            "color_space": "sRGB",
+            "codec": "none",
+            "images": [
+              "105:10",
+              0
+            ],
+            "audio": [
+              "105:23",
+              0
+            ]
+          },
+          "class_type": "CreateVideo",
+          "_meta": {
+            "title": "動画を作成"
+          }
+        },
+        "105:9": {
+          "inputs": {
+            "scheduler": "simple",
+            "steps": 8,
+            "denoise": 1,
+            "model": [
+              "105:125",
+              0
+            ]
+          },
+          "class_type": "BasicScheduler",
+          "_meta": {
+            "title": "基本スケジューラー"
+          }
+        },
+        "105:17": {
+          "inputs": {
+            "sampler_name": "euler"
+          },
+          "class_type": "KSamplerSelect",
+          "_meta": {
+            "title": "Kサンプラー選択"
+          }
+        },
+        "105:125": {
+          "inputs": {
+            "PowerLoraLoaderHeaderWidget": {
+              "type": "PowerLoraLoaderHeaderWidget"
+            },
+            "lora_1": {
+              "on": true,
+              "lora": "minimax_h3_turbo_v4_step600_ema_pruned_comfyui.safetensors",
+              "strength": 1
+            },
+            "lora_2": {
+              "on": true,
+              "lora": "MysticXXX_MMH3-V4.safetensors",
+              "strength": 0.8
+            },
+            "lora_3": {
+              "on": false,
+              "lora": "HMNSFW-AIO-V2.5.safetensors",
+              "strength": 0.8
+            },
+            "➕ Add Lora": "",
+            "model": [
+              "105:6",
+              0
+            ],
+            "clip": [
+              "105:13",
+              0
+            ]
+          },
+          "class_type": "Power Lora Loader (rgthree)",
+          "_meta": {
+            "title": "Power Lora Loader (rgthree)"
+          }
+        }
+      },
+    },
+  ],
+  workflowParams: {
+    labels: {
+      steps: "ステップ数", denoise: "デノイズ", sampler_name: "サンプラー", scheduler: "スケジューラー", cfg: "CFG",
+      unet_name: "拡散モデル", ckpt_name: "モデル", weight_dtype: "重みの型", clip_name: "テキストエンコーダー", vae_name: "VAE",
+      lora_name: "LoRA", strength_model: "強さ", strength_clip: "強さ（CLIP）", multiple: "解像度の刻み（倍数）",
+      format: "フォーマット", "format.codec": "フォーマットのコーデック", codec: "コーデック", fps: "FPS",
+      bit_depth: "ビット深度", color_space: "色空間", megapixels: "メガピクセル", resolution_steps: "解像度ステップ",
+    },
+    genericTitles: /^(整数|浮動小数点|真偽値|文字列|Int|Float|Boolean|String)$/i,
+    skipKeys: ["expression", "filename_prefix", "type", "device", "PowerLoraLoaderHeaderWidget", "➕ Add Lora"],
+    skipClasses: ["LoadImage"],
+    order: [/Lora/i, /Primitive|Switch/i, /Sampler|Scheduler|Guider/i, /Resolution/i, /UNET|Checkpoint|CLIP|VAE/i, /CreateVideo/i, /Save/i],
+    loraListClass: "LoraLoaderModelOnly",
+  },
   editorLoaders: { llm: "loadLlm", video: "loadVideo", skill: "loadSkill", style: "loadStyle" },
   editorCollections: { llm: "llmProfiles", video: "videoProfiles", skill: "skills", style: "styles" },
   editorPrefixes: { llm: "llm", video: "vid", skill: "skill", style: "style" },
@@ -869,7 +1225,7 @@ const USER_SETTINGS = {
     clip_name: "models/text_encoders", clip_name1: "models/text_encoders", clip_name2: "models/text_encoders", lora_name: "models/loras",
   },
   settingsVersion: 1,
-  defaultsRevision: 6,
+  defaultsRevision: 7,
   legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
   japanesePattern: /[\u3040-\u30ff\u4e00-\u9fff]/,
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
@@ -903,6 +1259,8 @@ const USER_SETTINGS = {
     cropStroke: "#f2b04d",
     cropStrokeWidth: 2,
     keyStep: 0.02,
+    maxZoom: 4,
+    zoomStep: 1.1,
     sameRatioTolerance: 0.01,
   },
   knownLlmServers: [
@@ -1483,8 +1841,8 @@ Tips for better results:
     skillDefaultNotH3: "このワークフローは MiniMax H3 ではないため、既定のスキルは使いません。",
     frameSize: "{w}×{h} で生成します",
     frameSource: "（元の画像 {sw}×{sh}、{aspect} の型で処理）",
-    frameSame: "縦横比がほぼ同じなので、そのまま縮小・拡大して使います。",
-    frameCropHint: "画像をドラッグ（または矢印キー）で、切り抜く位置を調整できます。",
+    frameSame: "縦横比がほぼ同じなので、そのまま縮小・拡大して使います。「切り抜き」を小さくすると一部を拡大して使えます。",
+    frameCropHint: "画像をドラッグ（または矢印キー）で位置を、マウスホイール（または＋／−キー）か「切り抜き」で大きさを調整できます。",
     framePadHint: "画像全体を残し、足りない部分に余白を足します。",
     frameNoImage: "画像を入れると、この型に合わせて切り抜き（または余白を追加）します。",
     frameWorkflow: "動画の大きさはワークフローの設定のまま作ります（画像は加工せずに送ります）。",
@@ -1497,6 +1855,9 @@ Tips for better results:
     helpLeadFound: "ComfyUI 側で、次のデータが足りていません。",
     helpMissingNode: "ノード: ",
     helpMissingModel: "モデル: ",
+    wfpNote: "「{name}」のワークフローの値です。変えた項目には ● が付き、次の実行から使われます（ワークフローごとに保存されます）。",
+    wfpNone: "このワークフローには、ここで変えられる値がありません。",
+    wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
@@ -1617,7 +1978,7 @@ class SettingsStore {
           vision: true, temperature: USER_SETTINGS.defaultTemperature, maxTokens: USER_SETTINGS.defaultMaxTokens },
       },
       llmActive: llmId,
-      videoProfiles: { [USER_SETTINGS.defaultVideoId]: SettingsStore.defaultVideoProfile() },
+      videoProfiles: SettingsStore.builtinVideoProfiles(),
       videoActive: USER_SETTINGS.defaultVideoId,
       styles,
       skills,
@@ -1629,13 +1990,19 @@ class SettingsStore {
     };
   }
 
-  static defaultVideoProfile() {
-    const workflow = clone(USER_SETTINGS.defaultWorkflow);
+  static defaultVideoProfile(spec = null) {
+    const workflow = clone(spec ? spec.workflow : USER_SETTINGS.defaultWorkflow);
     return {
-      name: USER_SETTINGS.defaultVideoName, comfyUrl: USER_SETTINGS.defaultComfyUrl,
-      workflow, workflowName: USER_SETTINGS.defaultWorkflowName, mapping: WorkflowMapper.detect(workflow),
+      name: spec ? spec.name : USER_SETTINGS.defaultVideoName, comfyUrl: USER_SETTINGS.defaultComfyUrl,
+      workflow, workflowName: spec ? spec.workflowName : USER_SETTINGS.defaultWorkflowName, mapping: WorkflowMapper.detect(workflow),
       styleId: "h3", seconds: USER_SETTINGS.defaultSeconds, freeVram: true,
     };
+  }
+
+  static builtinVideoProfiles() {
+    const out = { [USER_SETTINGS.defaultVideoId]: SettingsStore.defaultVideoProfile() };
+    for (const spec of USER_SETTINGS.extraVideoProfiles) out[spec.id] = SettingsStore.defaultVideoProfile(spec);
+    return out;
   }
 
   addMissingDefaults(data) {
@@ -1650,6 +2017,15 @@ class SettingsStore {
       builtin.workflow = fresh.workflow;
       builtin.mapping = fresh.mapping;
       builtin.workflowName = fresh.workflowName;
+    }
+    for (const spec of USER_SETTINGS.extraVideoProfiles) {
+      const current = data.videoProfiles[spec.id];
+      if (!current) data.videoProfiles[spec.id] = SettingsStore.defaultVideoProfile(spec);
+      else if (current.workflowName === spec.workflowName) {
+        const fresh = SettingsStore.defaultVideoProfile(spec);
+        current.workflow = fresh.workflow;
+        current.mapping = fresh.mapping;
+      }
     }
     for (const profile of Object.values(data.videoProfiles)) {
       const detected = WorkflowMapper.detect(profile.workflow);
@@ -2203,6 +2579,16 @@ class ComfyClient {
     return {};
   }
 
+  async nodeInfo(classType) {
+    ComfyClient.infoCache ??= new Map();
+    const key = `${this.base}|${classType}`;
+    if (!ComfyClient.infoCache.has(key)) {
+      ComfyClient.infoCache.set(key, fetch(`${this.base}/object_info/${encodeURIComponent(classType)}`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) })
+        .then((r) => r.json()).then((j) => j[classType]?.input || null).catch(() => { ComfyClient.infoCache.delete(key); return null; }));
+    }
+    return ComfyClient.infoCache.get(key);
+  }
+
   async inputNames(classType) {
     try {
       const res = await fetch(`${this.base}/object_info/${encodeURIComponent(classType)}`);
@@ -2470,6 +2856,98 @@ class Mp4Metadata {
   }
 }
 
+// ===== WORKFLOW PARAMS =====
+// ワークフローの中で「詳しい設定」から変えられる値を集め、上書きを当てる
+class WorkflowParams {
+  static isLink(v) {
+    return Array.isArray(v) && v.length === 2 && typeof v[0] === "string" && typeof v[1] === "number";
+  }
+
+  // 出力ノードからつながっているノードだけを対象にする（スイッチは両方の分岐をたどる）
+  static reachable(wf) {
+    const seen = new Set();
+    const visit = (id) => {
+      if (!wf[id] || seen.has(id)) return;
+      seen.add(id);
+      for (const v of Object.values(wf[id].inputs || {})) if (this.isLink(v)) visit(v[0]);
+    };
+    for (const [id, node] of Object.entries(wf)) if (/Save|Preview/i.test(node.class_type)) visit(id);
+    return seen;
+  }
+
+  static consumerLabel(wf, id) {
+    for (const node of Object.values(wf)) {
+      for (const [k, v] of Object.entries(node.inputs || {})) {
+        if (!this.isLink(v) || v[0] !== id) continue;
+        const title = node._meta?.title || node.class_type;
+        const name = (title.match(/\(([^)]+)\)/) || [null, title])[1];
+        const side = { on_true: "（スイッチON時）", on_false: "（スイッチOFF時）" }[k] || `（${k}）`;
+        return `${name}${side}`;
+      }
+    }
+    return null;
+  }
+
+  static label(wf, id, key) {
+    const cfg = USER_SETTINGS.workflowParams;
+    const node = wf[id];
+    const title = node._meta?.title || node.class_type;
+    if (key === "value") {
+      return cfg.genericTitles.test(title) ? this.consumerLabel(wf, id) || title : title.replace(/^.*\(([^)]+)\)$/, "$1");
+    }
+    return cfg.labels[key] || key;
+  }
+
+  // [{ id, title, params: [{ path, label, value, kind }] }]
+  static list(wf, mapping) {
+    const cfg = USER_SETTINGS.workflowParams;
+    const mapped = new Set(Object.values(mapping || {}).filter(Boolean));
+    const reach = this.reachable(wf);
+    const ids = Object.keys(wf).filter((id) => reach.has(id) && !cfg.skipClasses.includes(wf[id].class_type));
+    const groups = [];
+    for (const id of ids) {
+      const node = wf[id];
+      const params = [];
+      for (const [key, value] of Object.entries(node.inputs || {})) {
+        if (this.isLink(value) || mapped.has(`${id}|${key}`) || cfg.skipKeys.includes(key)) continue;
+        if (value && typeof value === "object" && !Array.isArray(value) && "lora" in value) {
+          const n = key.replace(/\D+/g, "") || key;
+          params.push({ path: `${id}|${key}|on`, label: `LoRA ${n}`, value: value.on !== false, kind: "lora-on", group: key });
+          params.push({ path: `${id}|${key}|lora`, label: "ファイル", value: value.lora, kind: "lora-file", group: key });
+          params.push({ path: `${id}|${key}|strength`, label: "強さ", value: value.strength ?? 1, kind: "number", group: key });
+          continue;
+        }
+        if (["string", "number", "boolean"].includes(typeof value)) {
+          params.push({ path: `${id}|${key}`, key, label: this.label(wf, id, key), value, kind: typeof value });
+        }
+      }
+      if (params.length) groups.push({ id, title: node._meta?.title || node.class_type, classType: node.class_type, params });
+    }
+    return groups;
+  }
+
+  static get(wf, path) {
+    const [id, key, sub] = path.split("|");
+    const v = wf[id]?.inputs?.[key];
+    return sub ? v?.[sub] : v;
+  }
+
+  static apply(wf, overrides) {
+    const out = clone(wf);
+    for (const [path, value] of Object.entries(overrides || {})) {
+      const [id, key, sub] = path.split("|");
+      const inputs = out[id]?.inputs;
+      if (!inputs || !(key in inputs)) continue;
+      if (sub) {
+        if (inputs[key] && typeof inputs[key] === "object") inputs[key][sub] = value;
+      } else if (!this.isLink(inputs[key])) {
+        inputs[key] = value;
+      }
+    }
+    return out;
+  }
+}
+
 // ===== FRAME FITTER =====
 class FrameFitter {
   static ratioOf(aspect) {
@@ -2483,13 +2961,16 @@ class FrameFitter {
     return { width: snap(Math.sqrt(pixels * ratio)), height: snap(Math.sqrt(pixels / ratio)) };
   }
 
+  // zoom = 1 は画像に入る一番大きな切り抜き。大きくするほど切り抜きが小さく（拡大に）なる。縦横比は変わらない
   static cropRect(srcW, srcH, dstW, dstH, focus) {
-    const scale = Math.max(dstW / srcW, dstH / srcH);
+    const cfg = USER_SETTINGS.frame;
+    const zoom = Math.min(Math.max(focus.zoom ?? 1, 1), cfg.maxZoom);
+    const scale = Math.max(dstW / srcW, dstH / srcH) * zoom;
     const w = dstW / scale, h = dstH / scale;
     const clamp = (v, max) => Math.min(Math.max(v, 0), max);
     const x = clamp(focus.x * srcW - w / 2, srcW - w);
     const y = clamp(focus.y * srcH - h / 2, srcH - h);
-    return { x, y, w, h, focus: { x: (x + w / 2) / srcW, y: (y + h / 2) / srcH } };
+    return { x, y, w, h, focus: { x: (x + w / 2) / srcW, y: (y + h / 2) / srcH, zoom } };
   }
 
   static containRect(srcW, srcH, dstW, dstH) {
@@ -2588,7 +3069,7 @@ class MainView {
     this.meta = null;
     this.img = null;
     this.last = null;
-    this.focus = { x: 0.5, y: 0.5 };
+    this.focus = { x: 0.5, y: 0.5, zoom: 1 };
     this.drag = null;
     this.previewUrl = null;
     this.running = null;
@@ -2681,7 +3162,14 @@ class MainView {
     this.on($("aspect"), "change", (e) => { this.saveUi({ aspect: e.target.value }); this.updateFrame(); });
     this.on($("megapixels"), "change", (e) => { this.saveUi({ megapixels: Number(e.target.value) }); this.updateFrame(); });
     this.on($("change-image"), "click", () => $("file-input").click());
-    this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5 }; this.drawPreview(); });
+    this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5, zoom: 1 }; this.updateFrame(); });
+    this.on($("crop-zoom"), "input", (e) => this.setZoom(100 / Number(e.target.value)));
+    this.on($("wfp-reset"), "click", () => {
+      delete (this.store.ui.overrides ??= {})[this.store.data.videoActive];
+      this.store.save();
+      this.renderWorkflowParams();
+      this.updateFrame();
+    });
     this.bindCanvas();
     const lastDrop = $("last-drop");
     this.on($("last-input"), "change", (e) => e.target.files[0] && this.loadLastImage(e.target.files[0]));
@@ -2822,8 +3310,119 @@ class MainView {
     note.textContent = text.replace("{name}", def?.name || "");
   }
 
+  // ===== WORKFLOW PARAMS（詳しい設定のワークフローの値） =====
+  overridesFor(id = this.store.data.videoActive) {
+    this.store.ui.overrides ??= {};
+    return this.store.ui.overrides[id] || {};
+  }
+
+  effectiveWorkflow(v = this.store.video) {
+    return v ? WorkflowParams.apply(v.workflow, this.overridesFor()) : null;
+  }
+
+  setOverride(param, value) {
+    const id = this.store.data.videoActive;
+    const all = (this.store.ui.overrides ??= {});
+    const mine = { ...(all[id] || {}) };
+    if (value === param.value) delete mine[param.path];
+    else mine[param.path] = value;
+    if (Object.keys(mine).length) all[id] = mine;
+    else delete all[id];
+    this.store.save();
+    $("wfp-reset").hidden = !Object.keys(mine).length;
+    if (param.path.endsWith("|multiple")) this.updateFrame();
+  }
+
+  async renderWorkflowParams() {
+    const v = this.store.video;
+    const box = $("wf-params");
+    const token = (this.wfpToken = (this.wfpToken || 0) + 1);
+    const cfg = USER_SETTINGS.workflowParams;
+    if (!v) { box.replaceChildren(); $("wfp-note").textContent = ""; $("wfp-reset").hidden = true; return; }
+    const groups = WorkflowParams.list(v.workflow, v.mapping);
+    const rank = (g) => { const i = cfg.order.findIndex((re) => re.test(g.classType)); return i < 0 ? cfg.order.length : i; };
+    groups.sort((a, b) => rank(a) - rank(b));
+    const comfy = new ComfyClient(v.comfyUrl);
+    const classes = [...new Set([...groups.map((g) => g.classType), cfg.loraListClass])];
+    const infos = Object.fromEntries(await Promise.all(classes.map(async (c) => [c, await comfy.nodeInfo(c)])));
+    if (token !== this.wfpToken) return;
+    const loraSpec = infos[cfg.loraListClass]?.required?.lora_name;
+    const loraList = Array.isArray(loraSpec?.[0]) ? loraSpec[0] : null;
+    const reachable = classes.some((c) => infos[c]);
+    const overrides = this.overridesFor();
+    const specOf = (g, key) => { const info = infos[g.classType]; return info?.required?.[key] || info?.optional?.[key] || null; };
+    const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+    const control = (param, spec, options) => {
+      const current = param.path in overrides ? overrides[param.path] : param.value;
+      let input;
+      if (param.kind === "boolean" || param.kind === "lora-on") {
+        input = el("input");
+        input.type = "checkbox";
+        input.checked = !!current;
+        input.addEventListener("change", () => { this.setOverride(param, input.checked); row.classList.toggle("changed", input.checked !== param.value); });
+      } else if (options) {
+        input = el("select");
+        const list = options.map(String).includes(String(current)) ? options : [current, ...options];
+        fillSelect(input, list.map((o) => [String(o), String(o)]), String(current));
+        input.addEventListener("change", () => {
+          const val = typeof param.value === "number" ? Number(input.value) : input.value;
+          this.setOverride(param, val);
+          row.classList.toggle("changed", val !== param.value);
+        });
+      } else if (param.kind === "number") {
+        input = el("input");
+        input.type = "number";
+        const opts = spec?.[1] || {};
+        const isInt = spec?.[0] === "INT" || (!spec && Number.isInteger(param.value) && !param.path.endsWith("strength"));
+        input.step = opts.step ?? (isInt ? 1 : 0.01);
+        if (opts.min !== undefined) input.min = opts.min;
+        if (opts.max !== undefined && opts.max < 1e9) input.max = opts.max;
+        input.value = current;
+        input.addEventListener("change", () => {
+          if (input.value === "") input.value = param.value;
+          const val = Number(input.value);
+          this.setOverride(param, val);
+          row.classList.toggle("changed", val !== param.value);
+        });
+      } else {
+        input = el("input");
+        input.type = "text";
+        input.value = current;
+        input.addEventListener("change", () => { this.setOverride(param, input.value); row.classList.toggle("changed", input.value !== param.value); });
+      }
+      input.setAttribute("aria-label", param.label);
+      const row = el("label", "wfp-row");
+      row.classList.toggle("changed", param.path in overrides && overrides[param.path] !== param.value);
+      row.append(el("span", "prop-label", param.label), input);
+      return row;
+    };
+    const nodes = groups.map((g) => {
+      const wrap = el("div", "wfp-group");
+      const simple = g.params.length === 1 && g.params[0].key === "value";
+      if (!simple) wrap.append(el("div", "wfp-title", g.title));
+      let loraBox = null;
+      for (const param of g.params) {
+        const spec = param.key ? specOf(g, param.key) : null;
+        const options = param.kind === "lora-file" ? loraList : Array.isArray(spec?.[0]) ? spec[0] : null;
+        const row = control(param, spec, options);
+        if (param.group) {
+          if (param.kind === "lora-on") { loraBox = el("div", "wfp-lora"); wrap.append(loraBox); }
+          loraBox.append(row);
+        } else {
+          wrap.append(row);
+        }
+      }
+      return wrap;
+    });
+    box.replaceChildren(...nodes);
+    const m = USER_SETTINGS.messages;
+    $("wfp-note").textContent = (groups.length ? m.wfpNote.replace("{name}", v.name) : m.wfpNone) + (groups.length && !reachable ? `\n${m.wfpOffline}` : "");
+    $("wfp-reset").hidden = !Object.keys(overrides).length;
+  }
+
   applyVideoProfile() {
     const v = this.store.video;
+    this.renderWorkflowParams();
     const m = v?.mapping || {};
     const lengthOk = !!(m.frames || m.seconds);
     const range = this.isH3() ? USER_SETTINGS.h3Seconds : { min: 1, max: 15 };
@@ -2853,7 +3452,7 @@ class MainView {
       this.file = file;
       this.meta = meta;
       this.img = img;
-      this.focus = { x: 0.5, y: 0.5 };
+      this.focus = { x: 0.5, y: 0.5, zoom: 1 };
       $("frame-canvas").hidden = false;
       $("drop-hint").hidden = true;
       $("frame-actions").hidden = false;
@@ -2907,7 +3506,8 @@ class MainView {
 
   workflowMultiple(v = this.store.video) {
     const target = v?.mapping?.aspect;
-    const multiple = target ? v.workflow[target.split("|")[0]]?.inputs?.multiple : null;
+    const wf = v && v === this.store.video ? this.effectiveWorkflow() : v?.workflow;
+    const multiple = target ? wf[target.split("|")[0]]?.inputs?.multiple : null;
     return Number.isInteger(multiple) && multiple > 0 ? multiple : USER_SETTINGS.frame.sizeMultiple;
   }
 
@@ -2955,13 +3555,19 @@ class MainView {
       const sameRatio = Math.abs(size.width / size.height - this.meta.width / this.meta.height) / (this.meta.width / this.meta.height) < USER_SETTINGS.frame.sameRatioTolerance;
       lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height) +
         m.frameSource.replace("{sw}", this.meta.width).replace("{sh}", this.meta.height).replace("{aspect}", ui.aspect.split(" ")[0]));
-      lines.push(sameRatio ? m.frameSame : ui.fit === "crop" ? m.frameCropHint : m.framePadHint);
-      needsCrop = !sameRatio && ui.fit === "crop";
+      const zoomed = ui.fit === "crop" && (this.focus.zoom ?? 1) > 1;
+      lines.push(sameRatio && !zoomed ? m.frameSame : ui.fit === "crop" ? m.frameCropHint : m.framePadHint);
+      needsCrop = (!sameRatio || zoomed) && ui.fit === "crop";
     }
     const sizeWritable = (mapping.aspect && mapping.megapixels) || (mapping.width && mapping.height);
     if (!workflowSize && this.store.video && !sizeWritable) lines.push(m.frameNoSizeSlot);
     $("frame-info").textContent = lines.join("\n");
     $("reset-focus").hidden = !needsCrop;
+    const zoomable = !workflowSize && !!this.meta && ui.fit === "crop";
+    const pct = Math.round(100 / (this.focus.zoom ?? 1));
+    $("crop-zoom-field").hidden = !zoomable;
+    $("crop-zoom").value = pct;
+    $("crop-zoom-out").textContent = pct;
     this.drawPreview();
     this.drawLastPreview();
   }
@@ -3008,9 +3614,15 @@ class MainView {
     const canvas = $("frame-canvas");
     const canDrag = () => !!this.frameSize() && this.store.ui.fit === "crop" && !this.running;
     const moveBy = (dx, dy) => {
-      this.focus = { x: this.focus.x + dx, y: this.focus.y + dy };
+      this.focus = { ...this.focus, x: this.focus.x + dx, y: this.focus.y + dy };
       this.drawPreview();
     };
+    this.on(canvas, "wheel", (e) => {
+      if (!canDrag()) return;
+      e.preventDefault();
+      const step = USER_SETTINGS.frame.zoomStep;
+      this.setZoom((this.focus.zoom ?? 1) * (e.deltaY < 0 ? step : 1 / step));
+    });
     this.on(canvas, "pointerdown", (e) => {
       if (!canDrag()) return;
       canvas.setPointerCapture(e.pointerId);
@@ -3028,11 +3640,23 @@ class MainView {
     this.on(canvas, "pointercancel", end);
     this.on(canvas, "keydown", (e) => {
       const step = USER_SETTINGS.frame.keyStep;
+      const zoomKey = { "+": USER_SETTINGS.frame.zoomStep, "=": USER_SETTINGS.frame.zoomStep, "-": 1 / USER_SETTINGS.frame.zoomStep }[e.key];
+      if (zoomKey && canDrag()) {
+        e.preventDefault();
+        this.setZoom((this.focus.zoom ?? 1) * zoomKey);
+        return;
+      }
       const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
       if (!delta || !canDrag()) return;
       e.preventDefault();
       moveBy(...delta);
     });
+  }
+
+  setZoom(zoom) {
+    const max = USER_SETTINGS.frame.maxZoom;
+    this.focus = { ...this.focus, zoom: Math.min(Math.max(zoom, 1), max) };
+    this.updateFrame();
   }
 
   fittedFrame(size) {
@@ -3233,7 +3857,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "megapixels", "last-input", "last-clear", "run-count", "direction"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction"]) $(id).disabled = busy;
     if (!busy) this.updatePromptOptions();
     else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
     if (!busy) this.updateFrame();
@@ -3409,7 +4033,8 @@ class MainView {
     $("prompt-en").value = this.withInstruction($("prompt-en").value);
     this.syncJaInstruction();
     const shared = {
-      profile: clone(v), prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
+      profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()),
+      prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
       seconds: Number($("seconds").value), negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
       img: this.img, meta: this.meta, file: this.file, last: options.mode === "FL2VA" && this.last ? { ...this.last } : null, options,
@@ -3451,7 +4076,8 @@ class MainView {
       await this.executeJob(job);
       this.setJob(job, { state: "done", note: "", progress: 1 });
       this.status(job.warningLong || m.jobDone.replace("{n}", job.id), !!job.warning);
-      if (!this.selectedJob?.url) this.selectJob(job);
+      const newest = Math.max(...this.jobs.filter((j) => j.state === "done").map((j) => j.id));
+      if (job.id === newest) this.selectJob(job);
     } catch (err) {
       const canceled = err.name === "AbortError" || job.state === "canceled";
       const text = canceled ? "" : describeError(err, "ComfyUI");
@@ -3731,7 +4357,7 @@ class MainView {
         seconds: job.seconds, aspect: job.aspect, megapixels: job.megapixels, fit: job.fit,
         width: job.size?.width ?? null, height: job.size?.height ?? null, seed: job.values?.seed ?? null,
       },
-      models: used.models, loras: used.loras,
+      models: used.models, loras: used.loras, workflow_overrides: job.overrides || {},
       workflow: job.profile.name, llm: { profile: job.llm, model: job.llmModel }, skills: job.skills, prompt_style: job.style,
       source_image: { file: job.file?.name || null, metadata: job.meta }, last_image: job.lastImage,
       comfy_filename: job.filename || null,
