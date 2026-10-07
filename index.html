@@ -222,10 +222,6 @@ dialog#advanced {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
 dialog#advanced[open] { display: flex; flex-direction: column; }
-dialog#share-login { width: min(420px, 100vw - 24px); padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
-dialog#share-login::backdrop { background: rgba(0, 0, 0, .55); }
-.share-login-body { padding: 12px 14px 4px; }
-.share-login-body .msg:empty { display: none; }
 dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .adv-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
 .adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -669,21 +665,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
   </section>
 </main>
-
-<dialog id="share-login" aria-labelledby="share-login-title">
-  <form method="dialog" id="share-login-form">
-    <div class="dlg-head"><h2 id="share-login-title">Prompt Reel にログイン</h2></div>
-    <div class="share-login-body">
-      <p class="note">投稿する前に、Prompt Reel のログインパスワードを確認します。一度通れば、次からは自動でログインします。</p>
-      <label class="field">ログインパスワード<input type="password" id="share-login-pw" autocomplete="current-password"></label>
-      <p class="msg err" id="share-login-msg"></p>
-    </div>
-    <div class="adv-foot">
-      <button type="button" id="share-login-cancel">やめる</button>
-      <button type="submit" class="primary" id="share-login-ok">ログインして投稿</button>
-    </div>
-  </form>
-</dialog>
 
 <dialog id="advanced" aria-labelledby="adv-title">
   <div class="dlg-head"><h2 id="adv-title">詳しい設定</h2><span class="adv-sub" id="adv-sub"></span><button id="close-advanced">閉じる</button></div>
@@ -1416,8 +1397,6 @@ const USER_SETTINGS = {
   metadataVersion: 1,
   shareHandoff: {
     db: "stillmotion-handoff", store: "videos",
-    loginKey: "pr_login_pw",                       // Prompt Reel が自動ログインに使う保存先（同じオリジンなので共有される）
-    gasUrlPattern: /const\s+GAS_URL\s*=\s*['"]([^'"]+)['"]/, // Prompt Reel の index.html から接続先を読む
   },
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
@@ -1942,10 +1921,7 @@ Tips for better results:
     shareOtherOrigin: "Prompt Reel への投稿は、Stillmotion を Prompt Reel と同じサイト（{origin}）で開いているときだけ使えます。動画を保存して Prompt Reel の動画投稿にドロップしても、生成情報は自動で入ります。",
     sharePopupBlocked: "新しいタブを開けませんでした。ブラウザのポップアップのブロックを解除してから、もう一度押してください。",
     shareFailed: "Prompt Reel に渡せませんでした: ",
-    shareChecking: "Prompt Reel のログインを確認しています…",
-    shareNoServer: "Prompt Reel に接続できなかったため、ログインを確認できませんでした。時間をおいてもう一度押してください。",
-    shareLoginWrong: "パスワードが違います。",
-    shareLoginEmpty: "パスワードを入力してください。",
+    shareOpening: "Prompt Reel を開いています…",
     jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
     restoreBusy: "プロンプトを作っている間は、設定を戻せません（プレビューだけ切り替えました）。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
@@ -4634,99 +4610,28 @@ class MainView {
     });
   }
 
-  // Prompt Reel の接続先（GAS の URL）は Prompt Reel の index.html から読む（向こうで URL が変わっても追従するため）
-  async shareGasUrl() {
-    if (this.gasUrl) return this.gasUrl;
-    const res = await fetch(new URL(USER_SETTINGS.shareAppUrl, location.href), { cache: "no-store" });
-    const m = (await res.text()).match(USER_SETTINGS.shareHandoff.gasUrlPattern);
-    if (!m) throw new Error("GAS_URL not found");
-    return (this.gasUrl = m[1]);
-  }
-
-  // Prompt Reel と同じ方法（loginAuth）でパスワードを確かめる。true / false、つながらなければ例外
-  async checkShareLogin(password) {
-    const res = await fetch(await this.shareGasUrl(), {
-      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "loginAuth", password }),
-    });
-    const data = await res.json();
-    return !!data?.success;
-  }
-
-  // ログインを確認できるまで Prompt Reel は開かない。保存済みのパスワードが通ればそのまま（自動ログイン）、
-  // 無いか違っていればパスワードを聞く。
+  // ログインは Prompt Reel 自身のログイン画面に任せる（Stillmotion ではパスワードを扱わない）。
+  // Prompt Reel は開くとまずログインを確認し、通るまで投稿画面も受け取った動画も出さない。
+  // 2回目以降は Prompt Reel の自動ログイン（保存済みパスワード）でそのまま投稿画面になる。
   async postToShareApp(job) {
     const m = USER_SETTINGS.messages;
-    const cfg = USER_SETTINGS.shareHandoff;
     if (!job?.blob) return;
     const target = new URL(USER_SETTINGS.shareAppUrl, location.href);
     if (target.origin !== location.origin) {
       this.status(m.shareOtherOrigin.replace("{origin}", target.origin), true);
       return;
     }
-    const stored = localStorage.getItem(cfg.loginKey);
-    if (stored) {
-      const win = this.openWaitingTab(); // ポップアップを止められないよう、確認の前にタブだけ用意する
-      if (!win) { this.status(m.sharePopupBlocked, true); return; }
-      let ok = false;
-      try {
-        ok = await this.checkShareLogin(stored);
-      } catch {
-        win.close();
-        this.status(m.shareNoServer, true);
-        return;
-      }
-      if (ok) { await this.handoffTo(job, win); return; }
-      win.close();
-      localStorage.removeItem(cfg.loginKey);
-    }
-    this.askShareLogin(job);
+    const win = this.openWaitingTab(); // ポップアップを止められないよう、押した直後にタブだけ用意する
+    if (!win) { this.status(m.sharePopupBlocked, true); return; }
+    await this.handoffTo(job, win);
   }
 
   openWaitingTab() {
     const win = window.open("", "_blank");
     if (!win) return null;
     win.document.title = "Prompt Reel";
-    win.document.body.textContent = USER_SETTINGS.messages.shareChecking;
+    win.document.body.textContent = USER_SETTINGS.messages.shareOpening;
     return win;
-  }
-
-  askShareLogin(job) {
-    const m = USER_SETTINGS.messages;
-    const dlg = $("share-login");
-    $("share-login-pw").value = "";
-    setMsg($("share-login-msg"), "");
-    this.shareLoginJob = job;
-    dlg.showModal();
-    $("share-login-pw").focus();
-    if (this.shareLoginBound) return;
-    this.shareLoginBound = true;
-    this.on($("share-login-cancel"), "click", () => dlg.close());
-    this.on($("share-login-form"), "submit", async (e) => {
-      e.preventDefault();
-      const pw = $("share-login-pw").value;
-      if (!pw) { setMsg($("share-login-msg"), m.shareLoginEmpty, "err"); return; }
-      const win = this.openWaitingTab();
-      if (!win) { setMsg($("share-login-msg"), m.sharePopupBlocked, "err"); return; }
-      $("share-login-ok").disabled = true;
-      setMsg($("share-login-msg"), m.shareChecking);
-      try {
-        if (!(await this.checkShareLogin(pw))) {
-          win.close();
-          setMsg($("share-login-msg"), m.shareLoginWrong, "err");
-          $("share-login-pw").select();
-          return;
-        }
-        localStorage.setItem(USER_SETTINGS.shareHandoff.loginKey, pw); // Prompt Reel の自動ログインにもそのまま使われる
-        dlg.close();
-        await this.handoffTo(this.shareLoginJob, win);
-      } catch {
-        win.close();
-        setMsg($("share-login-msg"), m.shareNoServer, "err");
-      } finally {
-        $("share-login-ok").disabled = false;
-      }
-    });
   }
 
   async handoffTo(job, win) {
