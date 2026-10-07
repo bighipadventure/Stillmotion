@@ -2003,7 +2003,7 @@ const USER_SETTINGS = {
   },
 
   settingsVersion: 1,
-  defaultsRevision: 9,
+  defaultsRevision: 10,
   legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
   japanesePattern: /[\u3040-\u30ff\u4e00-\u9fff]/,
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
@@ -2679,6 +2679,7 @@ Tips for better results:
     specOptimized: "このPCに合わせて最適化しました: ",
     specNothing: "最適化で変えるところはありませんでした。",
     specReadOk: "ComfyUI から読み取って反映しました。",
+    specReadNoReserve: "GPU・VRAM・メインメモリを読み取って反映しました。生成に使えない VRAM は、ComfyUI がモデルを読み込んだあとだと多めに出てしまうため測っていません（ComfyUI を起動し直した直後なら測れます）。",
     specSaved: "自動で保存しました。メイン画面の目安に反映されます。",
     specAutoRead: "ComfyUI から PC のスペックを読み取って反映しました: {text}",
     autoSaved: "自動で保存しました。",
@@ -2922,6 +2923,8 @@ class SettingsStore {
     const refStyle = USER_SETTINGS.refStyleId;
     if (!data.styles[refStyle]) data.styles[refStyle] = clone(USER_SETTINGS.defaultStyles[refStyle]);
     data.machine = { ...clone(USER_SETTINGS.machine.defaults), ...(data.machine || {}) };
+    // 以前の版は、ComfyUI がモデルを読み込んだあとでも「生成に使えない VRAM」を測っていて、多めに出ることがあった
+    if ((data.defaultsRevision || 0) < 10 && data.machine.autoDetect !== false && data.machine.reserve > 2) data.machine.reserve = USER_SETTINGS.machine.defaults.reserve;
     data.flowVideo ??= {};
     const vid = USER_SETTINGS.defaultVideoId;
     const builtin = data.videoProfiles[vid];
@@ -3610,6 +3613,18 @@ class ComfyClient {
       if (tight) Object.assign(out, { weightsGB: Number(tight[1]), freeGB: Number(tight[2]) });
     }
     return out;
+  }
+
+  // 生成に使えない VRAM を正しく測れるか: 何も生成しておらず、起動してからまだ一度も実行していない（= モデルを読み込んでいない）とき。
+  // モデルを読み込んだあとは、ComfyUI の使用量の内訳（cudaMallocAsync など）が正しく取れず、ほかのアプリの分が多めに出るため測らない
+  async canMeasureReserve() {
+    if (!(await this.isIdle())) return false;
+    try {
+      const res = await fetch(`${this.base}/history?max_items=1`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+      return !Object.keys(await res.json()).length;
+    } catch {
+      return false;
+    }
   }
 
   // 何も生成していないか（順番待ちも実行中もない）
@@ -4587,8 +4602,8 @@ class MachineSpec {
     const report = ctx.report;
     if (report && report.offloadGB > 0.05) {
       const when = new Date(report.at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-      issues.push({ level: "over", text: `前回の生成（${when}）では、動画モデルのうち ${gb(report.offloadGB)} GB が VRAM に入りきらず、メインメモリに逃がしていました${report.weightsGB ? `（モデル ${gb(report.weightsGB)} GB に対して空き ${gb(report.freeGB)} GB）` : ""}。この状態では1ステップに数分かかることがあり、大きさや長さを下げても大きくは速くなりません。${USER_SETTINGS.messages.memoryOffloadTip}` });
-    } else if (!report) {
+      issues.push({ level: "info", text: `前回の生成（${when}）では、動画モデルのうち ${gb(report.offloadGB)} GB が VRAM に入りきらず、メインメモリに置いて動いていました${report.weightsGB ? `（モデル ${gb(report.weightsGB)} GB に対して空き ${gb(report.freeGB)} GB）` : ""}。生成が遅いときの主な原因で、大きさや長さを下げても大きくは速くなりません。${USER_SETTINGS.messages.memoryOffloadTip}` });
+    } else if (!report && ctx.flow === "ref") {
       for (const id of reach) {
         const inputs = wf[id].inputs || {};
         for (const key of ["unet_name", "model_name", "ckpt_name"]) {
@@ -4597,7 +4612,7 @@ class MachineSpec {
           const est = MachineSpec.modelWeightGB(name);
           if (!est) continue;
           if (est.gb > usable - c.activationHeadroomGb) {
-            issues.push({ level: "warn", text: `動画モデル「${name}」は約 ${est.gb} GB（${est.label} の目安）あり、使える VRAM ${gb(usable)} GB にはすべて入りきりません。一部をメインメモリに逃がして動くため、1ステップに数分かかることがあります（実際の様子は、1回生成すると ComfyUI のログから読み取って表示します）。${USER_SETTINGS.messages.memoryOffloadTip}` });
+            issues.push({ level: "info", text: `動画モデル「${name}」は約 ${est.gb} GB（${est.label} の目安）あり、使える VRAM ${gb(usable)} GB にはすべて入りきりません。一部をメインメモリに逃がして動くため、1ステップに数分かかることがあります（実際の様子は、1回生成すると ComfyUI のログから読み取って表示します）。${USER_SETTINGS.messages.memoryOffloadTip}` });
           }
         }
       }
@@ -7018,11 +7033,11 @@ class SettingsView {
       const comfy = new ComfyClient(url);
       const stats = await comfy.stats();
       const read = MachineSpec.fromStats(stats);
-      if (await comfy.isIdle()) read.reserve = MachineSpec.reserveFromStats(stats);
+      if (await comfy.canMeasureReserve()) read.reserve = MachineSpec.reserveFromStats(stats);
       const current = this.machineFromForm();
       this.fillMachine({ ...current, ...Object.fromEntries(Object.entries(read).filter(([, v]) => v !== null && v !== "")) });
       this.saveMachine();
-      setMsg(msg, USER_SETTINGS.messages.specReadOk, "ok");
+      setMsg(msg, read.reserve !== undefined && read.reserve !== null ? USER_SETTINGS.messages.specReadOk : USER_SETTINGS.messages.specReadNoReserve, "ok");
     } catch {
       setMsg(msg, Net.probeMessage(await Net.probe(`${url.replace(/\/+$/, "")}/system_stats`)), "err");
     }
@@ -7543,7 +7558,7 @@ class App {
       const comfy = new ComfyClient(url);
       const stats = await comfy.stats();
       const read = MachineSpec.fromStats(stats);
-      if (await comfy.isIdle()) read.reserve = MachineSpec.reserveFromStats(stats);
+      if (await comfy.canMeasureReserve()) read.reserve = MachineSpec.reserveFromStats(stats);
       this.machineReadFor = url;
       const next = { ...machine };
       for (const [k, v] of Object.entries(read)) if (v !== null && v !== undefined && v !== "") next[k] = v;
