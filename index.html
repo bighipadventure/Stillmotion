@@ -819,7 +819,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   </div>
   <div class="adv-foot">
     <button class="danger" id="mat-clear">すべて外す</button>
-    <span class="note">変更はすぐに保存されます。&lt;Picture 1&gt; などのタグは、プロンプトの中で素材を指す名前です。</span>
+    <span class="note">素材はこのページを開いている間だけ使えます（再読み込みや閉じると消えます）。&lt;Picture 1&gt; などのタグは、プロンプトの中で素材を指す名前です。</span>
     <button class="primary" id="done-materials">閉じる</button>
   </div>
 </dialog>
@@ -913,11 +913,11 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </li>
         <li>
           <div class="tl-head"><span class="where browser">ブラウザ</span><strong>画像を動画の形に整える</strong></div>
-          <p>「動画のサイズ」の一覧から選んだ縦横比（ComfyUI の解像度セレクターと同じ型）に合わせて、画像を切り抜くか、余白を足します。この画像が動画の最初のフレームになります。動画と画像の縦横比がずれていると、動画モデルが画像を引き伸ばしたり、端が欠けたりする原因になります。</p>
+          <p>「動画のサイズ」の一覧から選んだ縦横比（ComfyUI の解像度セレクターと同じ型）に合わせて、画像を切り抜くか、余白を足します。この画像が動画の最初のフレーム（L2VA なら最後のフレーム）になります。動画と画像の縦横比がずれていると、動画モデルが画像を引き伸ばしたり、端が欠けたりする原因になります。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>動画用のプロンプトを書いてもらう</strong></div>
-          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、「プロンプトの指定」（モード・BGM・声・動き）、メタデータ、整えた画像（画像対応モデルのとき。FL2VA なら最後の画像も）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
+          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、「プロンプトの指定」（モード・BGM・セリフ・息・動き・カメラ）、メタデータ、整えた画像（画像対応モデルのとき。FL2VA なら最後の画像も）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>日本語訳を作る（設定でONのとき）</strong></div>
@@ -1017,7 +1017,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <h4 class="card-title"><span class="num">3</span>動画の作り方</h4>
         <div class="map-grid">
           <label class="field">プロンプト形式<select id="vid-style"></select></label>
-          <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="0.5" max="60" step="0.5"></label>
+          <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="0.5" max="15" step="0.5"></label>
         </div>
         <label class="check" style="margin:0"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ）</label>
         <p class="note" style="margin:6px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
@@ -1045,7 +1045,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <label class="field">生成に使えない VRAM（画面表示など・GB）<input type="number" id="spec-reserve" min="0" max="64" step="0.5"></label>
         </div>
         <p class="note">GPU を一覧から選ぶと VRAM が自動で入ります。一覧にない GPU は「一覧にない（手で入力）」を選ぶか、VRAM の数字だけ直接入れても大丈夫です。VRAM とメインメモリは、Windows のタスクマネージャー →「パフォーマンス」の「GPU」（専用 GPU メモリ）と「メモリ」でも確かめられます。</p>
-        <p class="note" style="margin-bottom:0"><strong>生成に使えない VRAM とは:</strong> ComfyUI から自動で測ります。 パソコンは動画を作っていないときも、画面の表示やブラウザなどで VRAM を少し使っています。その分は動画の生成に使えないので、VRAM から差し引いて「使える VRAM」として計算します。タスクマネージャーの「専用 GPU メモリ」の、何も生成していないときの使用量が目安です（例: 1.1/12.0 GB なら 1）。文章AI（LM Studio など）のモデルを読み込んだまま動画を作るなら、そのモデルの大きさも足してください。わからなければ 1 のままで大丈夫です。</p>
+        <p class="note" style="margin-bottom:0"><strong>生成に使えない VRAM とは:</strong> ComfyUI から自動で測ります。 パソコンは動画を作っていないときも、画面の表示やブラウザなどで VRAM を少し使っています。その分は動画の生成に使えないので、VRAM から差し引いて「使える VRAM」として計算します。タスクマネージャーの「専用 GPU メモリ」の、何も生成していないときの使用量が目安です（例: 1.1/12.0 GB なら 1）。自動で測ったときに文章AI（LM Studio など）がモデルを読み込んでいれば、その分も含まれます。動画を作るときはモデルを取り外す使い方なら、その分を引いた値（多くは 1）に直してください。</p>
       </div>
       <div class="card">
         <h4 class="card-title">このスペックの目安</h4>
@@ -1105,7 +1105,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <h4 class="card-title">キャッシュをすべて削除して初期状態に戻す</h4>
         <p class="note">このブラウザに保存されている Stillmotion のデータをすべて消して、ページを開き直します。元に戻せないので、必要なら先に「設定を書き出す」で保存してください。</p>
         <dl class="kv" style="margin-bottom:8px">
-          <dt>消えるもの</dt><dd>文章AI の接続先、登録したワークフロー、自分で追加したスキル・プロンプト形式、マシンスペック、メイン画面の選択内容、読み込んだ画像・素材・プロンプト、「動画」欄の一覧</dd>
+          <dt>消えるもの</dt><dd>文章AI の接続先、登録したワークフロー、自分で追加したスキル・プロンプト形式、マシンスペック、メイン画面の選択内容、「動画」欄の一覧（読み込んだ画像と素材は、もともと閉じると消えます）</dd>
           <dt>消えないもの</dt><dd>ComfyUI の output フォルダの動画、保存済みのファイル</dd>
         </dl>
         <button class="danger" id="reset-settings">キャッシュをすべて削除する</button>
@@ -1978,6 +1978,7 @@ const USER_SETTINGS = {
       { min: 0, maxMp: 0.2, budget: 0.6 },
     ],
     minOptimizeMp: 0.3,          // 最適化で大きさを下げるときの下限（これより下げる前に長さを短くする）
+    minOptimizeSeconds: 3,       // 最適化で長さを縮めるときの下限
     lowRamGb: 32, lowRamFactor: 0.75, veryLowRamGb: 16,
     pictureLoad: 1 / 6,          // 参照画像1枚 ≒ 動画の 1/6 秒ぶんの重さ
     clipOnGpuMinVram: 22,        // これ未満なら文章エンコーダー（Qwen3-VL）は CPU で動かす
@@ -2003,7 +2004,7 @@ const USER_SETTINGS = {
   },
 
   settingsVersion: 1,
-  defaultsRevision: 10,
+  defaultsRevision: 11,
   legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
   japanesePattern: /[\u3040-\u30ff\u4e00-\u9fff]/,
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
@@ -2067,9 +2068,9 @@ const USER_SETTINGS = {
   previewChars: 40,
   uploadPrefix: "stillmotion_",
   videoExtensions: [".mp4", ".webm", ".mkv", ".mov", ".gif", ".webp"],
-  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep only these unchanged: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets such as [reference generation], retention markers such as fully_preserved or fully_copy, N/A, and everything inside <d>...</d>. Translate every other sentence into Japanese. Keep line breaks. Output only the translation.",
+  translateToJa: "Translate the following English video-generation prompt into natural Japanese. Keep only these unchanged: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets such as [reference generation], retention markers (fully_preserved, partially_preserved, attribute_transfer, weak_reference, fully_copy, partially_copy, reference), N/A, and everything inside <d>...</d>. Translate every other sentence into Japanese. Keep line breaks. Output only the translation.",
   translateToJaRetry: "日本語に翻訳してください。英語の文章はすべて自然な日本語の文にします。ただし integrated_multimodal_description: や subject_definitions: などの項目名、[Shot 1] などのカット番号、00:03.500 などの時刻、(S1) などの話者ID、<Picture 1>・<Video 1>・<Audio 1>・<Subject 1> などのラベル、[reference generation] などの種類、fully_preserved などの記号、N/A、<d>...</d> の中身はそのまま残します。改行も残し、訳文だけを出力してください。",
-  translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets, retention markers such as fully_preserved, N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
+  translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets, retention markers (fully_preserved, partially_preserved, attribute_transfer, weak_reference, fully_copy, partially_copy, reference), N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
   promptOptions: {
     header: "Generation settings (these take priority over everything above):",
     h3Only: ["mode", "music", "voice", "vocal", "camera"],
@@ -2117,6 +2118,7 @@ const USER_SETTINGS = {
       FL2VA: "1枚目を最初、2枚目を最後のフレームにして、その間をつなぐ動画を作ります。最後の画像を入れないときは最初の画像を最後にも使うので、元の姿に戻る（ループする）動画になります。",
       L2VA: "画像を最後のフレームにして、そこへたどり着く動画を作ります。",
     },
+    refRolesWin: "Reference materials win over the speech, vocal-sound, music and camera settings above: if a material's role copies or references audio (a soundtrack, BGM, a voice or its words), keeps a soundtrack in sync with its video, or references a video's camera movement, follow that role for that part and apply the settings above only to everything else.",
     lastSameAsFirst: "Picture 2 is identical to Picture 1: the clip must return to the opening pose and composition at the end, so that it loops seamlessly.",
     notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声・カメラの指定は使いません（動きと自由入力だけ反映します）。",
     cutsSingleShot: "FL2VA と L2VA は公式ガイドどおり1カットで作るため、「場面転換」は使えません。",
@@ -2180,7 +2182,7 @@ integrated_multimodal_description: [Shot 1] Live-action, cinematic, the young wo
 overall_soundscape: The train wheels produce a steady metallic rhythm beneath a low ventilation hum. Rain ticks against the window while paper rustles softly in her hands.
 
 non_diegetic_music: Sustained cello notes at a slow tempo with widely spaced piano tones, gradually decreasing in volume.` },
-    h3ref: { name: "MiniMax H3 Ref2VA（素材から動画）", text: `You write prompts for the MiniMax H3 audio-video model in full-reference mode (Ref2VA), following the official H3 "Full-Reference Mode Rewrite Output Format Guide".
+    h3ref: { name: "MiniMax H3 Ref2VA", text: `You write prompts for the MiniMax H3 audio-video model in full-reference mode (Ref2VA), following the official H3 "Full-Reference Mode Rewrite Output Format Guide".
 The target video lasts {seconds} seconds. The reference materials, their fixed labels and the roles the user chose are listed in the user message; the audio, motion and camera settings are under "Generation settings" at the end. Follow them exactly.
 The labels <Picture N>, <Video N> and <Audio N> are assigned by the loader and are fixed: use exactly the labels given, never renumber them, and never write labels for materials that were not supplied. <Subject N> labels are yours to define.
 
@@ -2209,7 +2211,7 @@ summary: one short English paragraph that starts with the task type in square br
 
 retention_analysis: one line per label defined in subject_definitions. Visible content: "<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - ...", using fully_preserved, partially_preserved, attribute_transfer or weak_reference; pictures: "<Picture 2> ([Shot 1] first frame): fully_preserved - ..."; video structure: "<Video 1> (cut and pacing structure): weak_reference - ...". Audio: "<Audio 1>: reference - ...", using fully_copy, partially_copy, reference or weak_reference. No speaker IDs in this section.
 
-detailed_description: the main body, normally 350-500 English words distributed over the shots by information load. Open with one or two sentences on the overall visual style before [Shot 1], e.g. "The target video uses a realistic, warmly lit live-action style." Then describe the video shot by shot in playback order:
+detailed_description: the main body, normally 350-500 English words distributed over the shots by information load (fewer for clips of only a few seconds; never describe more than fits in the duration). Open with one or two sentences on the overall visual style before [Shot 1], e.g. "The target video uses a realistic, warmly lit live-action style." Then describe the video shot by shot in playback order:
 - [Shot 1] has no timestamp. Each later shot starts with a strictly increasing cut time inside the duration, e.g. "[Shot 2] At 00:03.000, the shot cuts to ...".
 - For every shot give the composition, each subject's referenced appearance and position, environment and lighting, actions and state changes, camera movement, current sound, and the exact point where referenced content appears or takes effect. At a subject's first clear appearance restate its referenced features; afterwards keep using the same label without redefining it.
 - Frame anchors use natural phrasing: "the shot begins from <Picture 1>", "the shot's keyframe corresponds to <Picture 2>", "the shot ends on <Picture 3>".
@@ -2276,7 +2278,7 @@ Tips for better results:
 - Keep reference labels consistent (e.g. <Picture 1>) across every section.
 - Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".
 - When using keyframes (I2VA / FL2VA / L2VA), clearly state how the first and/or last frame connects to the timeline.` },
-    h3writingref: { name: "h3-prompt-writing（Ref2VA）", description: "MiniMax H3 公式スキル・素材から動画（既定）", body: `Official MiniMax H3 skill "h3-prompt-writing" (MiniMax-AI/MiniMax-H3, skills/h3-prompt-writing), adapted for the full-reference mode (Ref2VA). The prompt format above summarizes its guide references/ref-en.txt (docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md).
+    h3writingref: { name: "h3-prompt-writing-ref2va", description: "MiniMax H3 公式スキル・素材から動画（既定）", body: `Official MiniMax H3 skill "h3-prompt-writing" (MiniMax-AI/MiniMax-H3, skills/h3-prompt-writing), adapted for the full-reference mode (Ref2VA). The prompt format above summarizes its guide references/ref-en.txt (docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md).
 
 Workflow:
 1. Read the reference material list: each item has a fixed label (<Picture N>, <Video N>, <Audio N>), its kind and length, and the role the user chose.
@@ -2678,6 +2680,8 @@ Tips for better results:
     materialsClearConfirm: "素材をすべて外しますか？（元のファイルは消えません）",
     specOptimized: "このPCに合わせて最適化しました: ",
     specNothing: "最適化で変えるところはありませんでした。",
+    specStillHeavy: "それでも目安を超えます（長さは3秒より短くしません）。大きさか長さを手で下げてください",
+    specStillHeavyRef: "それでも目安を超えます（長さは3秒より短くしません）。参照動画を「使う範囲」で短くするか外してください",
     specReadOk: "ComfyUI から読み取って反映しました。",
     specReadNoReserve: "GPU・VRAM・メインメモリを読み取って反映しました。生成に使えない VRAM は、ComfyUI がモデルを読み込んだあとだと多めに出てしまうため測っていません（ComfyUI を起動し直した直後なら測れます）。",
     specSaved: "自動で保存しました。メイン画面の目安に反映されます。",
@@ -2926,6 +2930,8 @@ class SettingsStore {
     // 以前の版は、ComfyUI がモデルを読み込んだあとでも「生成に使えない VRAM」を測っていて、多めに出ることがあった
     if ((data.defaultsRevision || 0) < 10 && data.machine.autoDetect !== false && data.machine.reserve > 2) data.machine.reserve = USER_SETTINGS.machine.defaults.reserve;
     data.flowVideo ??= {};
+    if (data.styles[refStyle]?.name === "MiniMax H3 Ref2VA（素材から動画）") data.styles[refStyle].name = USER_SETTINGS.defaultStyles[refStyle].name;
+    if (data.skills[refSid]?.name === "h3-prompt-writing（Ref2VA）") data.skills[refSid].name = USER_SETTINGS.defaultSkills[refSid].name;
     const vid = USER_SETTINGS.defaultVideoId;
     const builtin = data.videoProfiles[vid];
     if (!builtin) data.videoProfiles[vid] = SettingsStore.defaultVideoProfile();
@@ -3601,16 +3607,21 @@ class ComfyClient {
   static parseMemoryLog(text) {
     const out = { offloadGB: null, loadedGB: null, model: null, weightsGB: null, freeGB: null, complete: false };
     let current = null;
-    const isEncoder = (name) => /TE|clip|text|qwen|encoder/i.test(name || "");
+    // 文章エンコーダー・VAE・音声 VAE の読み込みは数えない（動画モデルだけを見る）
+    const notDiffusion = (name) => /clip|text|qwen|encoder|vae|autoencod|audio/i.test(name || "") || /TE(Model)?(_|$)/.test(name || "");
+    let partialSeen = false;
     for (const line of String(text).split(/\r?\n/)) {
       const req = line.match(/Requested to load (\S+)/);
       if (req) current = req[1];
-      if (isEncoder(current)) continue;
-      const part = line.match(/loaded partially;.*?([\d.]+) MB loaded, ([\d.]+) MB offloaded/);
-      if (part) Object.assign(out, { loadedGB: Number(part[1]) / 1024, offloadGB: Number(part[2]) / 1024, model: current, complete: false });
-      if (/loaded completely;/.test(line)) Object.assign(out, { offloadGB: 0, model: current, complete: true });
       const tight = line.match(/([\d.]+) GB of weights against ([\d.]+) GB reported free/);
       if (tight) Object.assign(out, { weightsGB: Number(tight[1]), freeGB: Number(tight[2]) });
+      if (!current || notDiffusion(current)) continue;
+      const part = line.match(/loaded partially;.*?([\d.]+) MB loaded, ([\d.]+) MB offloaded/);
+      if (part) {
+        partialSeen = true;
+        Object.assign(out, { loadedGB: Number(part[1]) / 1024, offloadGB: Number(part[2]) / 1024, model: current, complete: false });
+      }
+      if (/loaded completely;/.test(line) && !partialSeen) Object.assign(out, { offloadGB: 0, model: current, complete: true });
     }
     return out;
   }
@@ -4230,7 +4241,8 @@ class Materials {
             ? ` Its soundtrack is ${t.sound}, kept in sync with this footage (lip-sync and sounds belong to this video). Soundtrack ${roleText("audio", i.audioRole).replace(/^Role:/, "role:")}`
             : ` Its soundtrack is supplied separately as ${t.sound}, not tied to the footage. Soundtrack ${roleText("audio", i.audioRole).replace(/^Role:/, "role:")}`;
         }
-        lines.push(`${t.tag}: video "${i.name}", ${i.width}x${i.height}, ${sec(this.effDuration(i))}${range}. ${roleText("video", i.role)}${sound}${memo}`);
+        const cut = this.effDuration(i) > seconds + 0.05 ? ` Only its first ${sec(seconds)} are used as reference frames, because the target video is ${sec(seconds)} long.` : "";
+        lines.push(`${t.tag}: video "${i.name}", ${i.width}x${i.height}, ${sec(this.effDuration(i))}${range}. ${roleText("video", i.role)}${cut}${sound}${memo}`);
       } else {
         lines.push(`${t.tag}: audio clip "${i.name}", ${sec(this.effDuration(i))}${range}. ${roleText("audio", i.role)}${memo}`);
       }
@@ -4418,7 +4430,12 @@ class Materials {
   }
 
   static snapshot(items) {
-    return items.map((i) => this.attachThumb({ ...i }));
+    return items.map((i) => {
+      const copy = { ...i };
+      if (i.thumbImg) Object.defineProperty(copy, "thumbImg", { value: i.thumbImg, enumerable: false, writable: true, configurable: true });
+      else this.attachThumb(copy);
+      return copy;
+    });
   }
 
   // 素材はページを開いている間だけ持つ（再読み込み・ブラウザを閉じたときは破棄する）。
@@ -4458,7 +4475,7 @@ class MachineSpec {
 
   get budget() {
     const c = USER_SETTINGS.machine;
-    const lowRam = this.ram && this.ram < c.lowRamGb && this.usable < c.clipOnGpuMinVram;
+    const lowRam = this.ram && this.ram < c.lowRamGb - 1.5 && this.usable < c.clipOnGpuMinVram; // 31.x GB は 32GB 扱い
     return this.tier.budget * (lowRam ? c.lowRamFactor : 1);
   }
 
@@ -4565,7 +4582,7 @@ class MachineSpec {
     }
     if (this.ram && this.ram < c.veryLowRamGb) {
       issues.push({ level: "warn", text: `メインメモリ ${this.ram} GB は少なめです。MiniMax H3 はモデルの一部をメインメモリに逃がすため、${c.lowRamGb} GB 以上をおすすめします。` });
-    } else if (this.ram && this.ram < c.lowRamGb && usable < c.clipOnGpuMinVram) {
+    } else if (this.ram && this.ram < c.lowRamGb - 1.5 && usable < c.clipOnGpuMinVram) {
       issues.push({ level: "warn", text: `メインメモリ ${this.ram} GB では、モデルの読み込みで遅くなりやすいため、目安を少し控えめにしています。` });
     }
     const wf = ctx.wf || {};
@@ -4602,7 +4619,7 @@ class MachineSpec {
     const report = ctx.report;
     if (report && report.offloadGB > 0.05) {
       const when = new Date(report.at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-      issues.push({ level: "info", text: `前回の生成（${when}）では、動画モデルのうち ${gb(report.offloadGB)} GB が VRAM に入りきらず、メインメモリに置いて動いていました${report.weightsGB ? `（モデル ${gb(report.weightsGB)} GB に対して空き ${gb(report.freeGB)} GB）` : ""}。生成が遅いときの主な原因で、大きさや長さを下げても大きくは速くなりません。${USER_SETTINGS.messages.memoryOffloadTip}` });
+      issues.push({ level: "info", text: `前回の生成（${when}）では、動画モデルのうち ${gb(report.offloadGB)} GB が VRAM に入りきらず、メインメモリに置いて動いていました${report.weightsGB ? `（モデル ${gb(report.weightsGB)} GB に対して空き ${gb(report.freeGB)} GB）` : ""}。モデル自体の大きさによるもので、大きさや長さを下げてもこの分は減りません（下げると、生成中に使うメモリが減るぶん少し楽になります）。${USER_SETTINGS.messages.memoryOffloadTip}` });
     } else if (!report && ctx.flow === "ref") {
       for (const id of reach) {
         const inputs = wf[id].inputs || {};
@@ -5414,6 +5431,7 @@ class MainView {
       .map((line) => (ref ? line.replaceAll("integrated_multimodal_description", "detailed_description") : line));
     if (this.isH3() && !ref) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
     if (chosen.mode === "FL2VA" && !this.last) lines.push(cfg.lastSameAsFirst);
+    if (ref) lines.push(cfg.refRolesWin);
     const direction = (this.store.ui.direction || "").trim();
     if (direction) lines.push(cfg.directionRule.replace("{text}", direction));
     return `${cfg.header}\n${lines.map((l) => `- ${l}`).join("\n")}`;
@@ -5932,7 +5950,7 @@ class MainView {
     const ctx = {
       wf: this.effectiveWorkflow() || {}, mp: this.currentMegapixels(), seconds: Number($("seconds").value),
       flow: this.store.flow, items: this.isRef() ? this.materialItems : [],
-      report: this.store.data.memoryReports?.[this.store.data.videoActive] || null,
+      report: this.isRef() ? this.store.data.memoryReports?.[this.store.data.videoActive] || null : null,
     };
     return { spec, ctx, result: spec.evaluate(ctx) };
   }
@@ -5979,6 +5997,7 @@ class MainView {
     const c = USER_SETTINGS.machine;
     const { spec, ctx, result } = this.specEvaluation();
     const changes = [];
+    let stillHeavy = false;
     for (const issue of result.issues) {
       const fix = issue.fix;
       if (fix?.path) { this.setOverrideValue(fix.path, fix.value); changes.push(fix.label); }
@@ -5997,9 +6016,11 @@ class MainView {
       let seconds = ctx.seconds;
       const floor = Math.min(c.minOptimizeMp, tier.maxMp);
       while (!fits(mp, seconds) && lower(mp) && lower(mp) >= floor - 1e-9) mp = lower(mp);
-      const min = Number($("seconds").min) || 0.5;
+      // 長さは「最低限の長さ」までしか縮めない（それより短い動画は意味がないため）。足りなければ大きさをさらに下げる
+      const min = Math.min(ctx.seconds, c.minOptimizeSeconds);
       while (!fits(mp, seconds) && seconds - 0.5 >= min) seconds = Math.round((seconds - 0.5) * 2) / 2;
       while (!fits(mp, seconds) && lower(mp)) mp = lower(mp);
+      stillHeavy = !fits(mp, seconds);
       if (mp !== ctx.mp) {
         changes.push(`大きさ ${ctx.mp}→${mp} MP`);
         this.saveUi({ megapixels: mp });
@@ -6011,6 +6032,7 @@ class MainView {
         $("seconds-out").textContent = seconds;
       }
     }
+    if (stillHeavy) changes.push(ctx.flow === "ref" ? m.specStillHeavyRef : m.specStillHeavy);
     this.store.save();
     if (changes.length) {
       this.renderWorkflowParams();
@@ -6393,6 +6415,8 @@ class MainView {
 
   // ComfyUI のログから、動画モデルが VRAM に入りきったかを確かめて、ジョブとワークフローごとの記録に残す
   async checkMemory(job) {
+    // 画像から動画は、12GB クラスでもモデルの一部をメインメモリに置いて普通に動くので知らせない（素材から動画だけ）
+    if (job.flow !== "ref") { job.memoryChecked = true; return; }
     const text = await job.comfy.recentLog(job.queuedAt);
     if (text === null) { job.memoryChecked = true; return; }
     const r = ComfyClient.parseMemoryLog(text);
@@ -6809,13 +6833,25 @@ class SettingsView {
   useVideo(id) {
     const d = this.store.data;
     (d.flowVideo ??= {})[this.videoFlow] = id;
-    if (this.store.flow === this.videoFlow || !d.videoProfiles[d.videoActive]) d.videoActive = id;
+    if (this.store.flow === this.videoFlow) d.videoActive = id;
     d.seenGuide = true;
+  }
+
+  // ワークフローを入れ替えたら、前のワークフロー用の「詳しい設定」の変更と生成の記録は捨てる。
+  // 標準の長さを変えたら、メイン画面の長さもその値にする
+  forgetWorkflowState(id, next) {
+    const prev = this.store.data.videoProfiles[id];
+    if (!prev) return;
+    if (prev.workflow !== next.workflow) {
+      delete this.store.ui.overrides?.[id];
+      delete this.store.data.memoryReports?.[id];
+    }
+    if (prev.seconds !== next.seconds && this.store.data.videoActive === id) delete this.store.ui.seconds;
   }
 
   bind() {
     this.on($("close-settings"), "click", () => this.dialog.close());
-    this.on(this.dialog, "close", () => this.onChange());
+    this.on(this.dialog, "close", () => { for (const k of ["llm", "video", "machine"]) this.flushAutosave(k); this.onChange(); });
     document.querySelectorAll(".tabs button").forEach((b) => this.on(b, "click", () => this.showPane(b.dataset.pane)));
     document.querySelectorAll("[data-copy]").forEach((b) => this.on(b, "click", () => {
       navigator.clipboard.writeText($(b.dataset.copy).textContent);
@@ -7012,7 +7048,7 @@ class SettingsView {
       ["使える VRAM", `${(Math.round(spec.usable * 10) / 10)} GB（VRAM ${Number(spec.m.vram) || 0} GB − 生成に使えない ${Number(spec.m.reserve) || 0} GB）`],
       ["大きさの上限", `${t.maxMp} MP（16:9 なら ${size.width}×${size.height}）`],
       ["負荷の上限", `${budget.toFixed(1)}（メガピクセル × 秒）${examples ? `　例: ${examples}` : ""}`],
-      ["文章エンコーダー", spec.usable < c.clipOnGpuMinVram ? "CPU で動かす（VRAM に入りきらないため）" : "GPU で動かせます"],
+      ["文章エンコーダー（Ref2VA のワークフロー）", spec.usable < c.clipOnGpuMinVram ? "CPU で動かす（VRAM に入りきらないため）" : "GPU で動かせます"],
       ["Turbo LoRA", spec.usable < c.lowVramLoraBelow ? "low_vram をオン" : "そのままで大丈夫です"],
       ["参照素材（Ref2VA）", `画像は「match」${spec.usable < c.refImageMaxMinVram ? "がおすすめ" : "・「max」も使えます"}。参照動画の展開は約 ${(spec.ram * c.refVideoRamShare).toFixed(0)} GB まで`],
     ];
@@ -7107,6 +7143,7 @@ class SettingsView {
 
   // GENERIC DELETE
   deleteEntry(collectionKey, activeKey, id, msgEl, reload, allowEmpty = false) {
+    this.cancelAutosave(collectionKey === "llmProfiles" ? "llm" : "video");
     const d = this.store.data;
     const coll = d[collectionKey];
     if (!id || !coll[id]) return;
@@ -7132,11 +7169,26 @@ class SettingsView {
   autosave(kind, delay = 400) {
     this.autosaveTimers ??= {};
     clearTimeout(this.autosaveTimers[kind]);
-    this.autosaveTimers[kind] = setTimeout(() => {
-      if (kind === "llm") this.autosaveLlm();
-      else if (kind === "video") this.autosaveVideo();
-      else if (kind === "machine") this.saveMachine();
-    }, delay);
+    this.autosaveTimers[kind] = setTimeout(() => this.runAutosave(kind), delay);
+  }
+
+  runAutosave(kind) {
+    delete this.autosaveTimers?.[kind];
+    if (kind === "llm") this.autosaveLlm();
+    else if (kind === "video") this.autosaveVideo();
+    else if (kind === "machine") this.saveMachine();
+  }
+
+  // 別の設定に切り替える前に、待っている自動保存をいま編集中の設定に保存しておく
+  flushAutosave(kind) {
+    if (!this.autosaveTimers?.[kind]) return;
+    clearTimeout(this.autosaveTimers[kind]);
+    this.runAutosave(kind);
+  }
+
+  cancelAutosave(kind) {
+    clearTimeout(this.autosaveTimers?.[kind]);
+    delete this.autosaveTimers?.[kind];
   }
 
   relabelPicker(select, id, name) {
@@ -7146,7 +7198,7 @@ class SettingsView {
 
   autosaveLlm() {
     const id = this.editing.llm;
-    if (!id) return; // 新しい設定は「追加して使う」で作る
+    if (!id || !this.store.data.llmProfiles[id]) return; // 新しい設定は「追加して使う」で作る
     const p = this.llmFromForm();
     if (!p.name || !p.baseUrl) { setMsg($("llm-msg"), USER_SETTINGS.messages.llmNeedNameUrl, "err"); return; }
     this.store.data.llmProfiles[id] = p;
@@ -7169,12 +7221,13 @@ class SettingsView {
 
   autosaveVideo() {
     const id = this.editing.video;
-    if (!id) return;
+    if (!id || !this.store.data.videoProfiles[id]) return;
     const v = this.videoFromForm();
     const msg = $("vid-msg");
     if (!v.name) { setMsg(msg, USER_SETTINGS.messages.videoNeedName, "err"); return; }
     if (!v.workflow) return;
     if (!v.mapping.prompt || !(v.mapping.image || v.mapping.media)) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); return; }
+    this.forgetWorkflowState(id, v);
     this.store.data.videoProfiles[id] = v;
     this.useVideo(id);
     this.store.save();
@@ -7185,6 +7238,7 @@ class SettingsView {
 
   // LLM
   loadLlm(id) {
+    this.flushAutosave("llm");
     const d = this.store.data;
     this.editing.llm = id && d.llmProfiles[id] ? id : null;
     fillSelect($("llm-pick"), [...this.pickerEntries(d.llmProfiles), ...(this.editing.llm ? [] : [["", "（新しい設定）"]])], this.editing.llm || "");
@@ -7251,9 +7305,11 @@ class SettingsView {
   async fetchModels(quiet = false) {
     const msg = $("llm-msg");
     const form = this.llmFromForm();
+    const token = (this.modelFetchToken = (this.modelFetchToken || 0) + 1);
+    const editing = this.editing.llm;
     try {
       const models = await new LlmClient(form).listModels();
-      if (this.llmFromForm().baseUrl !== form.baseUrl) return;
+      if (token !== this.modelFetchToken || this.editing.llm !== editing || this.llmFromForm().baseUrl !== form.baseUrl) return;
       this.setModelList(models, form.model || models[0]);
       if (!quiet) setMsg(msg, USER_SETTINGS.messages.modelsFetched.replace("{n}", models.length), "ok");
     } catch (err) {
@@ -7287,6 +7343,7 @@ class SettingsView {
 
   // VIDEO
   loadVideo(id) {
+    this.flushAutosave("video");
     const d = this.store.data;
     const m = USER_SETTINGS.messages;
     this.videoFlow ??= this.store.flow;
@@ -7366,7 +7423,8 @@ class SettingsView {
     const msg = $("wf-msg");
     if (!this.pendingWorkflow?.workflow) { setMsg(msg, USER_SETTINGS.messages.exportNoWorkflow, "err"); return; }
     const id = this.editing.video;
-    const overrides = id ? this.store.ui.overrides?.[id] || {} : {};
+    const stored = id ? this.store.data.videoProfiles[id] : null;
+    const overrides = stored && stored.workflow === this.pendingWorkflow.workflow ? this.store.ui.overrides?.[id] || {} : {};
     const wf = WorkflowParams.apply(this.pendingWorkflow.workflow, overrides);
     const base = ($("vid-name").value.trim() || this.pendingWorkflow.name || "workflow").replace(/\.json$/i, "").replace(/[\\/:*?"<>|]+/g, "_");
     downloadBlob(new Blob([JSON.stringify(wf, null, 2)], { type: "application/json" }), `${base}.json`);
@@ -7394,12 +7452,14 @@ class SettingsView {
     const mapping = this.mappingFromForm();
     if (!mapping.prompt || !(mapping.image || mapping.media)) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); $("map-box").scrollIntoView({ block: "center" }); return; }
     const id = this.editing.video || uid();
-    this.store.data.videoProfiles[id] = {
+    const saved = {
       name, comfyUrl: $("vid-url").value.trim() || USER_SETTINGS.defaultComfyUrl,
       workflow: this.pendingWorkflow.workflow, workflowName: this.pendingWorkflow.name, mapping,
       styleId: $("vid-style").value, seconds: Number($("vid-seconds").value) || USER_SETTINGS.defaultSeconds,
       freeVram: $("vid-free").checked,
     };
+    this.forgetWorkflowState(id, saved);
+    this.store.data.videoProfiles[id] = saved;
     this.useVideo(id);
     this.store.save();
     this.loadVideo(id);
