@@ -1900,6 +1900,7 @@ Tips for better results:
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
+    modelAutoPicked: "サーバーの一覧の先頭のモデルを選びました。別のモデルを使うときはここで切り替えてください。",
     mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
     mainModelNone: "（「設定」→「文章AI」で接続してください）",
     modelNotListed: "（いまのサーバーの一覧にありません）",
@@ -3291,7 +3292,15 @@ class MainView {
       if (token !== this.modelToken) return;
       const options = models.map((name) => [name, name]);
       if (current && !models.includes(current)) options.unshift([current, `${current}${m.modelNotListed}`]);
-      fillSelect($("sel-model"), options.length ? options : [["", m.mainModelNone]], current);
+      // モデルが未選択なら、プルダウンに表示される先頭のモデルを選んだ状態として保存する（見た目と設定を一致させる）
+      const chosen = current || models[0] || "";
+      fillSelect($("sel-model"), options.length ? options : [["", m.mainModelNone]], chosen);
+      if (!current && chosen) {
+        llm.model = chosen;
+        this.store.save();
+        this.statusBar.refresh();
+        $("sel-model-note").textContent = m.modelAutoPicked;
+      }
     } catch {
       if (token === this.modelToken) $("sel-model-note").textContent = m.mainModelError;
     }
