@@ -360,7 +360,6 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .job-thumb { position: relative; display: block; width: 100%; min-height: 0; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
 .job-thumb:hover:not(:disabled) { background: var(--film); }
 .job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; transition: filter .3s; }
-.job-thumb:disabled { cursor: default; opacity: 1; }
 .job[data-state="preparing"] .job-thumb img, .job[data-state="queued"] .job-thumb img, .job[data-state="running"] .job-thumb img { filter: brightness(.4) saturate(.5); }
 .job-thumb .spinner {
   position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
@@ -390,6 +389,9 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-s); display: grid; place-items: center; overflow: hidden; }
 .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 12px; padding: 16px; text-align: center; }
+/* 生成中・エラーの動画を選んだとき: 元の画像を薄く出し、その上に状態を表示する */
+.screen #screen-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: .35; }
+.screen.is-still .empty { position: relative; z-index: 1; padding: 8px 14px; border-radius: var(--radius-s); background: rgba(0, 0, 0, .6); color: #fff; font-size: 13px; }
 
 /* ===== RUN ===== */
 .run-block { display: flex; flex-direction: column; gap: 4px; }
@@ -654,6 +656,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <div class="gallery" id="gallery" aria-label="作った動画"></div>
         <div class="screen" id="screen">
           <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
+          <img id="screen-still" alt="" hidden>
           <video id="video" controls loop playsinline preload="metadata" hidden></video>
         </div>
         <div class="preview-actions">
@@ -1923,6 +1926,7 @@ Tips for better results:
     shareFailed: "Prompt Reel に渡せませんでした: ",
     shareOpening: "Prompt Reel を開いています…",
     jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
+    screenEmpty: "上のパネルを押すと、ここで確認できます。",
     restoreBusy: "プロンプトを作っている間は、設定を戻せません（プレビューだけ切り替えました）。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
     modelAutoPicked: "サーバーの一覧の先頭のモデルを選びました。別のモデルを使うときはここで切り替えてください。",
@@ -4243,7 +4247,7 @@ class MainView {
   restoreJob(job) {
     const m = USER_SETTINGS.messages;
     const r = job.restore;
-    if (!r || job.state !== "done") return;
+    if (!r) return;
     if (this.running) { this.status(m.restoreBusy, true); return; }
     const d = this.store.data;
     if (d.videoProfiles[r.videoId]) d.videoActive = r.videoId;
@@ -4303,7 +4307,10 @@ class MainView {
       this.setJob(job, { state: "done", note: "", progress: 1 });
       this.status(job.warningLong || m.jobDone.replace("{n}", job.id), !!job.warning);
       const newest = Math.max(...this.jobs.filter((j) => j.state === "done").map((j) => j.id));
-      if (job.id === newest) this.selectJob(job);
+      // 完成した動画を自動でプレビューする: 選んでいた生成中の動画が完成したとき、
+      // または いちばん新しい完成品で、ほかの生成中の動画を見ている最中ではないとき
+      const watchingPending = this.selectedJob && this.selectedJob !== job && this.isPending(this.selectedJob);
+      if (this.selectedJob === job || (job.id === newest && !watchingPending)) this.selectJob(job);
     } catch (err) {
       const canceled = err.name === "AbortError" || job.state === "canceled";
       const text = canceled ? "" : describeError(err, "ComfyUI");
@@ -4457,14 +4464,14 @@ class MainView {
     const video = $("video");
     if (job?.url) {
       video.poster = job.thumb;
-      video.src = job.url;
+      if (video.getAttribute("src") !== job.url) video.src = job.url;
       video.hidden = false;
-      $("screen-empty").hidden = true;
     } else {
+      video.pause();
       video.removeAttribute("src");
+      video.removeAttribute("poster");
       video.load();
       video.hidden = true;
-      $("screen-empty").hidden = false;
     }
     $("dl-video").disabled = !job?.blob;
     $("dl-prompt").disabled = !job;
@@ -4472,6 +4479,29 @@ class MainView {
     $("player-label").textContent = job ? `▶ プレビュー中: #${job.id}${job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : ""}` : "";
     $("player-label").classList.toggle("active", !!job);
     this.renderJobs();
+  }
+
+  // プレビュー欄の表示を、選んでいる動画の状態に合わせる。
+  // 完成前（順番待ち・生成中）やエラー・中止の動画は、元の画像を薄く出して状態を重ねる。
+  updateScreen() {
+    const job = this.selectedJob;
+    const still = $("screen-still");
+    const empty = $("screen-empty");
+    const showStill = !!job && !job.url;
+    $("screen").classList.toggle("is-still", showStill);
+    still.hidden = !showStill;
+    if (showStill && still.getAttribute("src") !== job.thumb) still.src = job.thumb;
+    empty.hidden = !!job?.url;
+    if (!job) { empty.textContent = USER_SETTINGS.messages.screenEmpty; return; }
+    if (job.url) return;
+    const percent = Math.round((job.progress || 0) * 100);
+    empty.textContent = {
+      preparing: `#${job.id} を準備しています…`,
+      queued: `#${job.id} は順番待ちです。前の動画が終わると作り始めます。`,
+      running: `#${job.id} を生成中です（${percent}%）。完成するとここで再生できます。`,
+      error: `#${job.id} は作れませんでした。`,
+      canceled: `#${job.id} は中止しました。`,
+    }[job.state] || "";
   }
 
   renderJobs() {
@@ -4488,6 +4518,7 @@ class MainView {
     }
     this.updateProgress();
     this.syncCards();
+    this.updateScreen();
   }
 
   jobLabel(job) {
@@ -4542,7 +4573,6 @@ class MainView {
     card.dataset.state = job.state;
     card.setAttribute("aria-current", String(job === this.selectedJob));
     const thumb = card.querySelector(".job-thumb");
-    thumb.disabled = job.state !== "done";
     thumb.querySelector(".job-badge").textContent = USER_SETTINGS.jobStates[job.state];
     const spinner = thumb.querySelector(".spinner");
     if (pending && !spinner) thumb.append(el("span", "spinner"));
