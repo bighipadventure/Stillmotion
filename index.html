@@ -192,7 +192,7 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
   .layout { grid-template-columns: 1fr; grid-template-rows: none; }
   .col-output { overflow: visible; }
   .side-scroll { overflow: visible; }
-  .screen { min-height: 0; aspect-ratio: 16 / 9; }
+  .screen { height: auto; aspect-ratio: 16 / 9; }
   .pills { display: none; }
 }
 
@@ -251,8 +251,7 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 /* 右: 作業エリア */
 .col-output { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; background: var(--bg); }
 .col-output > .panel { flex: none; }
-.col-output > .video-panel { flex: 1 0 auto; min-height: 300px; display: flex; flex-direction: column; }
-.video-panel > .panel-body { flex: 1 1 auto; min-height: 0; }
+.col-output > .video-panel { flex: none; display: flex; flex-direction: column; }
 .panel { background: var(--surface); border-bottom: 1px solid var(--line); }
 .panel-head {
   display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 10px;
@@ -347,12 +346,18 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .pair.single { grid-template-columns: 1fr; }
 .pair .field { margin: 0; }
 @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
-.revise-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.revise-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: start; }
+/* 入力に合わせて下に伸びる入力欄（全文が常に見えるように。手で縮めるつまみは出さない） */
+textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-control); line-height: 1.5; padding-top: 4px; padding-bottom: 4px; }
 @media (max-width: 720px) { .revise-row { grid-template-columns: 1fr auto; } .revise-row .primary { grid-column: 1 / -1; } }
 
 /* ===== VIDEO ===== */
 .video-panel .panel-body { gap: 8px; }
-.gallery { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scroll-snap-type: x proximity; }
+/* サムネイルは常に1行。増えたら横スクロール（スクロールバーを常に見せ、マウスホイールでも横に動く） */
+.gallery { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; margin: 0 -2px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.gallery::-webkit-scrollbar { height: 8px; }
+.gallery::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.gallery::-webkit-scrollbar-track { background: transparent; }
 .gallery:empty { display: none; }
 .job { flex: 0 0 148px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); display: flex; flex-direction: column; }
 .job[aria-current="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 2px var(--accent-text); }
@@ -383,8 +388,10 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .job-actions { display: flex; gap: 4px; flex-wrap: wrap; }
 .job-actions button { min-height: 22px; padding: 0 7px; font-size: 11px; }
 .preview-label { font-size: 12px; color: var(--muted); }
+.preview-actions { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .preview-label.active { color: var(--accent-text); font-weight: 700; }
-.screen { position: relative; flex: 1 1 auto; background: var(--film); border-radius: var(--radius-s); min-height: 160px; display: grid; place-items: center; overflow: hidden; }
+/* プレビューの高さは、ブラウザの表示エリアの高さの半分を基準にする（小さい画面でもつぶれないよう最低 280px） */
+.screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-s); display: grid; place-items: center; overflow: hidden; }
 .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 12px; padding: 16px; text-align: center; }
 
@@ -550,7 +557,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             </div>
             <div class="row"><button id="last-clear" hidden>最後の画像を外す</button></div>
           </div>
-          <label class="field">狙いたい構図・シチュエーション（任意）<textarea id="direction" rows="2" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
+          <label class="field">狙いたい構図・シチュエーション（任意）<textarea id="direction" class="autogrow" rows="1" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
         </div>
       </section>
 
@@ -632,7 +639,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <label class="field" id="prompt-ja-field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="8"></textarea></label>
         </div>
         <div class="revise-row">
-          <input type="text" id="instruction" placeholder="AIへの修正指示（例: 髪が風で大きくなびくように）" aria-label="AIに修正してもらう指示">
+          <textarea id="instruction" class="autogrow" rows="1" placeholder="AIへの修正指示（例: 髪が風で大きくなびくように）　Ctrl+Enter で修正" aria-label="AIに修正してもらう指示"></textarea>
           <button id="revise">AIで修正</button>
           <button class="primary" id="rerun-video">このプロンプトで動画を作り直す</button>
         </div>
@@ -644,9 +651,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <h2 id="gallery-title">動画 <span class="head-count" id="gallery-count"></span></h2>
         <div class="head-tools">
           <span class="preview-label" id="player-label"></span>
-          <button id="dl-video" disabled>動画を保存</button>
-          <button id="dl-prompt" disabled>プロンプトを保存</button>
-          <button class="primary" id="post-share" disabled>Prompt Reel に投稿</button>
         </div>
       </div>
       <div class="panel-body">
@@ -655,6 +659,11 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <div class="screen" id="screen">
           <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
           <video id="video" controls loop playsinline preload="metadata" hidden></video>
+        </div>
+        <div class="preview-actions">
+          <button id="dl-video" disabled>動画を保存</button>
+          <button id="dl-prompt" disabled>プロンプトを保存</button>
+          <button class="primary" id="post-share" disabled>Prompt Reel に投稿</button>
         </div>
       </div>
     </section>
@@ -1937,6 +1946,8 @@ Tips for better results:
     shareNoServer: "Prompt Reel に接続できなかったため、ログインを確認できませんでした。時間をおいてもう一度押してください。",
     shareLoginWrong: "パスワードが違います。",
     shareLoginEmpty: "パスワードを入力してください。",
+    jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
+    restoreBusy: "プロンプトを作っている間は、設定を戻せません（プレビューだけ切り替えました）。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
     modelAutoPicked: "サーバーの一覧の先頭のモデルを選びました。別のモデルを使うときはここで切り替えてください。",
     mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
@@ -3208,6 +3219,20 @@ class MainView {
     $("seed").value = ui.seed ?? "";
     $("negative").value = ui.negative ?? "";
     $("direction").value = ui.direction ?? "";
+    this.autoGrow($("direction"));
+  }
+
+  // 中身の行数に合わせて高さを変える（幅いっぱいまで書いたら1行ぶん下に伸びる）
+  autoGrow(ta) {
+    if (!ta || !ta.isConnected) return;
+    ta.style.height = "auto";
+    if (!ta.offsetParent) return; // 非表示のときは測れないので、表示されたときに改めて合わせる
+    const border = ta.offsetHeight - ta.clientHeight;
+    ta.style.height = `${ta.scrollHeight + border}px`;
+  }
+
+  autoGrowAll() {
+    document.querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
   }
 
   saveUi(patch) {
@@ -3299,7 +3324,22 @@ class MainView {
     this.on($("to-ja"), "click", () => this.translate("ja"));
     this.on($("to-en"), "click", () => this.translate("en"));
     this.on($("revise"), "click", () => this.revise($("instruction").value));
-    this.on($("instruction"), "keydown", (e) => { if (e.key === "Enter" && !e.isComposing) this.revise($("instruction").value); });
+    // Enter は改行。Ctrl+Enter（Mac は ⌘+Enter）で「AIで修正」
+    this.on($("instruction"), "keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); this.revise($("instruction").value); }
+    });
+    document.querySelectorAll("textarea.autogrow").forEach((ta) => this.on(ta, "input", () => this.autoGrow(ta)));
+    this.on(window, "resize", () => this.autoGrowAll());
+    // サムネイルの列の上では、マウスホイールの縦の動きを横スクロールに変える（端まで行ったらページのスクロールに任せる）
+    this.on($("gallery"), "wheel", (e) => {
+      const g = e.currentTarget;
+      if (g.scrollWidth <= g.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const atStart = g.scrollLeft <= 0 && e.deltaY < 0;
+      const atEnd = g.scrollLeft + g.clientWidth >= g.scrollWidth - 1 && e.deltaY > 0;
+      if (atStart || atEnd) return;
+      e.preventDefault();
+      g.scrollLeft += e.deltaY;
+    });
     this.on($("dl-video"), "click", () => {
       const job = this.selectedJob;
       if (job?.blob) downloadBlob(job.blob, `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`);
@@ -4118,6 +4158,7 @@ class MainView {
       if (!instruction.trim()) throw new UserError(USER_SETTINGS.messages.needInstruction);
       await this.makePrompt(signal, $("prompt-en").value, instruction);
       $("instruction").value = "";
+      this.autoGrow($("instruction"));
       this.status(USER_SETTINGS.messages.revised);
     });
   }
@@ -4186,6 +4227,7 @@ class MainView {
       direction: (ui.direction || "").trim(),
       skills: this.store.activeSkillObjects().map((s) => s.name), style: this.store.styleFor(v)?.name,
       llm: this.store.llm?.name, llmModel: this.store.llm?.model,
+      restore: this.restoreSnapshot(),
     };
     shared.thumb = this.jobThumb(shared);
     const batch = [];
@@ -4204,6 +4246,69 @@ class MainView {
     gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
     this.status(m.jobStarted.replace("{n}", total > 1 ? `${batch[0].id}〜#${batch[batch.length - 1].id}` : batch[0].id));
     for (const job of batch) this.runJob(job);
+  }
+
+  // 実行した時点の左パネルの設定（サムネイルを押したときに戻すため）
+  restoreSnapshot() {
+    const d = this.store.data;
+    const ui = this.store.ui;
+    return {
+      videoId: d.videoActive, llmId: d.llmActive, llmModel: this.store.llm?.model || "",
+      activeSkills: [...(d.activeSkills || [])], translate: !!d.translate,
+      overrides: clone(this.overridesFor()),
+      ui: clone({
+        aspect: ui.aspect, megapixels: ui.megapixels, fit: ui.fit, seconds: Number($("seconds").value),
+        seed: ui.seed ?? "", negative: ui.negative ?? "", direction: ui.direction ?? "", promptOptions: ui.promptOptions,
+      }),
+    };
+  }
+
+  // サムネイルを押したとき: プロンプトと左パネルを、その動画を作ったときの内容に戻す
+  restoreJob(job) {
+    const m = USER_SETTINGS.messages;
+    const r = job.restore;
+    if (!r || job.state !== "done") return;
+    if (this.running) { this.status(m.restoreBusy, true); return; }
+    const d = this.store.data;
+    if (d.videoProfiles[r.videoId]) d.videoActive = r.videoId;
+    if (d.llmProfiles[r.llmId]) {
+      d.llmActive = r.llmId;
+      if (r.llmModel) d.llmProfiles[r.llmId].model = r.llmModel;
+    }
+    d.activeSkills = r.activeSkills.filter((id) => d.skills[id]);
+    d.translate = r.translate;
+    Object.assign(this.store.ui, clone(r.ui));
+    const all = (this.store.ui.overrides ??= {});
+    if (Object.keys(r.overrides).length) all[r.videoId] = clone(r.overrides);
+    else delete all[r.videoId];
+    this.store.save();
+
+    this.file = job.file;
+    this.meta = job.meta;
+    this.img = job.img;
+    this.focus = { ...job.focus };
+    $("frame-canvas").hidden = false;
+    $("drop-hint").hidden = true;
+    $("frame-actions").hidden = false;
+    $("dropzone").classList.add("has-image");
+    this.showMeta(job.meta);
+    if (job.last) {
+      this.last = { ...job.last };
+      $("last-canvas").hidden = false;
+      $("last-hint").hidden = true;
+      $("last-clear").hidden = false;
+    } else if (this.last) {
+      this.clearLastImage();
+    }
+
+    this.statusBar.refresh();
+    this.refresh();
+    $("prompt-en").value = job.prompt;
+    $("prompt-ja").value = job.promptJa || "";
+    this.currentRun = null;
+    this.setStep("image", "done", `${job.meta.width}×${job.meta.height}`);
+    this.setStep("prompt", "done", `#${job.id}`);
+    this.status(m.jobRestored.replace("{n}", job.id));
   }
 
   jobThumb(job) {
@@ -4445,7 +4550,7 @@ class MainView {
     img.src = job.thumb;
     img.alt = "";
     thumb.append(img, el("span", "job-badge"), el("span", "play", "▶"), el("span", "job-now", "プレビュー中"));
-    thumb.addEventListener("click", () => this.selectJob(job));
+    thumb.addEventListener("click", () => { this.selectJob(job); this.restoreJob(job); });
     card.append(thumb, el("div", "job-body"));
     return card;
   }
@@ -4490,8 +4595,6 @@ class MainView {
     if (pending) {
       action("中止", () => this.cancelJob(job), "danger");
     } else {
-      if (job.state === "done") action("投稿", () => this.postToShareApp(job), "primary");
-      action("プロンプト", () => this.downloadPrompt(job));
       action("削除", () => this.removeJob(job));
     }
     body.append(actions);
