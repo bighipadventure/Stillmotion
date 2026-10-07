@@ -568,7 +568,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" id="skill-default-note"></p>
           <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
           <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span> <output id="seconds-out">5</output>秒</span>
-            <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
+            <input type="range" id="seconds" min="0.5" max="15" step="0.5" value="5">
           </label>
           <button class="adv-open" id="open-advanced" aria-haspopup="dialog">
             <span>詳しい設定</span><span class="adv-badge" id="adv-badge"></span><span class="adv-arrow" aria-hidden="true">›</span>
@@ -850,7 +850,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <h4 class="card-title"><span class="num">3</span>動画の作り方</h4>
         <div class="map-grid">
           <label class="field">プロンプト形式<select id="vid-style"></select></label>
-          <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
+          <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="0.5" max="60" step="0.5"></label>
         </div>
         <label class="check" style="margin:0"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ）</label>
         <p class="note" style="margin:6px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
@@ -1284,7 +1284,7 @@ const USER_SETTINGS = {
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
   legacyWorkflowNames: ["既定（MiniMax H3 画像→動画）"],
   officialSkillUrl: "https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing",
-  h3Seconds: { min: 4, max: 15 },
+  h3Seconds: { min: 0.5, max: 15 },
   defaultVideoId: "h3default",
   defaultSkillId: "h3writing",
   defaultVideoName: "MiniMax H3（既定）",
@@ -1478,7 +1478,7 @@ Output rules:
 - Avoid plot summaries, unresolved reference labels, and timing that does not match the requested duration.
 
 Tips for better results:
-- Always match the total duration of the description to the requested video length (4–15 seconds).
+- Always match the total duration of the description to the requested video length (0.5–15 seconds).
 - Keep reference labels consistent (e.g. <Picture 1>) across every section.
 - Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".
 - When using keyframes (I2VA / FL2VA / L2VA), clearly state how the first and/or last frame connects to the timeline.` },
@@ -3586,7 +3586,7 @@ class MainView {
     this.renderWorkflowParams();
     const m = v?.mapping || {};
     const lengthOk = !!(m.frames || m.seconds);
-    const range = this.isH3() ? USER_SETTINGS.h3Seconds : { min: 1, max: 15 };
+    const range = this.isH3() ? USER_SETTINGS.h3Seconds : { min: 0.5, max: 15 };
     const seconds = Math.min(Math.max(this.store.ui.seconds ?? v?.seconds ?? USER_SETTINGS.defaultSeconds, range.min), range.max);
     $("seconds").min = range.min;
     $("seconds").max = range.max;
