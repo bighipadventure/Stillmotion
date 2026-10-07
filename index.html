@@ -915,6 +915,7 @@ const USER_SETTINGS = {
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   storagePrefixes: ["sd2video."],
+  textInputTypes: ["text", "number", "url", "password", "search", "email"],
   // 既定（公式テンプレート）のほかに、最初から選べるワークフロー
   extraVideoProfiles: [
     {
@@ -4949,6 +4950,14 @@ class App {
     const signal = this.listeners.signal;
     $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
     $("open-flow").addEventListener("click", () => this.settings.open("flow"), { signal });
+    // 見出し（ラベル）や余白のクリックで文字入力欄にカーソルが移らないようにする（入力欄そのもののクリックは通常どおり）
+    document.addEventListener("click", (e) => {
+      const label = e.target.closest?.("label");
+      if (!label || e.target.closest("input, textarea, select, button, a")) return;
+      const control = label.control;
+      const typing = control && (control.tagName === "TEXTAREA" || (control.tagName === "INPUT" && USER_SETTINGS.textInputTypes.includes(control.type)));
+      if (typing) e.preventDefault();
+    }, { signal, capture: true });
     $("share-app-link").href = USER_SETTINGS.shareAppUrl;
     $("official-skill-link").href = USER_SETTINGS.officialSkillUrl;
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
