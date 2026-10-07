@@ -9,360 +9,433 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* ===== TOKENS ===== */
+/* ===== TOKENS =====
+   Adobe（Spectrum）系の配色。濃いグレーのパネルに、青のアクセントを1色だけ使う */
 :root {
-  --bg: #eceef2;
-  --surface: #ffffff;
-  --surface-2: #f4f5f8;
-  --ink: #12161c;
-  --muted: #4b5462;
-  --line: #d9dde4;
-  --line-strong: #a9b2be;
-  --accent: #0c5965;
-  --accent-hover: #08454f;
+  --bg: #e9e9e9;
+  --surface: #f5f5f5;
+  --surface-2: #ffffff;
+  --head: #e1e1e1;
+  --ink: #2c2c2c;
+  --muted: #5a5a5a;
+  --line: #d0d0d0;
+  --line-strong: #a8a8a8;
+  --control: #ffffff;
+  --control-hover: #ececec;
+  --accent: #0d66d0;
+  --accent-hover: #0a58b5;
   --on-accent: #ffffff;
-  --accent-soft: #dff0f2;
-  --on-accent-soft: #08414a;
-  --lamp: #f0a63a;
+  --accent-text: #0d66d0;
+  --accent-soft: #dde9f8;
+  --on-accent-soft: #0a4a99;
+  --lamp: #e68619;
+  --lamp-glow: rgba(230, 134, 25, .3);
   --on-lamp: #1b1204;
-  --lamp-glow: rgba(240, 166, 58, .38);
-  --danger: #b42318;
-  --danger-soft: #fdeceb;
-  --ok: #1b6e40;
-  --warn-soft: #fff0d6;
-  --on-warn-soft: #573800;
-  --tag-browser: #e3ecfb;
-  --on-tag-browser: #1d3f7a;
-  --tag-llm: #efe6fa;
+  --danger: #c9252d;
+  --danger-soft: #fbe6e6;
+  --ok: #268e6c;
+  --warn-soft: #fdf0dc;
+  --on-warn-soft: #5c3a00;
+  --tag-browser: #dde9f8;
+  --on-tag-browser: #0a4a99;
+  --tag-llm: #ece4f8;
   --on-tag-llm: #4b2a7a;
-  --tag-comfy: #fff0d6;
-  --on-tag-comfy: #5a3a00;
-  --film: #161b21;
-  --film-cell: #28313b;
-  --film-ink: #c3ccd6;
-  --film-active: #4a391a;
-  --film-active-ink: #ffdc9c;
+  --tag-comfy: #fdf0dc;
+  --on-tag-comfy: #5c3a00;
+  --film: #1b1b1b;
+  --film-cell: #3a3a3a;
+  --film-ink: #d6d6d6;
+  --film-active: #4a3a1a;
+  --film-active-ink: #ffd9a0;
   --film-error: #5c2521;
   --film-error-ink: #ffd8d4;
-  --run-height: 52px;
-  --radius-s: 8px;
-  --radius-m: 12px;
-  --radius-l: 16px;
-  --font: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --radius-s: 4px;
+  --radius-m: 4px;
+  --radius-l: 6px;
+  --h-control: 28px;
+  --run-height: 36px;
+  --topbar-h: 40px;
+  --font: "Source Han Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   color-scheme: light;
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d1115;
-    --surface: #161b21;
-    --surface-2: #1e252d;
-    --ink: #eef2f6;
-    --muted: #a9b4c0;
-    --line: #2b333d;
-    --line-strong: #4a5562;
-    --accent: #5fc3cd;
-    --accent-hover: #86d6de;
-    --on-accent: #04191c;
-    --accent-soft: #143439;
-    --on-accent-soft: #bdeef3;
-    --lamp: #f2b04d;
-    --on-lamp: #1b1204;
-    --lamp-glow: rgba(242, 176, 77, .3);
-    --danger: #ff9188;
-    --danger-soft: #3b1714;
-    --ok: #78d6a0;
+    --bg: #1b1b1b;
+    --surface: #2c2c2c;
+    --surface-2: #232323;
+    --head: #252525;
+    --ink: #e8e8e8;
+    --muted: #ababab;
+    --line: #3e3e3e;
+    --line-strong: #5a5a5a;
+    --control: #383838;
+    --control-hover: #454545;
+    --accent: #0d66d0;
+    --accent-hover: #1473e6;
+    --on-accent: #ffffff;
+    --accent-text: #5aa9fa;
+    --accent-soft: #1d3554;
+    --on-accent-soft: #cfe3fb;
+    --lamp: #f0a63a;
+    --lamp-glow: rgba(240, 166, 58, .28);
+    --danger: #ff8a8a;
+    --danger-soft: #3d1c1c;
+    --ok: #6fd6a8;
     --warn-soft: #3a2c10;
     --on-warn-soft: #ffe0a8;
-    --tag-browser: #1c2d4a;
-    --on-tag-browser: #bcd3ff;
-    --tag-llm: #2c2142;
+    --tag-browser: #1d3554;
+    --on-tag-browser: #cfe3fb;
+    --tag-llm: #2e2444;
     --on-tag-llm: #dcc9ff;
     --tag-comfy: #3a2c10;
     --on-tag-comfy: #ffe0a8;
-    --film: #090c0f;
-    --film-cell: #222a33;
+    --film: #121212;
+    --film-cell: #333333;
     color-scheme: dark;
   }
 }
 *, *::before, *::after { box-sizing: inherit; }
-html { scroll-padding-top: env(safe-area-inset-top, 0px); }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.65; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 13px; line-height: 1.5; }
 button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 [hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ===== CONTROLS ===== */
-button, .filebtn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
-  border-radius: var(--radius-s); padding: 8px 16px; cursor: pointer; font-weight: 500; line-height: 1.4;
-  transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+button, .filebtn, a.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--h-control);
+  border: 1px solid var(--line-strong); background: var(--control); color: var(--ink); text-decoration: none;
+  border-radius: var(--radius-s); padding: 3px 12px; cursor: pointer; font-size: 12px; font-weight: 500; line-height: 1.3;
+  transition: background-color .12s, border-color .12s, color .12s;
 }
-button:hover:not(:disabled), .filebtn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--on-accent-soft); }
-button:disabled { opacity: .5; cursor: not-allowed; }
+button:hover:not(:disabled), .filebtn:hover, a.btn:hover { background: var(--control-hover); border-color: var(--muted); }
+button:disabled { opacity: .45; cursor: not-allowed; }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
 button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
-button.big { width: 100%; padding: 15px; font-size: 18px; letter-spacing: .08em; border-radius: var(--radius-m); }
-button.run { background: var(--lamp); border-color: var(--lamp); color: var(--on-lamp); font-weight: 700; }
-button.run:hover:not(:disabled) { background: var(--lamp); border-color: var(--lamp); color: var(--on-lamp); box-shadow: 0 0 0 5px var(--lamp-glow); }
-button.chip { border-radius: 999px; padding: 5px 14px; font-size: 13px; }
+button.quiet { border-color: transparent; background: transparent; }
+button.quiet:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
+button.big { width: 100%; font-size: 14px; letter-spacing: .06em; }
+button.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button.run:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+button.chip { border-radius: 999px; min-height: 24px; padding: 1px 10px; font-size: 12px; }
 button.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
 button.chip[aria-pressed="true"]::before { content: "✓"; }
-button.link { border: none; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 700; }
-button.link:hover:not(:disabled) { background: none; color: var(--accent-hover); }
-button.danger { color: var(--danger); border-color: var(--danger); background: var(--surface); }
+button.link { border: none; background: none; padding: 0; min-height: 0; color: var(--accent-text); text-decoration: underline; font-weight: 700; }
+button.link:hover:not(:disabled) { background: none; }
+button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
 button.danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
 .filebtn { position: relative; overflow: hidden; }
 .filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.filebtn:focus-within { outline: 3px solid var(--lamp); outline-offset: 2px; }
+.filebtn:focus-within { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 input[type="text"], input[type="url"], input[type="password"], input[type="number"], select, textarea {
-  width: 100%; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-s); padding: 8px 11px;
-  transition: border-color .15s, background-color .15s;
+  width: 100%; min-height: var(--h-control); background: var(--surface-2); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s); padding: 3px 8px; font-size: 13px; transition: border-color .12s;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--surface); }
-input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
-textarea { resize: vertical; line-height: 1.6; }
+select { padding-right: 4px; }
+input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--muted); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent-text); outline: none; box-shadow: 0 0 0 1px var(--accent-text); }
+input:disabled, select:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
+textarea { resize: vertical; line-height: 1.55; padding: 6px 8px; }
 input[type="range"], input[type="checkbox"] { accent-color: var(--accent); }
 input[type="range"] { width: 100%; }
-label.field { display: block; margin-bottom: 14px; font-size: 13px; font-weight: 500; color: var(--muted); }
-label.field > input, label.field > select, label.field > textarea { margin-top: 4px; font-size: 15px; font-weight: 400; color: var(--ink); }
-label.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin-bottom: 10px; }
-label.check input { margin-top: 5px; }
-.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+label.field { display: block; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+label.field > input, label.field > select, label.field > textarea { margin-top: 3px; color: var(--ink); }
+label.check { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; margin-bottom: 6px; }
+label.check input { margin-top: 3px; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .row > .grow { flex: 1 1 200px; }
-.note { font-size: 13px; color: var(--muted); margin: 4px 0 12px; }
-.msg { font-size: 14px; margin: 8px 0; white-space: pre-wrap; }
+.note { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+.note:empty { display: none; }
+.msg { font-size: 13px; margin: 6px 0; white-space: pre-wrap; }
 .msg.ok { color: var(--ok); }
 .msg.err { color: var(--danger); }
-details { border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface-2); }
 details > summary {
-  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
-  font-size: 14px; font-weight: 700; color: var(--ink); border-radius: var(--radius-m);
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 0;
+  font-size: 12px; font-weight: 700; color: var(--muted);
 }
 details > summary::-webkit-details-marker { display: none; }
 details > summary::before {
-  content: ""; width: 8px; height: 8px; flex: none; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
-  transform: rotate(-45deg); transition: transform .15s;
+  content: ""; width: 0; height: 0; flex: none; border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+  transition: transform .12s;
 }
-details[open] > summary::before { transform: rotate(45deg); }
-details > summary::after { content: "開く"; margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
-details[open] > summary::after { content: "閉じる"; }
-details > summary:hover { background: var(--accent-soft); color: var(--on-accent-soft); }
-details > :not(summary) { margin-left: 14px; margin-right: 14px; }
-details[open] { padding-bottom: 12px; }
-code { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
+details[open] > summary::before { transform: rotate(90deg); }
+details > summary:hover { color: var(--ink); }
+details[open] > summary { margin-bottom: 4px; }
+code { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); padding: 0 5px; border-radius: 3px; word-break: break-all; font-size: 12px; }
 
-/* ===== LAYOUT ===== */
-.topbar { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
-.topbar h1 { font-size: 20px; margin: 0 8px 0 0; font-weight: 700; letter-spacing: .06em; display: flex; align-items: center; gap: 10px; }
-.topbar h1::before { content: ""; width: 14px; height: 14px; border-radius: 4px; background: var(--lamp); box-shadow: 0 0 0 4px var(--lamp-glow); }
-.pills { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
-.pill { font-size: 13px; border-radius: 999px; padding: 4px 12px; background: var(--surface-2); border-color: var(--line); }
-.pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+/* ===== APP SHELL ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 10; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 10px;
+  background: var(--head); border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 14px; margin: 0 6px 0 2px; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+.topbar h1::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--lamp); }
+.pills { display: flex; gap: 4px; margin-left: auto; flex-wrap: nowrap; overflow: hidden; }
+.pill { min-height: 24px; font-size: 12px; border-radius: 999px; padding: 1px 10px; background: transparent; border-color: var(--line); white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
 .pill[data-state="ok"]::before { background: var(--ok); }
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
-.banner { background: var(--warn-soft); color: var(--on-warn-soft); padding: 10px 24px; font-size: 14px; font-weight: 500; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.layout { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
-@media (max-width: 860px) { .layout { grid-template-columns: 1fr; padding: 16px; } .topbar { padding: 12px 16px; } }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 20px; }
-.col-input { display: flex; flex-direction: column; gap: 16px; align-self: start; }
-.col-output { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.box-title { font-size: 14px; font-weight: 700; margin: 0 0 10px; color: var(--ink); }
-.field-label { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; }
-.subbox { border-top: 1px solid var(--line); padding-top: 14px; }
+.banner { background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 1px; background: var(--line); min-height: calc(100vh - var(--topbar-h)); }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .pills { display: none; } }
+
+/* 左: プロパティパネル（上は個別にスクロール、実行ボタンは下に固定） */
+.col-input {
+  background: var(--surface); display: flex; flex-direction: column;
+  position: sticky; top: var(--topbar-h); height: calc(100vh - var(--topbar-h)); align-self: start;
+}
+@media (max-width: 860px) { .col-input { position: static; height: auto; } }
+.side-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
+.psec { border-bottom: 1px solid var(--line); }
+.psec-title {
+  margin: 0; padding: 5px 10px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted);
+  background: var(--head); border-bottom: 1px solid var(--line);
+}
+.psec-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.psec-body > .field, .psec-body > details, .psec-body .field { margin: 0; }
+.prop { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: center; margin: 0; }
+.prop-top { align-items: start; }
+.prop-top .prop-label { padding-top: 3px; }
+.prop-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.prop-label output { color: var(--ink); font-weight: 700; }
+#seconds-field { grid-template-columns: 76px minmax(0, 1fr); }
+.side-foot { flex: none; padding: 8px 10px; background: var(--head); border-top: 1px solid var(--line); }
+
+/* 右: 作業エリア */
+.col-output { display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.panel { background: var(--surface); border-bottom: 1px solid var(--line); }
+.panel-head {
+  display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 10px;
+  background: var(--head); border-bottom: 1px solid var(--line);
+}
+.panel-head h2 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.head-count { font-weight: 500; letter-spacing: 0; margin-left: 4px; }
+.head-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.panel-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 12px; color: var(--muted); margin: 0; }
+.box-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; }
 
 /* ===== DROPZONE ===== */
 .dropzone {
-  display: grid; place-items: center; min-height: 220px; border: 2px dashed var(--line-strong); border-radius: var(--radius-m);
-  cursor: pointer; text-align: center; padding: 12px; overflow: hidden; position: relative; background: var(--surface-2);
-  transition: border-color .15s, background-color .15s;
+  display: grid; place-items: center; min-height: 150px; border: 1px dashed var(--line-strong); border-radius: var(--radius-s);
+  cursor: pointer; text-align: center; padding: 8px; overflow: hidden; position: relative; background: var(--surface-2);
+  transition: border-color .12s, background-color .12s;
 }
-.dropzone:focus-within { outline: 3px solid var(--lamp); outline-offset: 2px; }
-.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone .hint { color: var(--muted); font-size: 14px; }
-.dropzone .hint strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.dropzone:focus-within { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.dropzone.over { border-color: var(--accent-text); background: var(--accent-soft); }
+.dropzone .hint { color: var(--muted); font-size: 12px; }
+.dropzone .hint strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
 .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.dropzone.has-image { cursor: default; border-style: solid; border-color: var(--line); background: var(--film); }
+.dropzone.has-image { cursor: default; border-style: solid; border-color: var(--line); background: var(--film); padding: 4px; }
 .dropzone.has-image input { pointer-events: none; }
-#frame-canvas { position: relative; z-index: 1; display: block; max-width: 100%; max-height: 380px; border-radius: 4px; touch-action: none; }
+#frame-canvas { position: relative; z-index: 1; display: block; max-width: 100%; max-height: 300px; touch-action: none; }
 #frame-canvas.draggable { cursor: grab; }
 #frame-canvas.dragging { cursor: grabbing; }
-#meta-text { white-space: pre-wrap; font-size: 12px; max-height: 240px; overflow: auto; margin: 8px 0 0; color: var(--muted); }
-.skill-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; }
-.seg button { flex: 1; border: none; border-radius: 0; border-right: 1px solid var(--line-strong); padding: 8px 6px; font-size: 13px; background: var(--surface); }
-.seg button:last-child { border-right: none; }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 700; }
-#frame-actions button { padding: 6px 12px; font-size: 13px; }
-.opt-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; }
-.opt-grid .field-label { margin: 0; }
-.dropzone.small { min-height: 120px; margin-top: 10px; }
-#last-canvas { display: block; max-width: 100%; max-height: 200px; border-radius: 4px; }
-.frame-info { font-size: 13px; color: var(--muted); margin: 10px 0 0; white-space: pre-wrap; }
-.frame-info strong { color: var(--ink); font-size: 15px; }
-
-/* ===== FILMSTRIP ===== */
-.status-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-.status-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; min-height: 32px; }
-#cancel { padding: 4px 14px; font-size: 13px; margin-left: auto; }
-.filmstrip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.filmstrip li {
-  display: inline-flex; align-items: baseline; gap: 6px; font-size: 13px; font-weight: 700; padding: 3px 12px; border-radius: 999px;
-  background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); transition: background .2s, color .2s;
+#frame-actions button { min-height: 24px; padding: 1px 8px; }
+#meta-text { white-space: pre-wrap; font-size: 11px; max-height: 200px; overflow: auto; margin: 0; color: var(--muted); }
+.dropzone.small { min-height: 90px; }
+#last-canvas { display: block; max-width: 100%; max-height: 160px; }
+.skill-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); }
+.seg button {
+  flex: 1; min-width: 0; min-height: 26px; border: none; border-radius: 0; border-right: 1px solid var(--line-strong);
+  padding: 2px 4px; font-size: 12px; background: transparent; white-space: nowrap;
 }
-.filmstrip li { position: relative; }
-.filmstrip li + li { margin-left: 14px; }
-.filmstrip li + li::before { content: "›"; position: absolute; left: -15px; top: 50%; transform: translateY(-55%); color: var(--muted); font-weight: 400; font-size: 16px; }
-.filmstrip li small { font-weight: 400; font-size: 12px; }
+.seg button:last-child { border-right: none; }
+.seg button:hover:not(:disabled) { background: var(--control-hover); }
+.seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.opt-grid { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 5px 8px; align-items: center; }
+.frame-info { font-size: 12px; color: var(--muted); margin: 0; white-space: pre-wrap; }
+.frame-info:empty { display: none; }
+.frame-info strong { color: var(--ink); }
+
+/* ===== STATUS ===== */
+.status-panel { padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; }
+.status-head { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
+#cancel { min-height: 24px; padding: 1px 10px; }
+.filmstrip { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; flex: none; }
+.filmstrip li {
+  position: relative; display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px; font-weight: 700; padding: 1px 9px;
+  border-radius: 3px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line);
+}
+.filmstrip li + li { margin-left: 12px; }
+.filmstrip li + li::before { content: "›"; position: absolute; left: -11px; top: 50%; transform: translateY(-55%); color: var(--muted); font-weight: 400; }
+.filmstrip li small { font-weight: 400; font-size: 11px; }
 .filmstrip li small:empty { display: none; }
 .filmstrip li[data-state="active"] { background: var(--warn-soft); color: var(--on-warn-soft); border-color: var(--lamp); }
-.filmstrip li[data-state="done"] { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent); }
+.filmstrip li[data-state="done"] { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent-text); }
 .filmstrip li[data-state="error"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
-.progress { height: 4px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.progress > div { height: 100%; width: 0; background: var(--lamp); transition: width .3s; }
-#run-status { margin: 0; font-size: 13px; min-height: 1.5em; white-space: pre-wrap; }
-.video-panel { display: flex; flex-direction: column; gap: 12px; }
-.video-panel .gallery { margin-top: 0; }
-.run-block { display: flex; flex-direction: column; gap: 6px; }
-.run-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: end; }
-.run-row label.count-field { margin: 0; }
-.run-row select, .run-row button.big { height: var(--run-height); margin: 0; }
-.run-row select { padding: 0 10px; font-size: 16px; }
-.run-row button.big { padding: 0 15px; }
-.run-block .note { margin: 0; }
+.overall { display: flex; align-items: center; gap: 8px; flex: 1 1 160px; min-width: 120px; }
+.progress { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.overall .progress { flex: 1; }
+.progress > div { height: 100%; width: 0; background-color: var(--lamp); transition: width .4s; }
+.overall-pct { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
+.progress.busy > div {
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+  background-size: 60px 100%; background-repeat: no-repeat; animation: shimmer 1.3s linear infinite;
+}
+@keyframes shimmer { from { background-position: -60px 0; } to { background-position: calc(100% + 60px) 0; } }
+#run-status { margin: 0; font-size: 12px; min-height: 1.5em; white-space: pre-wrap; color: var(--muted); }
 #run-status.err { color: var(--danger); }
 
-/* ===== SCREEN ===== */
-.screen { background: var(--film); border-radius: var(--radius-l); min-height: 260px; display: grid; place-items: center; overflow: hidden; }
-.screen video { width: 100%; max-height: 70vh; display: block; background: #000; }
-.screen .empty { color: var(--film-ink); font-size: 14px; padding: 24px; text-align: center; }
-.gallery-head { display: flex; align-items: baseline; gap: 10px; }
-.gallery { display: flex; gap: 12px; overflow-x: auto; padding: 4px 4px 8px; margin: 0 -4px; scroll-snap-type: x proximity; }
+/* ComfyUI のデータ不足の案内 */
+.help-box { border: 1px solid var(--lamp); background: var(--warn-soft); color: var(--on-warn-soft); border-radius: var(--radius-s); padding: 8px 10px; font-size: 12px; }
+.help-head { display: flex; align-items: center; gap: 8px; }
+.help-head strong { font-size: 13px; }
+.help-head button { margin-left: auto; min-height: 22px; padding: 0 8px; color: inherit; }
+.help-box p { margin: 4px 0; }
+.help-items { margin: 2px 0 6px; padding-left: 1.3em; font-weight: 700; word-break: break-all; }
+.help-steps { margin: 4px 0 8px; padding-left: 1.5em; }
+.help-steps li { margin-bottom: 2px; }
+.help-box a.btn { color: var(--ink); }
+.help-detail { margin: 0 0 8px; }
+.help-detail summary { color: inherit; }
+.help-detail pre { margin: 0; white-space: pre-wrap; word-break: break-all; font-size: 11px; max-height: 140px; overflow: auto; }
+
+/* ===== PROMPT ===== */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair .field { margin: 0; }
+@media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+.revise-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+@media (max-width: 720px) { .revise-row { grid-template-columns: 1fr auto; } .revise-row .primary { grid-column: 1 / -1; } }
+
+/* ===== VIDEO ===== */
+.video-panel .panel-body { gap: 8px; }
+.gallery { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scroll-snap-type: x proximity; }
 .gallery:empty { display: none; }
-.job { flex: 0 0 176px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden; background: var(--surface); display: flex; flex-direction: column; }
-.job[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
-.job-thumb { position: relative; display: block; width: 100%; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
+.job { flex: 0 0 148px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); display: flex; flex-direction: column; }
+.job[aria-current="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 2px var(--accent-text); }
+.job-thumb { position: relative; display: block; width: 100%; min-height: 0; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
 .job-thumb:hover:not(:disabled) { background: var(--film); }
 .job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; transition: filter .3s; }
 .job-thumb:disabled { cursor: default; opacity: 1; }
 .job[data-state="preparing"] .job-thumb img, .job[data-state="queued"] .job-thumb img, .job[data-state="running"] .job-thumb img { filter: brightness(.4) saturate(.5); }
 .job-thumb .spinner {
-  position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; border-radius: 50%;
+  position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--lamp); animation: spin .9s linear infinite;
 }
 .job[data-state="queued"] .job-thumb .spinner, .job[data-state="preparing"] .job-thumb .spinner { border-top-color: rgba(255, 255, 255, .85); animation-duration: 1.6s; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 28px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .15s; }
+.job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .12s; }
 .job[data-state="done"] .job-thumb:hover .play, .job[data-state="done"] .job-thumb:focus-visible .play { opacity: 1; }
-.job-badge { position: absolute; left: 8px; top: 8px; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 10px; background: var(--film-cell); color: var(--film-ink); }
+.job-badge { position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 700; border-radius: 3px; padding: 0 6px; background: var(--film-cell); color: var(--film-ink); }
 .job[data-state="running"] .job-badge { background: var(--film-active); color: var(--film-active-ink); }
 .job[data-state="done"] .job-badge { background: var(--lamp); color: var(--on-lamp); }
 .job[data-state="error"] .job-badge { background: var(--film-error); color: var(--film-error-ink); }
-.job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 8px; font-size: 12px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
+.job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
 .job:not([aria-current="true"]) .job-now { display: none; }
-.job-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
-.job-title { font-weight: 700; font-size: 13px; }
-.job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.job-body { padding: 5px 7px 7px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.job-title { font-weight: 700; font-size: 12px; line-height: 1.35; }
+.job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .job-status.err { color: var(--danger); }
-.job .progress { height: 4px; }
-.job-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.job-actions button { padding: 3px 10px; font-size: 12px; }
-.preview-head { display: flex; align-items: center; min-height: 26px; }
-.preview-label { font-size: 13px; font-weight: 700; color: var(--muted); }
-.preview-label.active { color: var(--on-accent-soft); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 999px; padding: 2px 12px; }
-@media (prefers-reduced-motion: reduce) { .job-thumb .spinner { animation-duration: 3s; } }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
+.job .progress { height: 3px; }
+.job-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.job-actions button { min-height: 22px; padding: 0 7px; font-size: 11px; }
+.preview-label { font-size: 12px; color: var(--muted); }
+.preview-label.active { color: var(--accent-text); font-weight: 700; }
+.screen { background: var(--film); border-radius: var(--radius-s); min-height: 200px; display: grid; place-items: center; overflow: hidden; }
+.screen video { width: 100%; max-height: 64vh; display: block; background: #000; }
+.screen .empty { color: var(--film-ink); font-size: 12px; padding: 16px; text-align: center; }
+
+/* ===== RUN ===== */
+.run-block { display: flex; flex-direction: column; gap: 4px; }
+.run-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px; }
+.run-row .count-field { margin: 0; }
+.run-row select, .run-row button.big { height: var(--run-height); margin: 0; }
+.run-row select { padding: 0 6px; font-size: 13px; }
+.run-block .note { margin: 0; font-size: 11px; }
 
 /* ===== SETTINGS DIALOG ===== */
 dialog#settings {
-  width: min(980px, 100vw - 24px); height: min(740px, 100dvh - 24px); max-width: none; max-height: none;
-  padding: 0; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  width: min(920px, 100vw - 24px); height: min(680px, 100dvh - 24px); max-width: none; max-height: none;
+  padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
 dialog#settings[open] { display: flex; flex-direction: column; }
-dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
-.dlg-head { flex: none; display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
-.dlg-head h2 { margin: 0; font-size: 18px; }
+dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
+.dlg-head { flex: none; display: flex; align-items: center; padding: 4px 6px 4px 14px; min-height: 36px; border-bottom: 1px solid var(--line); background: var(--head); }
+.dlg-head h2 { margin: 0; font-size: 13px; }
 .dlg-head button { margin-left: auto; }
-.dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: flex-end; padding: 10px 20px; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 13px; color: var(--muted); }
-.dlg-foot a { color: var(--accent); font-weight: 700; }
-.dlg-foot a:hover { color: var(--accent-hover); }
-.dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-.tabs { border-right: 1px solid var(--line); padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--surface-2); }
-.tab-group { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); padding: 14px 12px 4px; }
-.tab-group:first-child { padding-top: 4px; }
-.tab-group:not(:first-child) { border-top: 1px solid var(--line-strong); margin-top: 10px; padding-top: 12px; }
-.tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; color: var(--ink); padding: 8px 12px; border-radius: var(--radius-s); }
-.tabs button:hover:not(:disabled) { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: flex-end; padding: 5px 14px; border-top: 1px solid var(--line); background: var(--head); font-size: 12px; color: var(--muted); }
+.dlg-foot a { color: var(--accent-text); font-weight: 700; }
+.dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.tabs { border-right: 1px solid var(--line); padding: 6px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; background: var(--head); }
+.tab-group { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); padding: 8px 8px 2px; }
+.tab-group:first-child { padding-top: 2px; }
+.tab-group:not(:first-child) { border-top: 1px solid var(--line-strong); margin-top: 6px; padding-top: 8px; }
+.tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; padding: 3px 8px; font-size: 13px; }
+.tabs button:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
 .tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
-.pane { padding: 24px 28px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
-.pane::after { content: ""; flex: none; height: 8px; }
-.pane-head h3 { margin: 0 0 4px; font-size: 20px; }
-.lead a, .note a { color: var(--accent); font-weight: 700; }
-.lead a:hover, .note a:hover { color: var(--accent-hover); }
-.lead { margin: 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
-.card { border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px 18px; background: var(--surface); }
-.card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; font-size: 15px; font-weight: 700; }
-.card-title .num { width: 24px; height: 24px; border-radius: 50%; background: var(--film); color: var(--lamp); display: grid; place-items: center; font-size: 13px; flex: none; }
-.sub-title { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-size: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
-.badge { font-size: 12px; font-weight: 500; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 0 10px; }
-.cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: card; }
-.cards > .card { counter-increment: card; position: relative; padding-left: 56px; }
-.cards > .card::before {
-  content: counter(card); position: absolute; left: 18px; top: 15px; width: 26px; height: 26px; border-radius: 50%;
-  background: var(--film); color: var(--lamp); display: grid; place-items: center; font-weight: 700; font-size: 13px;
+.pane { padding: 14px 16px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.pane::after { content: ""; flex: none; height: 4px; }
+@media (max-width: 700px) {
+  .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .tabs { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); }
+  .tab-group { display: none; }
+  .tabs button { flex: none; }
+  .pane { padding: 12px 12px 0; }
+  .pane-actions { margin: auto -12px 0; padding: 8px 12px; }
+  .inline-field { grid-template-columns: 1fr; }
 }
-.cards .card-title { margin-bottom: 6px; min-height: 26px; }
-.note.sub { font-size: 12px; margin-bottom: 0; }
-.copyline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 10px; }
-.copyline code { padding: 6px 10px; font-size: 13px; }
-.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+.pane-head h3 { margin: 0 0 2px; font-size: 16px; }
+.lead { margin: 0; font-size: 12px; color: var(--muted); max-width: 72ch; }
+.lead a, .note a { color: var(--accent-text); font-weight: 700; }
+.card { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; background: var(--surface-2); }
+.card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 700; }
+.card-title .num { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 11px; flex: none; }
+.sub-title { display: flex; align-items: center; gap: 6px; margin: 10px 0 2px; font-size: 13px; padding-top: 8px; border-top: 1px solid var(--line); }
+.badge { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+.cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: card; }
+.cards > .card { counter-increment: card; position: relative; padding-left: 42px; }
+.cards > .card::before {
+  content: counter(card); position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 11px;
+}
+.cards .card-title { margin-bottom: 4px; min-height: 20px; }
+.note.sub { font-size: 11px; margin-bottom: 0; }
+.copyline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 2px 0 6px; }
+.copyline code { padding: 3px 8px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 12px; }
 .kv dt { font-weight: 700; }
 .kv dd { margin: 0; color: var(--muted); }
-.inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; }
 .pane-actions {
-  position: sticky; bottom: 0; z-index: 2; margin: auto -28px 0; padding: 12px 28px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  background: var(--surface); border-top: 1px solid var(--line);
+  position: sticky; bottom: 0; z-index: 2; margin: auto -16px 0; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  background: var(--head); border-top: 1px solid var(--line);
 }
 .pane-actions .msg { flex: 1 1 100%; margin: 0; }
 .pane-actions .msg:empty { display: none; }
 .danger-zone { border-color: var(--danger); }
-#diag-out:not(:empty) { margin-top: 12px; }
-@media (max-width: 700px) {
-  .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .tabs { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); padding: 8px; }
-  .tab-group { display: none; }
-  .tabs button { flex: none; }
-  .pane { padding: 18px 16px 0; }
-  .pane-actions { margin: auto -16px 0; padding: 12px 16px; }
-  .inline-field { grid-template-columns: 1fr; }
-}
-.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 14px 18px; border-radius: var(--radius-m); background: var(--surface-2); border: 1px solid var(--line); }
+#diag-out:not(:empty) { margin-top: 8px; }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; padding: 8px 12px; border-radius: var(--radius-s); background: var(--head); border: 1px solid var(--line); }
 .picker .field { margin: 0; }
-.map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
 @media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
-.diag { font-size: 14px; margin: 6px 0; }
+.diag { font-size: 13px; margin: 4px 0; }
 
 /* ===== TIMELINE ===== */
-.timeline { list-style: none; margin: 18px 0 0; padding: 0; counter-reset: step; }
-.timeline li { position: relative; padding: 0 0 20px 46px; counter-increment: step; }
+.timeline { list-style: none; margin: 4px 0 0; padding: 0; counter-reset: step; }
+.timeline li { position: relative; padding: 0 0 12px 36px; counter-increment: step; }
 .timeline li::before {
-  content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%;
-  background: var(--film); color: var(--lamp); display: grid; place-items: center; font-weight: 700; font-size: 14px;
+  content: counter(step); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 12px;
 }
-.timeline li::after { content: ""; position: absolute; left: 14px; top: 34px; bottom: 4px; width: 2px; background: var(--line); }
+.timeline li::after { content: ""; position: absolute; left: 11px; top: 28px; bottom: 2px; width: 2px; background: var(--line); }
 .timeline li:last-child::after { display: none; }
-.tl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 30px; }
-.tl-head strong { font-size: 15px; }
-.timeline p { margin: 4px 0 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
-.where { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 10px; }
+.tl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 24px; }
+.tl-head strong { font-size: 13px; }
+.timeline p { margin: 2px 0 0; font-size: 12px; color: var(--muted); max-width: 72ch; }
+.where { font-size: 11px; font-weight: 700; border-radius: 3px; padding: 0 7px; }
 .where.browser { background: var(--tag-browser); color: var(--on-tag-browser); }
 .where.llm { background: var(--tag-llm); color: var(--on-tag-llm); }
 .where.comfy { background: var(--tag-comfy); color: var(--on-tag-comfy); }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .progress.busy > div { animation: none; }
+  .job-thumb .spinner { animation-duration: 3s; }
+}
 </style>
 </head>
 <body>
@@ -372,8 +445,8 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
     <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
     <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
   </div>
-  <button id="open-flow">動画ができるまで</button>
-  <button id="open-settings">設定</button>
+  <button class="quiet" id="open-flow">動画ができるまで</button>
+  <button class="quiet" id="open-settings">設定</button>
 </header>
 <div class="banner" id="setup-banner" hidden>
   <span id="setup-banner-text"></span>
@@ -381,72 +454,82 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
 </div>
 
 <main class="layout">
-  <section class="col-input panel">
-    <div class="dropzone" id="dropzone">
-      <input type="file" id="file-input" accept="image/png,image/*" aria-label="画像を選ぶ">
-      <canvas id="frame-canvas" tabindex="0" aria-label="動画の最初のフレーム" hidden></canvas>
-      <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックして選ぶこともできます）</span>
-    </div>
-    <div class="row" id="frame-actions" hidden>
-      <button id="change-image">別の画像を選ぶ</button>
-      <button id="reset-focus">切り抜き位置を中央に戻す</button>
-    </div>
-    <section class="subbox" aria-labelledby="frame-title">
-      <h2 class="box-title" id="frame-title">動画のサイズ</h2>
-      <div class="map-grid">
-        <label class="field">縦横比<select id="aspect"></select></label>
-        <label class="field">大きさ（メガピクセル）<select id="megapixels"></select></label>
-      </div>
-      <div class="field-label" id="fit-label">画像の合わせ方</div>
-      <div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div>
-      <p class="frame-info" id="frame-info" aria-live="polite"></p>
-    </section>
-    <section class="subbox" aria-labelledby="popt-title">
-      <h2 class="box-title" id="popt-title">プロンプトの指定</h2>
-      <div class="opt-grid" id="prompt-options"></div>
-      <p class="frame-info" id="mode-info" aria-live="polite"></p>
-      <div id="last-box" hidden>
-        <div class="dropzone small" id="last-drop">
-          <input type="file" id="last-input" accept="image/png,image/*" aria-label="最後のフレームの画像を選ぶ">
-          <canvas id="last-canvas" hidden></canvas>
-          <span class="hint" id="last-hint"><strong>最後のフレームにする画像をドロップ（省略可）</strong>入れないときは最初の画像を最後のフレームにも使います</span>
+  <aside class="col-input" aria-label="入力と指定">
+    <div class="side-scroll">
+      <section class="psec" aria-labelledby="img-title">
+        <h2 class="psec-title" id="img-title">画像</h2>
+        <div class="psec-body">
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="image/png,image/*" aria-label="画像を選ぶ">
+            <canvas id="frame-canvas" tabindex="0" aria-label="動画の最初のフレーム" hidden></canvas>
+            <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックでも選べます）</span>
+          </div>
+          <div class="row" id="frame-actions" hidden>
+            <button id="change-image">別の画像</button>
+            <button id="reset-focus">切り抜きを中央に</button>
+          </div>
+          <details id="meta-box" hidden>
+            <summary>画像の情報（メタデータ）</summary>
+            <pre id="meta-text"></pre>
+          </details>
         </div>
-        <div class="row" style="margin-top:8px"><button id="last-clear" hidden>最後の画像を外す</button></div>
-      </div>
-      <label class="field" style="margin:12px 0 0">狙いたい構図・シチュエーション（任意）<textarea id="direction" rows="3" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
-    </section>
-    <details id="meta-box" hidden>
-      <summary>画像の情報（メタデータ）</summary>
-      <pre id="meta-text"></pre>
-    </details>
-    <section class="subbox" aria-labelledby="engine-title">
-      <h2 class="box-title" id="engine-title">使うAI</h2>
-      <label class="field" id="sel-llm-field">文章AIの接続先<select id="sel-llm"></select></label>
-      <label class="field" style="margin-bottom:4px">文章AIのモデル<select id="sel-model"></select></label>
-      <p class="note" id="sel-model-note" style="margin:0 0 10px"></p>
-      <label class="field" id="sel-video-field">動画の設定<select id="sel-video"></select></label>
-    </section>
-    <div>
-      <div class="note" id="skill-chips-label" style="margin:0 0 6px">スキル（押すとON/OFF）</div>
-      <div class="skill-chips" id="skill-chips"></div>
-      <p class="note" id="skill-default-note" style="margin:8px 0 0"></p>
+      </section>
+
+      <section class="psec" aria-labelledby="frame-title">
+        <h2 class="psec-title" id="frame-title">動画のサイズ</h2>
+        <div class="psec-body">
+          <div class="prop"><span class="prop-label">縦横比</span><select id="aspect" aria-label="縦横比"></select></div>
+          <div class="prop"><span class="prop-label">大きさ</span><select id="megapixels" aria-label="大きさ（メガピクセル）"></select></div>
+          <div class="prop"><span class="prop-label" id="fit-label">合わせ方</span><div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div></div>
+          <p class="frame-info" id="frame-info" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="psec" aria-labelledby="popt-title">
+        <h2 class="psec-title" id="popt-title">プロンプトの指定</h2>
+        <div class="psec-body">
+          <div class="opt-grid" id="prompt-options"></div>
+          <p class="frame-info" id="mode-info" aria-live="polite"></p>
+          <div id="last-box" hidden>
+            <div class="dropzone small" id="last-drop">
+              <input type="file" id="last-input" accept="image/png,image/*" aria-label="最後のフレームの画像を選ぶ">
+              <canvas id="last-canvas" hidden></canvas>
+              <span class="hint" id="last-hint"><strong>最後のフレームの画像（省略可）</strong>入れないときは最初の画像を使います</span>
+            </div>
+            <div class="row"><button id="last-clear" hidden>最後の画像を外す</button></div>
+          </div>
+          <label class="field">狙いたい構図・シチュエーション（任意）<textarea id="direction" rows="2" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
+        </div>
+      </section>
+
+      <section class="psec" aria-labelledby="engine-title">
+        <h2 class="psec-title" id="engine-title">生成</h2>
+        <div class="psec-body">
+          <div class="prop" id="sel-llm-field"><span class="prop-label">文章AI</span><select id="sel-llm" aria-label="文章AIの接続先"></select></div>
+          <div class="prop"><span class="prop-label">モデル</span><select id="sel-model" aria-label="文章AIのモデル"></select></div>
+          <p class="note" id="sel-model-note"></p>
+          <div class="prop" id="sel-video-field"><span class="prop-label">動画</span><select id="sel-video" aria-label="動画の設定"></select></div>
+          <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
+          <p class="note" id="skill-default-note"></p>
+          <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span> <output id="seconds-out">5</output>秒</span>
+            <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
+          </label>
+          <details>
+            <summary>詳しい設定</summary>
+            <div class="prop"><span class="prop-label">シード</span><input type="number" id="seed" min="0" placeholder="空欄 = 毎回ランダム" aria-label="シード"></div>
+            <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローのまま）<textarea id="negative" rows="2"></textarea></label>
+          </details>
+        </div>
+      </section>
     </div>
-    <label class="field" id="seconds-field">動画の長さ: <output id="seconds-out">5</output> 秒
-      <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
-    </label>
-    <details>
-      <summary>詳しい設定（ふだんは触らなくてOK）</summary>
-      <label class="field" style="margin-top:10px">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
-      <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローの設定のまま）<textarea id="negative" rows="3"></textarea></label>
-    </details>
-    <div class="run-block">
+    <div class="side-foot run-block">
       <div class="run-row">
-        <label class="field count-field">本数<select id="run-count"></select></label>
+        <label class="count-field"><span class="sr-only">本数</span><select id="run-count" aria-label="本数"></select></label>
         <button class="run big" id="run">実行</button>
       </div>
-      <p class="note">同じ画像とプロンプトで、指定した本数の動画を作ります。</p>
+      <p class="note">同じ画像・プロンプトで、選んだ本数を作ります。</p>
     </div>
-  </section>
+  </aside>
 
   <section class="col-output">
     <div class="panel status-panel">
@@ -456,40 +539,71 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
           <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
           <li data-step="video" data-state="idle">動画<small></small></li>
         </ol>
+        <div class="overall">
+          <div class="progress" id="progress" role="progressbar" aria-label="全体の進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
+          <span class="overall-pct" id="progress-pct">0%</span>
+        </div>
         <button class="danger" id="cancel" hidden>中止する</button>
       </div>
-      <div class="progress"><div id="progress-bar"></div></div>
       <p id="run-status" role="status"></p>
+      <div class="help-box" id="comfy-help" role="alert" hidden>
+        <div class="help-head">
+          <strong>ComfyUI でデータが足りていない可能性があります</strong>
+          <button class="quiet" id="comfy-help-close" aria-label="案内を閉じる">閉じる</button>
+        </div>
+        <p id="comfy-help-lead"></p>
+        <ul class="help-items" id="comfy-help-items" hidden></ul>
+        <ol class="help-steps">
+          <li>「ワークフローを書き出す」で JSON を保存し、「ComfyUI を開く」で開いた画面にドロップして、ワークフローを展開します<span id="comfy-help-template">（既定のワークフローは、ComfyUI のメニュー「テンプレート」から MiniMax H3 の画像→動画を開いても同じです。足りないモデルのダウンロード案内が出ます）</span></li>
+          <li>赤く表示されたノードは、ComfyUI の「Manager」→「Install Missing Custom Nodes」でインストールし、ComfyUI を再起動します</li>
+          <li>足りないモデル（.safetensors）は、ComfyUI に出るダウンロード案内か、上に表示した「入れる場所」のフォルダに入れます</li>
+          <li>ComfyUI で一度「実行」して動画ができたら、このアプリで「このプロンプトで動画を作り直す」を押します</li>
+        </ol>
+        <details class="help-detail"><summary>ComfyUI からのエラー内容</summary><pre id="comfy-help-raw"></pre></details>
+        <div class="row">
+          <button class="primary" id="comfy-help-export">ワークフローを書き出す</button>
+          <a class="btn" id="comfy-help-open" target="_blank" rel="noopener">ComfyUI を開く ↗</a>
+        </div>
+      </div>
     </div>
-    <div class="panel">
-      <h2 class="box-title">プロンプト</h2>
-      <div class="pair">
-        <label class="field">英語プロンプト（動画にはこちらを使います）<textarea id="prompt-en" rows="9"></textarea></label>
-        <label class="field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="9"></textarea></label>
+
+    <section class="panel" aria-labelledby="prompt-title">
+      <div class="panel-head">
+        <h2 id="prompt-title">プロンプト</h2>
+        <div class="head-tools">
+          <button id="to-ja">英語 → 日本語</button>
+          <button id="to-en">日本語 → 英語</button>
+        </div>
       </div>
-      <div class="row" style="margin-bottom:14px">
-        <button id="to-ja">英語 → 日本語を更新</button>
-        <button id="to-en">日本語 → 英語に反映</button>
+      <div class="panel-body">
+        <div class="pair">
+          <label class="field">英語（動画にはこちらを使います）<textarea id="prompt-en" rows="8"></textarea></label>
+          <label class="field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="8"></textarea></label>
+        </div>
+        <div class="revise-row">
+          <input type="text" id="instruction" placeholder="AIへの修正指示（例: 髪が風で大きくなびくように）" aria-label="AIに修正してもらう指示">
+          <button id="revise">AIで修正</button>
+          <button class="primary" id="rerun-video">このプロンプトで動画を作り直す</button>
+        </div>
       </div>
-      <label class="field" for="instruction" style="margin-bottom:6px">AIに修正してもらう（指示を書いて「AIで修正」）</label>
-      <div class="row" style="margin-bottom:14px">
-        <input type="text" class="grow" id="instruction" placeholder="例: 髪が風で大きくなびくように">
-        <button id="revise">AIで修正</button>
-      </div>
-      <button class="primary" id="rerun-video">このプロンプトで動画を作り直す</button>
-    </div>
+    </section>
+
     <section class="panel video-panel" aria-labelledby="gallery-title">
-      <div class="gallery-head"><h2 class="box-title" id="gallery-title" style="margin:0">動画</h2><span class="note" id="gallery-count" style="margin:0"></span></div>
-      <p class="note" id="gallery-empty" style="margin:0">「実行」を押すと、作った動画がここに古い順（左）から並びます。パネルを押すと下で確認できます。</p>
-      <div class="gallery" id="gallery" aria-label="作った動画"></div>
-      <div class="preview-head"><span class="preview-label" id="player-label"></span></div>
-      <div class="screen" id="screen">
-        <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
-        <video id="video" controls loop playsinline preload="metadata" hidden></video>
+      <div class="panel-head">
+        <h2 id="gallery-title">動画 <span class="head-count" id="gallery-count"></span></h2>
+        <div class="head-tools">
+          <span class="preview-label" id="player-label"></span>
+          <button id="dl-video" disabled>動画を保存</button>
+          <button id="dl-prompt" disabled>プロンプトを保存</button>
+        </div>
       </div>
-      <div class="row">
-        <button id="dl-video" disabled>この動画を保存</button>
-        <button id="dl-prompt" disabled>この動画のプロンプトを保存</button>
+      <div class="panel-body">
+        <p class="note" id="gallery-empty">「実行」を押すと、作った動画がここに古い順（左）から並びます。パネルを押すと下で確認できます。</p>
+        <div class="gallery" id="gallery" aria-label="作った動画"></div>
+        <div class="screen" id="screen">
+          <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
+          <video id="video" controls loop playsinline preload="metadata" hidden></video>
+        </div>
       </div>
     </section>
   </section>
@@ -509,7 +623,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
       <button role="tab" data-pane="skills">スキル</button>
       <button role="tab" data-pane="styles">プロンプト形式</button>
       <div class="tab-group" aria-hidden="true">その他</div>
-      <button role="tab" data-pane="backup">バックアップ</button>
+      <button role="tab" data-pane="backup">バックアップ・初期化</button>
     </nav>
 
     <section class="pane" data-pane="guide">
@@ -599,7 +713,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
       <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button></div>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
-        <div class="row" style="margin-bottom:14px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
+        <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
         <label class="field">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
         <label class="field" style="margin-bottom:0">名前（メイン画面に表示されます）<input type="text" id="llm-name"></label>
       </div>
@@ -609,8 +723,8 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
           <label class="field" style="margin:0">モデル<select id="llm-model"></select></label>
           <button id="llm-fetch">一覧を更新</button>
         </div>
-        <label class="field" id="llm-model-custom-field" style="margin:12px 0 0" hidden>モデル名<input type="text" id="llm-model-custom" placeholder="例: qwen2.5-vl-7b-instruct"></label>
-        <div class="row" style="margin-top:14px">
+        <label class="field" id="llm-model-custom-field" style="margin:8px 0 0" hidden>モデル名<input type="text" id="llm-model-custom" placeholder="例: qwen2.5-vl-7b-instruct"></label>
+        <div class="row" style="margin-top:8px">
           <label class="check" style="margin:0"><input type="checkbox" id="llm-vision"> 画像もAIに見せる（画像対応モデルのみ）</label>
           <button id="llm-vtest">画像対応をテスト</button>
         </div>
@@ -635,12 +749,12 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
           <label class="field" style="margin:0">ComfyUI のURL<input type="url" id="vid-url" placeholder="http://127.0.0.1:8188"></label>
           <button id="vid-test">接続テスト</button>
         </div>
-        <label class="field" style="margin:14px 0 0">名前（メイン画面に表示されます）<input type="text" id="vid-name"></label>
+        <label class="field" style="margin:8px 0 0">名前（メイン画面に表示されます）<input type="text" id="vid-name"></label>
       </div>
       <div class="card">
         <h4 class="card-title"><span class="num">2</span>ワークフロー</h4>
         <p class="note">ComfyUI で一度ちゃんと動画が作れたワークフローを、メニューの「ワークフロー」→「エクスポート (API)」で書き出して、ここに入れます。</p>
-        <label class="dropzone" id="wf-drop" style="min-height:90px">
+        <label class="dropzone" id="wf-drop" style="min-height:70px">
           <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
           <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
         </label>
@@ -659,7 +773,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
           <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="1" max="60" step="0.5"></label>
         </div>
         <label class="check" style="margin:0"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ）</label>
-        <p class="note" style="margin:10px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
+        <p class="note" style="margin:6px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
       </div>
       <div class="pane-actions"><button class="primary" id="vid-save">保存して使う</button><button class="danger" id="vid-del">この設定を削除</button><p class="msg" id="vid-msg"></p></div>
     </section>
@@ -697,7 +811,7 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
     </section>
 
     <section class="pane" data-pane="backup" hidden>
-      <header class="pane-head"><h3>バックアップ</h3><p class="lead">設定の移動や初期化をします。</p></header>
+      <header class="pane-head"><h3>バックアップ・初期化</h3><p class="lead">設定の移動や、初期状態へのリセットをします。</p></header>
       <div class="card">
         <h4 class="card-title">日本語訳</h4>
         <label class="check" style="margin:0"><input type="checkbox" id="opt-translate"> プロンプトを作ったら日本語訳も自動で作る</label>
@@ -711,9 +825,13 @@ dialog#settings::backdrop { background: rgba(6, 10, 14, .6); }
         </div>
       </div>
       <div class="card danger-zone">
-        <h4 class="card-title">初期化</h4>
-        <p class="note">登録したワークフロー・スキル・文章AIの設定がすべて消えます。元に戻せません。</p>
-        <button class="danger" id="reset-settings">すべての設定を消して最初に戻す</button>
+        <h4 class="card-title">キャッシュをすべて削除して初期状態に戻す</h4>
+        <p class="note">このブラウザに保存されている Stillmotion のデータをすべて消して、ページを開き直します。元に戻せないので、必要なら先に「設定を書き出す」で保存してください。</p>
+        <dl class="kv" style="margin-bottom:8px">
+          <dt>消えるもの</dt><dd>文章AI の接続先、登録したワークフロー、自分で追加したスキル・プロンプト形式、メイン画面の選択内容、読み込んだ画像・プロンプト、「動画」欄の一覧</dd>
+          <dt>消えないもの</dt><dd>ComfyUI の output フォルダの動画、保存済みのファイル</dd>
+        </dl>
+        <button class="danger" id="reset-settings">キャッシュをすべて削除する</button>
         <p class="msg" id="backup-msg"></p>
       </div>
     </section>
@@ -731,6 +849,11 @@ const USER_SETTINGS = {
   pagesOrigin: "https://bighipadventure.github.io",
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
+  storagePrefixes: ["sd2video."],
+  modelFolders: {
+    unet_name: "models/diffusion_models", ckpt_name: "models/checkpoints", vae_name: "models/vae",
+    clip_name: "models/text_encoders", clip_name1: "models/text_encoders", clip_name2: "models/text_encoders", lora_name: "models/loras",
+  },
   settingsVersion: 1,
   defaultsRevision: 6,
   legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
@@ -753,7 +876,7 @@ const USER_SETTINGS = {
     megapixels: [0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.98, 1.0, 1.2, 1.5, 1.8, 2.0],
     megapixelUnit: 1048576,
     workflowSizeLabel: "ワークフローのまま",
-    fits: [["crop", "切り抜く"], ["blur", "余白（ぼかし）"], ["black", "余白（黒）"]],
+    fits: [["crop", "切り抜く"], ["blur", "ぼかし余白"], ["black", "黒い余白"]],
     defaultAspect: "16:9 (Widescreen)",
     defaultMegapixels: 0.4,
     defaultFit: "crop",
@@ -851,6 +974,7 @@ const USER_SETTINGS = {
   maxRunCount: 8,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
+  progressWeights: { image: 0.1, prompt: 0.3, video: 0.6 },
   skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
   slots: [
     { key: "prompt", label: "プロンプト", kind: "str" },
@@ -1326,15 +1450,16 @@ Tips for better results:
     workflowUiFormat: "これは通常の保存形式です。ComfyUI のメニューから「エクスポート (API)」で書き出したファイルを使ってください。",
     workflowInvalid: "ComfyUI の API 形式のワークフローではありません。",
     workflowNoVideo: "生成は終わりましたが、動画ファイルが見つかりません。ワークフローに Save Video などの保存ノードがあるか確認してください。",
-    modelMissingHint: "→ モデルファイル名が ComfyUI 側に見つからない可能性があります。ComfyUI でワークフローが動くか確認してから、もう一度書き出して登録し直してください。",
+    comfyOutOfMemory: "GPUのメモリが足りない可能性もあります。文章AIのモデルを外すか、「大きさ」や「長さ」を小さくして試してください。",
     mapNeedPromptImage: "「プロンプト」と「入力画像」の書き込み先は必ず選んでください。",
     nameRequired: "名前を入力してください。",
     saved: "保存しました。",
+    clearing: "削除しています…",
     deleted: "削除しました。",
     lastOne: "最後の1つは削除できません。",
     visionOk: "このモデルは画像を理解できます。画像もAIに見せる設定にしました。",
     visionNg: "このモデルは画像を理解できないようです。メタデータの文字情報だけでプロンプトを作ります。",
-    resetConfirm: "すべての設定（登録したワークフローやスキルを含む）を消します。よろしいですか？",
+    resetConfirm: "このブラウザに保存されている Stillmotion のデータ（設定・登録したワークフロー・スキル・画面の状態）をすべて削除して、初期状態に戻します。生成中の動画は中止されます。元に戻せません。よろしいですか？",
     importDone: "設定を読み込みました。",
     importBad: "このファイルは設定ファイルとして読めません。",
     lengthLocked: "（このワークフローでは変更できません）",
@@ -1354,6 +1479,10 @@ Tips for better results:
     modeNeedsFirst: "このワークフローの動画ノードは最初のフレームが必須のため、L2VA は使えません。",
     sizeMismatch: "完成しましたが、動画の大きさが {vw}×{vh} で、指定した {w}×{h} と縦横比が違います。「設定」→「動画（ComfyUI）」の「書き込み先」で、縦横比（解像度セレクター）か幅・高さが選ばれているか確認してください。",
     sizeMismatchShort: "縦横比が指定と違います（{vw}×{vh}）",
+    helpLead: "ComfyUI 側で、このワークフローに必要なノードやモデルが足りていない可能性が高いです。",
+    helpLeadFound: "ComfyUI 側で、次のデータが足りていません。",
+    helpMissingNode: "ノード: ",
+    helpMissingModel: "モデル: ",
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
@@ -1381,6 +1510,14 @@ const timestamp = () => {
 };
 
 class UserError extends Error {}
+
+// ComfyUI がワークフローを受け付けない・実行に失敗したときのエラー（不足データの案内を出す）
+class ComfyWorkflowError extends UserError {
+  constructor(message, missing = []) {
+    super(message);
+    this.missing = missing;
+  }
+}
 
 function textHash(text) {
   let h = 0x811c9dc5;
@@ -1543,6 +1680,12 @@ class SettingsStore {
   reset() {
     localStorage.removeItem(USER_SETTINGS.storageKey);
     this.data = this.defaults();
+  }
+
+  clearAll() {
+    for (const key of Object.keys(localStorage)) {
+      if (USER_SETTINGS.storagePrefixes.some((prefix) => key.startsWith(prefix))) localStorage.removeItem(key);
+    }
   }
 
   get llm() { return this.data.llmProfiles[this.data.llmActive]; }
@@ -2073,22 +2216,30 @@ class ComfyClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: workflow, client_id: this.clientId }),
     });
-    if (!res.ok) throw new UserError("ComfyUI がワークフローを受け付けませんでした。\n" + await this.explainRejection(res, workflow));
+    if (!res.ok) {
+      const { text, missing } = await this.explainRejection(res, workflow);
+      throw new ComfyWorkflowError("ComfyUI がワークフローを受け付けませんでした。\n" + text, missing);
+    }
     return (await res.json()).prompt_id;
   }
 
   async explainRejection(res, workflow) {
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); } catch { return text.slice(0, 800); }
+    try { data = JSON.parse(text); } catch { return { text: text.slice(0, 800), missing: [] }; }
+    const missing = [];
     const lines = [data.error?.message || ""];
+    const nodeMissing = (data.error?.message || "").match(/node (.+?) does not exist/i);
+    if (nodeMissing) missing.push({ kind: "node", name: nodeMissing[1] });
     for (const [id, ne] of Object.entries(data.node_errors || {})) {
       const title = workflow[id]?._meta?.title || ne.class_type || id;
-      for (const e of ne.errors || []) lines.push(`・ノード「${title}」: ${e.message || ""} ${e.details || ""}`.trim());
+      for (const e of ne.errors || []) {
+        lines.push(`・ノード「${title}」: ${e.message || ""} ${e.details || ""}`.trim());
+        const file = `${e.details || ""}`.match(/(\w+): '([^']+)' not in/);
+        if (file) missing.push({ kind: "model", name: file[2], folder: USER_SETTINGS.modelFolders[file[1]] || "" });
+      }
     }
-    let out = lines.filter(Boolean).join("\n");
-    if (out.includes("not in list")) out += "\n" + USER_SETTINGS.messages.modelMissingHint;
-    return out;
+    return { text: lines.filter(Boolean).join("\n"), missing };
   }
 
   watchProgress(promptId, onProgress, onStart = () => {}) {
@@ -2120,7 +2271,9 @@ class ComfyClient {
         if (status.status_str === "error") {
           const err = (status.messages || []).find((m) => m[0] === "execution_error");
           const d = err ? err[1] : {};
-          throw new UserError(`ComfyUI の実行中にエラー（${d.node_type || "?"}）: ${(d.exception_message || "").trim()}`);
+          const detail = (d.exception_message || "").trim();
+          const memory = /out of memory|OutOfMemory|allocat/i.test(detail) ? `\n${USER_SETTINGS.messages.comfyOutOfMemory}` : "";
+          throw new ComfyWorkflowError(`ComfyUI の実行中にエラー（${d.node_type || "?"}）: ${detail}${memory}`);
         }
         const files = ComfyClient.findVideos(entry.outputs || {});
         if (!files.length) throw new UserError(USER_SETTINGS.messages.workflowNoVideo);
@@ -2426,6 +2579,7 @@ class MainView {
     this.previewUrl = null;
     this.running = null;
     this.jobs = [];
+    this.currentRun = null;
     this.jobSeq = 0;
     this.selectedJob = null;
     this.initUiState();
@@ -2534,6 +2688,8 @@ class MainView {
       if (job?.blob) downloadBlob(job.blob, `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`);
     });
     this.on($("dl-prompt"), "click", () => this.selectedJob && this.downloadPrompt(this.selectedJob));
+    this.on($("comfy-help-export"), "click", () => this.downloadHelpWorkflow());
+    this.on($("comfy-help-close"), "click", () => { $("comfy-help").hidden = true; });
     this.on($("banner-open"), "click", () => this.openSettings());
   }
 
@@ -2623,7 +2779,8 @@ class MainView {
     $("seconds").value = seconds;
     $("seconds-out").textContent = seconds;
     $("seconds").disabled = !lengthOk && !!v;
-    $("seconds-field").firstChild.textContent = lengthOk || !v ? "動画の長さ: " : `動画の長さ${USER_SETTINGS.messages.lengthLocked}: `;
+    $("seconds-caption").textContent = "長さ";
+    $("seconds-field").title = lengthOk || !v ? "" : `動画の長さ${USER_SETTINGS.messages.lengthLocked}`;
     const negOk = !!m.negative;
     $("negative").disabled = !negOk;
     $("neg-field").firstChild.textContent = negOk ? USER_SETTINGS.messages.negOpen : USER_SETTINGS.messages.negLocked;
@@ -2631,6 +2788,7 @@ class MainView {
 
   // IMAGE
   async loadImage(file) {
+    this.currentRun = null;
     this.setStep("image", "active", "");
     this.status(USER_SETTINGS.messages.readingImage);
     try {
@@ -3000,10 +3158,24 @@ class MainView {
     const li = document.querySelector(`#filmstrip li[data-step="${step}"]`);
     li.dataset.state = state;
     li.querySelector("small").textContent = note;
+    this.updateProgress();
   }
 
-  setProgress(ratio) {
-    $("progress-bar").style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+  // 画像・プロンプト・動画を1本のゲージにまとめた全体の進み具合
+  updateProgress() {
+    const w = USER_SETTINGS.progressWeights;
+    const stateOf = (step) => document.querySelector(`#filmstrip li[data-step="${step}"]`).dataset.state;
+    const part = (state) => ({ done: 1, active: 0.5 })[state] || 0;
+    const run = this.currentRun ? this.jobs.filter((j) => this.currentRun.has(j.id) && j.state !== "canceled") : [];
+    const jobPart = (j) => (j.state === "running" ? j.progress : this.isPending(j) ? 0 : 1);
+    const video = run.length ? run.reduce((n, j) => n + jobPart(j), 0) / run.length : 0;
+    const ratio = Math.min(1, w.image * part(stateOf("image")) + w.prompt * part(stateOf("prompt")) + w.video * video);
+    const busy = stateOf("prompt") === "active" || run.some((j) => this.isPending(j) && !(j.state === "running" && j.progress));
+    const pct = Math.round(ratio * 100);
+    $("progress-bar").style.width = `${pct}%`;
+    $("progress").classList.toggle("busy", busy);
+    $("progress").setAttribute("aria-valuenow", String(pct));
+    $("progress-pct").textContent = `${pct}%`;
   }
 
   setBusy(busy) {
@@ -3066,6 +3238,7 @@ class MainView {
     if (!this.meta) throw new UserError(USER_SETTINGS.messages.needImage);
     const llm = this.requireLlm();
     this.running.phase = "prompt";
+    this.currentRun = null;
     this.setStep("prompt", "active", current ? "修正中" : "作成中");
     this.status(USER_SETTINGS.messages.generatingPrompt);
     const size = this.frameSize();
@@ -3143,6 +3316,33 @@ class MainView {
     });
   }
 
+  // COMFYUI ERROR HELP
+  showComfyHelp(err, job, detail) {
+    const m = USER_SETTINGS.messages;
+    const profile = job.profile;
+    this.helpWorkflow = { workflow: job.workflow || profile.workflow, name: profile.name };
+    $("comfy-help-open").href = profile.comfyUrl;
+    $("comfy-help-template").hidden = profile.workflowName !== USER_SETTINGS.defaultWorkflowName;
+    const items = $("comfy-help-items");
+    const seen = new Set();
+    const list = err.missing.filter((x) => !seen.has(x.name) && seen.add(x.name)).map((x) => {
+      const li = document.createElement("li");
+      li.textContent = x.kind === "node" ? `${m.helpMissingNode}${x.name}` : `${m.helpMissingModel}${x.name}${x.folder ? `（入れる場所: ComfyUI/${x.folder}）` : ""}`;
+      return li;
+    });
+    items.replaceChildren(...list);
+    items.hidden = !list.length;
+    $("comfy-help-lead").textContent = list.length ? m.helpLeadFound : m.helpLead;
+    $("comfy-help-raw").textContent = detail;
+    $("comfy-help").hidden = false;
+  }
+
+  downloadHelpWorkflow() {
+    if (!this.helpWorkflow) return;
+    const blob = new Blob([JSON.stringify(this.helpWorkflow.workflow, null, 2)], { type: "application/json" });
+    downloadBlob(blob, `${USER_SETTINGS.fileNamePrefix}workflow_${timestamp()}.json`);
+  }
+
   // VIDEO JOBS
   startJobs() {
     const v = this.requireVideo();
@@ -3173,6 +3373,7 @@ class MainView {
       });
     }
     this.jobs.push(...batch);
+    this.currentRun = new Set(batch.map((j) => j.id));
     this.renderJobs();
     const gallery = $("gallery");
     gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
@@ -3200,7 +3401,9 @@ class MainView {
       const canceled = err.name === "AbortError" || job.state === "canceled";
       const text = canceled ? "" : describeError(err, "ComfyUI");
       this.setJob(job, { state: canceled ? "canceled" : "error", note: text });
-      if (!canceled) this.status(m.jobFailed.replace("{n}", job.id).replace("{err}", text), true);
+      const helpful = !canceled && err instanceof ComfyWorkflowError;
+      if (!canceled) this.status(m.jobFailed.replace("{n}", job.id).replace("{err}", helpful ? text.split("\n")[0] : text), true);
+      if (helpful) this.showComfyHelp(err, job, text);
     } finally {
       const busySameServer = this.jobs.some((j) => this.isPending(j) && j.profile.comfyUrl === job.profile.comfyUrl);
       if (job.profile.freeVram && job.comfy && job.state === "done" && !busySameServer) job.comfy.freeMemory();
@@ -3353,7 +3556,7 @@ class MainView {
     }
     $("dl-video").disabled = !job?.blob;
     $("dl-prompt").disabled = !job;
-    $("player-label").textContent = job ? `▶ プレビュー中: ${this.jobLabel(job)}` : "";
+    $("player-label").textContent = job ? `▶ プレビュー中: #${job.id}${job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : ""}` : "";
     $("player-label").classList.toggle("active", !!job);
     this.renderJobs();
   }
@@ -3370,7 +3573,7 @@ class MainView {
     } else {
       this.setStep("video", this.jobs.some((j) => j.state === "done") ? "done" : "idle", this.jobs.length ? `${this.jobs.length}件` : "");
     }
-    this.setProgress(running ? running.progress : 0);
+    this.updateProgress();
     this.syncCards();
   }
 
@@ -3499,7 +3702,8 @@ class MainView {
 
 // ===== SETTINGS VIEW =====
 class SettingsView {
-  constructor(store, onChange) {
+  constructor(store, onChange, onClearAll = async () => {}) {
+    this.onClearAll = onClearAll;
     this.store = store;
     this.onChange = onChange;
     this.dialog = $("settings");
@@ -3571,12 +3775,13 @@ class SettingsView {
     this.on($("export-settings"), "click", () => downloadBlob(new Blob([JSON.stringify(this.store.data, null, 2)],
       { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}settings_${timestamp()}.json`));
     this.on($("import-settings"), "change", (e) => e.target.files[0] && this.importSettings(e.target.files[0]));
-    this.on($("reset-settings"), "click", () => {
+    this.on($("reset-settings"), "click", async () => {
       if (!confirm(USER_SETTINGS.messages.resetConfirm)) return;
-      this.store.reset();
-      this.store.save();
-      this.loadAll();
-      setMsg($("backup-msg"), USER_SETTINGS.messages.deleted, "ok");
+      $("reset-settings").disabled = true;
+      setMsg($("backup-msg"), USER_SETTINGS.messages.clearing);
+      await this.onClearAll();
+      this.store.clearAll();
+      location.reload();
     });
   }
 
@@ -3959,7 +4164,7 @@ class App {
   constructor() {
     this.store = new SettingsStore();
     this.statusBar = new StatusBar(this.store);
-    this.settings = new SettingsView(this.store, () => this.onSettingsChanged());
+    this.settings = new SettingsView(this.store, () => this.onSettingsChanged(), () => this.main.cancel());
     this.main = new MainView(this.store, this.statusBar, () => this.settings.open());
     this.listeners = new AbortController();
     const signal = this.listeners.signal;
