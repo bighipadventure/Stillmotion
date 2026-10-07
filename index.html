@@ -305,6 +305,7 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 
 /* ===== PROMPT ===== */
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair.single { grid-template-columns: 1fr; }
 .pair .field { margin: 0; }
 @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
 .revise-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
@@ -520,6 +521,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="prop" id="sel-video-field"><span class="prop-label">動画</span><select id="sel-video" aria-label="動画の設定"></select></div>
           <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
           <p class="note" id="skill-default-note"></p>
+          <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
           <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span> <output id="seconds-out">5</output>秒</span>
             <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
           </label>
@@ -587,7 +589,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <div class="panel-body">
         <div class="pair">
           <label class="field">英語（動画にはこちらを使います）<textarea id="prompt-en" rows="8"></textarea></label>
-          <label class="field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="8"></textarea></label>
+          <label class="field" id="prompt-ja-field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="8"></textarea></label>
         </div>
         <div class="revise-row">
           <input type="text" id="instruction" placeholder="AIへの修正指示（例: 髪が風で大きくなびくように）" aria-label="AIに修正してもらう指示">
@@ -2658,6 +2660,8 @@ class MainView {
       this.store.save();
       this.statusBar.refresh();
     });
+    document.querySelectorAll("#ja-toggle button").forEach((b) => this.on(b, "click", () => this.setTranslate(b.dataset.ja === "on")));
+    this.linkPromptHeights();
     this.on($("run-count"), "change", (e) => { this.saveUi({ runCount: Number(e.target.value) }); this.updateRunLabels(); });
     this.on($("last-clear"), "click", () => this.clearLastImage());
     this.on($("sel-video"), "change", (e) => {
@@ -2707,6 +2711,7 @@ class MainView {
 
   refresh() {
     const d = this.store.data;
+    this.updateTranslateUi();
     this.initUiState();
     const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]);
     fillSelect($("sel-llm"), llms, d.llmActive);
@@ -2757,6 +2762,43 @@ class MainView {
     } catch {
       if (token === this.modelToken) $("sel-model-note").textContent = m.mainModelError;
     }
+  }
+
+  // 日本語訳のオン・オフ（設定の「日本語訳」と同じ値）
+  setTranslate(on) {
+    this.store.data.translate = on;
+    this.store.save();
+    this.updateTranslateUi();
+  }
+
+  updateTranslateUi() {
+    const on = !!this.store.data.translate;
+    document.querySelectorAll("#ja-toggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.ja === "on") === on)));
+    $("prompt-ja-field").hidden = !on;
+    $("to-ja").hidden = !on;
+    $("to-en").hidden = !on;
+    $("prompt-ja-field").closest(".pair").classList.toggle("single", !on);
+  }
+
+  // 英語・日本語訳の欄を、どちらかを伸び縮みさせたらもう片方も同じ高さにする
+  linkPromptHeights() {
+    const en = $("prompt-en");
+    const ja = $("prompt-ja");
+    let syncing = false;
+    const observer = new ResizeObserver((entries) => {
+      if (syncing) return;
+      for (const entry of entries) {
+        const other = entry.target === en ? ja : en;
+        const height = entry.target.style.height;
+        if (!height || other.style.height === height) continue;
+        syncing = true;
+        other.style.height = height;
+        requestAnimationFrame(() => { syncing = false; });
+      }
+    });
+    observer.observe(en);
+    observer.observe(ja);
+    this.listeners.signal.addEventListener("abort", () => observer.disconnect());
   }
 
   updateRunLabels() {
@@ -3358,6 +3400,7 @@ class MainView {
   // VIDEO JOBS
   startJobs() {
     const v = this.requireVideo();
+    $("comfy-help").hidden = true;
     const m = USER_SETTINGS.messages;
     const ui = this.store.ui;
     const options = this.promptOptions();
@@ -3787,7 +3830,7 @@ class SettingsView {
     this.on($("style-restore"), "click", () => this.restoreDefault("style"));
     this.on($("style-del"), "click", () => this.deleteEntry("styles", null, this.editing.style, $("style-msg"), () => this.loadAll()));
 
-    this.on($("opt-translate"), "change", (e) => { this.store.data.translate = e.target.checked; this.store.save(); });
+    this.on($("opt-translate"), "change", (e) => { this.store.data.translate = e.target.checked; this.store.save(); this.onChange(); });
     this.on($("export-settings"), "click", () => downloadBlob(new Blob([JSON.stringify(this.store.data, null, 2)],
       { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}settings_${timestamp()}.json`));
     this.on($("import-settings"), "change", (e) => e.target.files[0] && this.importSettings(e.target.files[0]));
