@@ -96,6 +96,8 @@
   }
 }
 *, *::before, *::after { box-sizing: inherit; }
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; overflow: hidden; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 13px; line-height: 1.5; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
@@ -166,7 +168,7 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 
 /* ===== APP SHELL ===== */
 .topbar {
-  position: sticky; top: 0; z-index: 10; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 10px;
+  flex: none; position: sticky; top: 0; z-index: 10; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 10px;
   background: var(--head); border-bottom: 1px solid var(--line);
 }
 .topbar h1 { font-size: 14px; margin: 0 6px 0 2px; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
@@ -177,16 +179,20 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .pill[data-state="ok"]::before { background: var(--ok); }
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
-.banner { background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 1px; background: var(--line); min-height: calc(100vh - var(--topbar-h)); }
-@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .pills { display: none; } }
+.banner { flex: none; background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1px; background: var(--line); }
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  body { overflow: visible; }
+  .layout { grid-template-columns: 1fr; grid-template-rows: none; }
+  .col-output { overflow: visible; }
+  .side-scroll { overflow: visible; }
+  .screen { min-height: 0; aspect-ratio: 16 / 9; }
+  .pills { display: none; }
+}
 
 /* 左: プロパティパネル（上は個別にスクロール、実行ボタンは下に固定） */
-.col-input {
-  background: var(--surface); display: flex; flex-direction: column;
-  position: sticky; top: var(--topbar-h); height: calc(100vh - var(--topbar-h)); align-self: start;
-}
-@media (max-width: 860px) { .col-input { position: static; height: auto; } }
+.col-input { background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
 .side-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 .psec { border-bottom: 1px solid var(--line); }
 .psec-title {
@@ -204,7 +210,10 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .side-foot { flex: none; padding: 8px 10px; background: var(--head); border-top: 1px solid var(--line); }
 
 /* 右: 作業エリア */
-.col-output { display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+.col-output { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; background: var(--bg); }
+.col-output > .panel { flex: none; }
+.col-output > .video-panel { flex: 1 0 auto; min-height: 300px; display: flex; flex-direction: column; }
+.video-panel > .panel-body { flex: 1 1 auto; min-height: 0; }
 .panel { background: var(--surface); border-bottom: 1px solid var(--line); }
 .panel-head {
   display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 10px;
@@ -335,8 +344,8 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .job-actions button { min-height: 22px; padding: 0 7px; font-size: 11px; }
 .preview-label { font-size: 12px; color: var(--muted); }
 .preview-label.active { color: var(--accent-text); font-weight: 700; }
-.screen { background: var(--film); border-radius: var(--radius-s); min-height: 200px; display: grid; place-items: center; overflow: hidden; }
-.screen video { width: 100%; max-height: 64vh; display: block; background: #000; }
+.screen { position: relative; flex: 1 1 auto; background: var(--film); border-radius: var(--radius-s); min-height: 160px; display: grid; place-items: center; overflow: hidden; }
+.screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 12px; padding: 16px; text-align: center; }
 
 /* ===== RUN ===== */
@@ -409,7 +418,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 .pane-actions .msg:empty { display: none; }
 .danger-zone { border-color: var(--danger); }
 #diag-out:not(:empty) { margin-top: 8px; }
-.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; padding: 8px 12px; border-radius: var(--radius-s); background: var(--head); border: 1px solid var(--line); }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: end; padding: 8px 12px; border-radius: var(--radius-s); background: var(--head); border: 1px solid var(--line); }
 .picker .field { margin: 0; }
 .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
 @media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
@@ -710,7 +719,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
     <section class="pane" data-pane="llm" hidden>
       <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、Ollama など）の接続先です。複数登録して、メイン画面で切り替えられます。</p></header>
-      <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button></div>
+      <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button><button id="llm-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
         <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
@@ -742,7 +751,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
     <section class="pane" data-pane="video" hidden>
       <header class="pane-head"><h3>動画（ComfyUI）</h3><p class="lead">動画を作る ComfyUI の接続先とワークフローです。MiniMax H3 は「MiniMax H3（既定）」として最初から入っています。</p></header>
-      <div class="picker"><label class="field">編集する設定<select id="vid-pick"></select></label><button id="vid-new">＋ 新しく追加</button></div>
+      <div class="picker"><label class="field">編集する設定<select id="vid-pick"></select></label><button id="vid-new">＋ 新しく追加</button><button id="vid-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>ComfyUI に接続</h4>
         <div class="inline-field">
@@ -780,7 +789,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
     <section class="pane" data-pane="skills" hidden>
       <header class="pane-head"><h3>スキル</h3><p class="lead">ふだんは MiniMax H3 公式の「h3-prompt-writing」（<a id="official-skill-link" target="_blank" rel="noopener">公式ページ ↗</a>）を元にした既定のスキルが自動で使われるので、ここは触らなくて大丈夫です。自分用のスキルを使いたいときだけ、読み込むか新しく追加してください。追加したスキルはメイン画面にボタンで表示され、ONにすると既定のスキルの代わりに使われます。</p></header>
-      <div class="picker"><label class="field">編集するスキル<select id="skill-pick"></select></label><button id="skill-new">＋ 新しく追加</button></div>
+      <div class="picker"><label class="field">編集するスキル<select id="skill-pick"></select></label><button id="skill-new">＋ 新しく追加</button><button id="skill-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <h4 class="card-title">ファイルで読み込む・書き出す</h4>
         <p class="note">Agent Skills 形式（SKILL.md）に対応しています。Bionic などで使っている SKILL.md もそのまま読み込めます。</p>
@@ -802,7 +811,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
     <section class="pane" data-pane="styles" hidden>
       <header class="pane-head"><h3>プロンプト形式</h3><p class="lead">動画モデルごとの基本の書き方（文章AIへの指示文）です。MiniMax H3 は公式ガイドに沿った既定の形式が使われるので、ふだんは触らなくて大丈夫です。<code>{seconds}</code> は動画の秒数に置き換わります。</p></header>
-      <div class="picker"><label class="field">編集する形式<select id="style-pick"></select></label><button id="style-new">＋ 新しく追加</button></div>
+      <div class="picker"><label class="field">編集する形式<select id="style-pick"></select></label><button id="style-new">＋ 新しく追加</button><button id="style-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <label class="field">名前<input type="text" id="style-name"></label>
         <label class="field" style="margin:0">指示文<textarea id="style-text" rows="16"></textarea></label>
@@ -850,6 +859,9 @@ const USER_SETTINGS = {
   fileNamePrefix: "stillmotion_",
   storageKey: "sd2video.settings.v1",
   storagePrefixes: ["sd2video."],
+  editorLoaders: { llm: "loadLlm", video: "loadVideo", skill: "loadSkill", style: "loadStyle" },
+  editorCollections: { llm: "llmProfiles", video: "videoProfiles", skill: "skills", style: "styles" },
+  editorPrefixes: { llm: "llm", video: "vid", skill: "skill", style: "style" },
   modelFolders: {
     unet_name: "models/diffusion_models", ckpt_name: "models/checkpoints", vae_name: "models/vae",
     clip_name: "models/text_encoders", clip_name1: "models/text_encoders", clip_name2: "models/text_encoders", lora_name: "models/loras",
@@ -3739,7 +3751,8 @@ class SettingsView {
     this.on($("run-diag"), "click", () => this.diagnose());
 
     this.on($("llm-pick"), "change", (e) => this.loadLlm(e.target.value));
-    this.on($("llm-new"), "click", () => this.loadLlm(null));
+    this.on($("llm-new"), "click", () => this.startNew("llm"));
+    this.on($("llm-cancel"), "click", () => this.cancelNew("llm"));
     this.on($("llm-detect"), "click", () => this.detectLlm());
     this.on($("llm-fetch"), "click", () => this.fetchModels());
     this.on($("llm-model"), "change", () => this.updateModelCustom());
@@ -3749,7 +3762,8 @@ class SettingsView {
     this.on($("llm-del"), "click", () => this.deleteEntry("llmProfiles", "llmActive", this.editing.llm, $("llm-msg"), () => this.loadAll()));
 
     this.on($("vid-pick"), "change", (e) => this.loadVideo(e.target.value));
-    this.on($("vid-new"), "click", () => this.loadVideo(null));
+    this.on($("vid-new"), "click", () => this.startNew("video"));
+    this.on($("vid-cancel"), "click", () => this.cancelNew("video"));
     this.on($("vid-test"), "click", () => this.testComfy());
     this.on($("wf-file"), "change", (e) => e.target.files[0] && this.loadWorkflowFile(e.target.files[0]));
     this.bindDrop($("wf-drop"), (f) => this.loadWorkflowFile(f));
@@ -3758,7 +3772,8 @@ class SettingsView {
     this.on($("vid-del"), "click", () => this.deleteEntry("videoProfiles", "videoActive", this.editing.video, $("vid-msg"), () => this.loadAll()));
 
     this.on($("skill-pick"), "change", (e) => this.loadSkill(e.target.value));
-    this.on($("skill-new"), "click", () => this.loadSkill(null));
+    this.on($("skill-new"), "click", () => this.startNew("skill"));
+    this.on($("skill-cancel"), "click", () => this.cancelNew("skill"));
     this.on($("skill-file"), "change", (e) => this.importSkills([...e.target.files]));
     this.on($("skill-export"), "click", () => this.exportSkill());
     this.on($("skill-save"), "click", () => this.saveSkill());
@@ -3766,7 +3781,8 @@ class SettingsView {
     this.on($("skill-del"), "click", () => this.deleteEntry("skills", null, this.editing.skill, $("skill-msg"), () => this.loadAll(), true));
 
     this.on($("style-pick"), "change", (e) => this.loadStyle(e.target.value));
-    this.on($("style-new"), "click", () => this.loadStyle(null));
+    this.on($("style-new"), "click", () => this.startNew("style"));
+    this.on($("style-cancel"), "click", () => this.cancelNew("style"));
     this.on($("style-save"), "click", () => this.saveStyle());
     this.on($("style-restore"), "click", () => this.restoreDefault("style"));
     this.on($("style-del"), "click", () => this.deleteEntry("styles", null, this.editing.style, $("style-msg"), () => this.loadAll()));
@@ -3810,6 +3826,29 @@ class SettingsView {
     this.loadSkill(d.skills[this.editing.skill] ? this.editing.skill : Object.keys(d.skills)[0] || null);
     this.loadStyle(d.styles[this.editing.style] ? this.editing.style : Object.keys(d.styles)[0] || null);
     $("opt-translate").checked = d.translate;
+  }
+
+  // 「新しく追加」中だけ「編集をやめて戻る」を出し、押したら直前に見ていた設定に戻す
+  startNew(kind) {
+    this.beforeNew ??= {};
+    if (this.editing[kind]) this.beforeNew[kind] = this.editing[kind];
+    this[USER_SETTINGS.editorLoaders[kind]](null);
+  }
+
+  cancelNew(kind) {
+    const collection = this.store.data[USER_SETTINGS.editorCollections[kind]];
+    const back = this.beforeNew?.[kind];
+    this[USER_SETTINGS.editorLoaders[kind]](collection[back] ? back : Object.keys(collection)[0] || null);
+  }
+
+  syncNewMode(kind) {
+    const pre = USER_SETTINGS.editorPrefixes[kind];
+    const isNew = !this.editing[kind];
+    const hasAny = Object.keys(this.store.data[USER_SETTINGS.editorCollections[kind]]).length > 0;
+    $(`${pre}-cancel`).hidden = !isNew || !hasAny;
+    $(`${pre}-new`).hidden = isNew;
+    if (isNew) $(`${pre}-del`).hidden = true;
+    else if (kind === "llm" || kind === "video") $(`${pre}-del`).hidden = false;
   }
 
   pickerEntries(collection, defaultId = null) {
@@ -3875,6 +3914,7 @@ class SettingsView {
     $("llm-temp-out").textContent = p.temperature;
     $("llm-maxtok").value = p.maxTokens || USER_SETTINGS.defaultMaxTokens;
     setMsg($("llm-msg"), "");
+    this.syncNewMode("llm");
   }
 
   llmFromForm() {
@@ -3972,6 +4012,7 @@ class SettingsView {
     this.renderMapping(v?.workflow || null, v?.mapping || {});
     setMsg($("wf-msg"), v ? WorkflowMapper.summary(v.mapping) : "");
     setMsg($("vid-msg"), "");
+    this.syncNewMode("video");
   }
 
   renderMapping(wf, mapping) {
@@ -4069,6 +4110,7 @@ class SettingsView {
     $("skill-restore").hidden = !USER_SETTINGS.defaultSkills[this.editing.skill];
     $("skill-del").hidden = this.editing.skill === USER_SETTINGS.defaultSkillId;
     setMsg($("skill-msg"), "");
+    this.syncNewMode("skill");
   }
 
   async importSkills(files) {
@@ -4117,6 +4159,7 @@ class SettingsView {
     $("style-restore").hidden = !USER_SETTINGS.defaultStyles[this.editing.style];
     $("style-del").hidden = this.editing.style === "h3";
     setMsg($("style-msg"), "");
+    this.syncNewMode("style");
   }
 
   restoreDefault(kind) {
