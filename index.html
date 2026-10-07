@@ -642,6 +642,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <span class="preview-label" id="player-label"></span>
           <button id="dl-video" disabled>動画を保存</button>
           <button id="dl-prompt" disabled>プロンプトを保存</button>
+          <button class="primary" id="post-share" disabled>Prompt Reel に投稿</button>
         </div>
       </div>
       <div class="panel-body">
@@ -1385,6 +1386,7 @@ const USER_SETTINGS = {
   customModelValue: "__custom__",
   metadataFormat: "stillmotion-metadata",
   metadataVersion: 1,
+  shareHandoff: { db: "stillmotion-handoff", store: "videos" },
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
@@ -1904,6 +1906,10 @@ Tips for better results:
     wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
+    shareOpened: "動画 #{n} を Prompt Reel の投稿画面に渡しました。開いたタブでログインし、内容を確認して投稿してください。",
+    shareOtherOrigin: "Prompt Reel への投稿は、Stillmotion を Prompt Reel と同じサイト（{origin}）で開いているときだけ使えます。動画を保存して Prompt Reel の動画投稿にドロップしても、生成情報は自動で入ります。",
+    sharePopupBlocked: "新しいタブを開けませんでした。ブラウザのポップアップのブロックを解除してから、もう一度押してください。",
+    shareFailed: "Prompt Reel に渡せませんでした: ",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
     modelAutoPicked: "サーバーの一覧の先頭のモデルを選びました。別のモデルを使うときはここで切り替えてください。",
     mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
@@ -2514,6 +2520,35 @@ class WorkflowMapper {
       const sep = target.indexOf("|");
       const id = target.slice(0, sep), key = target.slice(sep + 1);
       if (out[id]) out[id].inputs[key] = values[slot];
+    }
+    return out;
+  }
+
+  // 実際に使われる値を、リンク（数値ノード・スイッチ）をたどって求める
+  static resolveValue(wf, v, depth = 0) {
+    if (!this.isLink(v) || depth > 8) return this.isLink(v) ? null : v;
+    const node = wf[v[0]];
+    if (!node) return null;
+    const inputs = node.inputs || {};
+    if (node.class_type === "ComfySwitchNode") {
+      const flag = this.resolveValue(wf, inputs.switch, depth + 1);
+      return typeof flag === "boolean" ? this.resolveValue(wf, inputs[flag ? "on_true" : "on_false"], depth + 1) : null;
+    }
+    if ("value" in inputs) return this.resolveValue(wf, inputs.value, depth + 1);
+    return null;
+  }
+
+  // サンプラー・スケジューラー・ステップ数など（Prompt Reel の動画の生成設定に入れる値）
+  static samplingInfo(wf) {
+    const keys = { sampler_name: "sampler", scheduler: "scheduler", steps: "steps", cfg: "cfg", shift: "shift", denoise: "denoise", fps: "fps" };
+    const out = {};
+    const reach = WorkflowParams.reachable(wf);
+    for (const id of reach) {
+      for (const [k, name] of Object.entries(keys)) {
+        if (out[name] !== undefined || !(k in (wf[id].inputs || {}))) continue;
+        const value = this.resolveValue(wf, wf[id].inputs[k]);
+        if (value !== null && value !== undefined && value !== "") out[name] = value;
+      }
     }
     return out;
   }
@@ -3243,6 +3278,7 @@ class MainView {
       if (job?.blob) downloadBlob(job.blob, `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`);
     });
     this.on($("dl-prompt"), "click", () => this.selectedJob && this.downloadPrompt(this.selectedJob));
+    this.on($("post-share"), "click", () => this.selectedJob && this.postToShareApp(this.selectedJob));
     this.on($("comfy-help-export"), "click", () => this.downloadHelpWorkflow());
     this.on($("comfy-help-close"), "click", () => { $("comfy-help").hidden = true; });
     this.on($("banner-open"), "click", () => this.openSettings());
@@ -4226,12 +4262,16 @@ class MainView {
         if (job.state === "running") this.setJob(job, { note: `${steps ? steps + " / " : ""}${sec}秒経過` });
       });
       this.setJob(job, { note: m.downloading });
-      job.blob = await this.embedMetadata(job, await comfy.fetchVideo(info));
+      const raw = await comfy.fetchVideo(info);
       job.filename = info.filename;
       job.ext = (info.filename.match(/\.\w+$/) || [".mp4"])[0];
+      const rawUrl = URL.createObjectURL(raw);
+      const actual = await this.videoSize(rawUrl);
+      URL.revokeObjectURL(rawUrl);
+      job.duration = actual?.duration || null;
+      job.blob = await this.embedMetadata(job, raw);
       job.url = URL.createObjectURL(job.blob);
-      const actual = size ? await this.videoSize(job.url) : null;
-      if (actual && Math.abs(actual.width / actual.height - size.width / size.height) / (size.width / size.height) >= USER_SETTINGS.frame.sameRatioTolerance) {
+      if (size && actual && Math.abs(actual.width / actual.height - size.width / size.height) / (size.width / size.height) >= USER_SETTINGS.frame.sameRatioTolerance) {
         const fill = (t) => t.replace("{vw}", actual.width).replace("{vh}", actual.height).replace("{w}", size.width).replace("{h}", size.height);
         job.warning = fill(m.sizeMismatchShort);
         job.warningLong = fill(m.sizeMismatch);
@@ -4278,7 +4318,8 @@ class MainView {
       probe.muted = true;
       probe.preload = "metadata";
       probe.onerror = () => finish(null);
-      probe.onloadedmetadata = () => finish(probe.videoWidth && probe.videoHeight ? { width: probe.videoWidth, height: probe.videoHeight } : null);
+      probe.onloadedmetadata = () => finish(probe.videoWidth && probe.videoHeight
+        ? { width: probe.videoWidth, height: probe.videoHeight, duration: Number.isFinite(probe.duration) ? probe.duration : null } : null);
       probe.src = url;
     });
   }
@@ -4319,6 +4360,7 @@ class MainView {
     }
     $("dl-video").disabled = !job?.blob;
     $("dl-prompt").disabled = !job;
+    $("post-share").disabled = !job?.blob;
     $("player-label").textContent = job ? `▶ プレビュー中: #${job.id}${job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : ""}` : "";
     $("player-label").classList.toggle("active", !!job);
     this.renderJobs();
@@ -4421,6 +4463,7 @@ class MainView {
     if (pending) {
       action("中止", () => this.cancelJob(job), "danger");
     } else {
+      if (job.state === "done") action("投稿", () => this.postToShareApp(job), "primary");
       action("プロンプト", () => this.downloadPrompt(job));
       action("削除", () => this.removeJob(job));
     }
@@ -4430,20 +4473,71 @@ class MainView {
 
   jobRecord(job) {
     const used = WorkflowMapper.usedModels(job.workflow || job.profile.workflow);
+    const sampling = WorkflowMapper.samplingInfo(job.workflow || job.profile.workflow);
+    const frames = job.duration && sampling.fps ? Math.round(job.duration * sampling.fps) : null;
     return {
       format: USER_SETTINGS.metadataFormat, version: USER_SETTINGS.metadataVersion,
       app: USER_SETTINGS.appName, app_url: USER_SETTINGS.pagesUrl, created: new Date().toISOString(),
-      prompt: { en: job.prompt, ja: job.promptJa },
+      prompt: { en: job.prompt, ja: job.promptJa }, negative: job.negative || "",
       direction: job.direction, options: job.options,
       video: {
         seconds: job.seconds, aspect: job.aspect, megapixels: job.megapixels, fit: job.fit,
         width: job.size?.width ?? null, height: job.size?.height ?? null, seed: job.values?.seed ?? null,
+        duration: job.duration ?? null, frames,
       },
+      sampling,
       models: used.models, loras: used.loras, workflow_overrides: job.overrides || {},
       workflow: job.profile.name, llm: { profile: job.llm, model: job.llmModel }, skills: job.skills, prompt_style: job.style,
       source_image: { file: job.file?.name || null, metadata: job.meta }, last_image: job.lastImage,
       comfy_filename: job.filename || null,
     };
+  }
+
+  // ===== Prompt Reel への投稿（同じオリジンの IndexedDB に置いて、Prompt Reel の投稿フォームで受け取ってもらう） =====
+  handoffDb() {
+    const cfg = USER_SETTINGS.shareHandoff;
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(cfg.db, 1);
+      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(cfg.store)) req.result.createObjectStore(cfg.store); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async postToShareApp(job) {
+    const m = USER_SETTINGS.messages;
+    const cfg = USER_SETTINGS.shareHandoff;
+    if (!job?.blob) return;
+    const target = new URL(USER_SETTINGS.shareAppUrl, location.href);
+    if (target.origin !== location.origin) {
+      this.status(m.shareOtherOrigin.replace("{origin}", target.origin), true);
+      return;
+    }
+    // ポップアップを止められないよう、クリックの直後に先にタブを開いておき、保存が済んでから移動する
+    const win = window.open("", "_blank");
+    if (!win) { this.status(m.sharePopupBlocked, true); return; }
+    try {
+      const key = `sm_${job.stamp}_${job.id}_${Math.random().toString(36).slice(2, 8)}`;
+      const record = {
+        source: "stillmotion", createdAt: Date.now(), blob: job.blob, mime: job.blob.type || "video/mp4",
+        name: `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`, meta: this.jobRecord(job),
+      };
+      const db = await this.handoffDb();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(cfg.store, "readwrite");
+        tx.objectStore(cfg.store).put(record, key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+      target.searchParams.set("import", "stillmotion");
+      target.searchParams.set("key", key);
+      win.location.href = target.href;
+      this.status(m.shareOpened.replace("{n}", job.id));
+    } catch (err) {
+      win.close();
+      this.status(`${m.shareFailed}${err.message || err}`, true);
+    }
   }
 
   async embedMetadata(job, blob) {
