@@ -206,7 +206,7 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 }
 .psec-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
 .psec-body > .field, .psec-body > details, .psec-body .field { margin: 0; }
-.prop { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; align-items: center; margin: 0; }
+.prop { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; margin: 0; }
 .prop-top { align-items: start; }
 .prop-top .prop-label { padding-top: 3px; }
 .prop-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
@@ -222,6 +222,10 @@ dialog#advanced {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
 dialog#advanced[open] { display: flex; flex-direction: column; }
+dialog#share-login { width: min(420px, 100vw - 24px); padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
+dialog#share-login::backdrop { background: rgba(0, 0, 0, .55); }
+.share-login-body { padding: 12px 14px 4px; }
+.share-login-body .msg:empty { display: none; }
 dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .adv-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
 .adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -290,7 +294,7 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .seg button:last-child { border-right: none; }
 .seg button:hover:not(:disabled) { background: var(--control-hover); }
 .seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); font-weight: 700; }
-.opt-grid { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 5px 8px; align-items: center; }
+.opt-grid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 5px 8px; align-items: center; }
 .frame-info { font-size: 12px; color: var(--muted); margin: 0; white-space: pre-wrap; }
 .frame-info:empty { display: none; }
 .frame-info strong { color: var(--ink); }
@@ -553,10 +557,10 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <section class="psec" aria-labelledby="engine-title">
         <h2 class="psec-title" id="engine-title">生成</h2>
         <div class="psec-body">
-          <div class="prop" id="sel-llm-field"><span class="prop-label">文章AI</span><select id="sel-llm" aria-label="文章AIの接続先"></select></div>
-          <div class="prop"><span class="prop-label">モデル</span><select id="sel-model" aria-label="文章AIのモデル"></select></div>
+          <div class="prop" id="sel-llm-field"><span class="prop-label">文章AI接続</span><select id="sel-llm" aria-label="文章AIの接続先"></select></div>
+          <div class="prop"><span class="prop-label">文章AI</span><select id="sel-model" aria-label="文章AIのモデル" title="プロンプトを書く文章AIのモデル"></select></div>
           <p class="note" id="sel-model-note"></p>
-          <div class="prop" id="sel-video-field"><span class="prop-label">動画</span><select id="sel-video" aria-label="動画の設定"></select></div>
+          <div class="prop" id="sel-video-field"><span class="prop-label">ワークフロー</span><select id="sel-video" aria-label="ワークフロー（動画を作る ComfyUI のワークフロー）" title="動画を作る ComfyUI のワークフロー"></select></div>
           <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
           <p class="note" id="skill-default-note"></p>
           <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
@@ -656,6 +660,21 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
   </section>
 </main>
+
+<dialog id="share-login" aria-labelledby="share-login-title">
+  <form method="dialog" id="share-login-form">
+    <div class="dlg-head"><h2 id="share-login-title">Prompt Reel にログイン</h2></div>
+    <div class="share-login-body">
+      <p class="note">投稿する前に、Prompt Reel のログインパスワードを確認します。一度通れば、次からは自動でログインします。</p>
+      <label class="field">ログインパスワード<input type="password" id="share-login-pw" autocomplete="current-password"></label>
+      <p class="msg err" id="share-login-msg"></p>
+    </div>
+    <div class="adv-foot">
+      <button type="button" id="share-login-cancel">やめる</button>
+      <button type="submit" class="primary" id="share-login-ok">ログインして投稿</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="advanced" aria-labelledby="adv-title">
   <div class="dlg-head"><h2 id="adv-title">詳しい設定</h2><span class="adv-sub" id="adv-sub"></span><button id="close-advanced">閉じる</button></div>
@@ -1386,7 +1405,11 @@ const USER_SETTINGS = {
   customModelValue: "__custom__",
   metadataFormat: "stillmotion-metadata",
   metadataVersion: 1,
-  shareHandoff: { db: "stillmotion-handoff", store: "videos" },
+  shareHandoff: {
+    db: "stillmotion-handoff", store: "videos",
+    loginKey: "pr_login_pw",                       // Prompt Reel が自動ログインに使う保存先（同じオリジンなので共有される）
+    gasUrlPattern: /const\s+GAS_URL\s*=\s*['"]([^'"]+)['"]/, // Prompt Reel の index.html から接続先を読む
+  },
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
@@ -1906,10 +1929,14 @@ Tips for better results:
     wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
-    shareOpened: "動画 #{n} を Prompt Reel の投稿画面に渡しました。開いたタブでログインし、内容を確認して投稿してください。",
+    shareOpened: "動画 #{n} を Prompt Reel の投稿画面に渡しました。開いたタブで内容を確認して投稿してください。",
     shareOtherOrigin: "Prompt Reel への投稿は、Stillmotion を Prompt Reel と同じサイト（{origin}）で開いているときだけ使えます。動画を保存して Prompt Reel の動画投稿にドロップしても、生成情報は自動で入ります。",
     sharePopupBlocked: "新しいタブを開けませんでした。ブラウザのポップアップのブロックを解除してから、もう一度押してください。",
     shareFailed: "Prompt Reel に渡せませんでした: ",
+    shareChecking: "Prompt Reel のログインを確認しています…",
+    shareNoServer: "Prompt Reel に接続できなかったため、ログインを確認できませんでした。時間をおいてもう一度押してください。",
+    shareLoginWrong: "パスワードが違います。",
+    shareLoginEmpty: "パスワードを入力してください。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
     modelAutoPicked: "サーバーの一覧の先頭のモデルを選びました。別のモデルを使うときはここで切り替えてください。",
     mainModelError: "モデルの一覧を取得できませんでした（文章AIのサーバーが起動しているか確認してください）。",
@@ -4504,6 +4531,27 @@ class MainView {
     });
   }
 
+  // Prompt Reel の接続先（GAS の URL）は Prompt Reel の index.html から読む（向こうで URL が変わっても追従するため）
+  async shareGasUrl() {
+    if (this.gasUrl) return this.gasUrl;
+    const res = await fetch(new URL(USER_SETTINGS.shareAppUrl, location.href), { cache: "no-store" });
+    const m = (await res.text()).match(USER_SETTINGS.shareHandoff.gasUrlPattern);
+    if (!m) throw new Error("GAS_URL not found");
+    return (this.gasUrl = m[1]);
+  }
+
+  // Prompt Reel と同じ方法（loginAuth）でパスワードを確かめる。true / false、つながらなければ例外
+  async checkShareLogin(password) {
+    const res = await fetch(await this.shareGasUrl(), {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "loginAuth", password }),
+    });
+    const data = await res.json();
+    return !!data?.success;
+  }
+
+  // ログインを確認できるまで Prompt Reel は開かない。保存済みのパスワードが通ればそのまま（自動ログイン）、
+  // 無いか違っていればパスワードを聞く。
   async postToShareApp(job) {
     const m = USER_SETTINGS.messages;
     const cfg = USER_SETTINGS.shareHandoff;
@@ -4513,9 +4561,75 @@ class MainView {
       this.status(m.shareOtherOrigin.replace("{origin}", target.origin), true);
       return;
     }
-    // ポップアップを止められないよう、クリックの直後に先にタブを開いておき、保存が済んでから移動する
+    const stored = localStorage.getItem(cfg.loginKey);
+    if (stored) {
+      const win = this.openWaitingTab(); // ポップアップを止められないよう、確認の前にタブだけ用意する
+      if (!win) { this.status(m.sharePopupBlocked, true); return; }
+      let ok = false;
+      try {
+        ok = await this.checkShareLogin(stored);
+      } catch {
+        win.close();
+        this.status(m.shareNoServer, true);
+        return;
+      }
+      if (ok) { await this.handoffTo(job, win); return; }
+      win.close();
+      localStorage.removeItem(cfg.loginKey);
+    }
+    this.askShareLogin(job);
+  }
+
+  openWaitingTab() {
     const win = window.open("", "_blank");
-    if (!win) { this.status(m.sharePopupBlocked, true); return; }
+    if (!win) return null;
+    win.document.title = "Prompt Reel";
+    win.document.body.textContent = USER_SETTINGS.messages.shareChecking;
+    return win;
+  }
+
+  askShareLogin(job) {
+    const m = USER_SETTINGS.messages;
+    const dlg = $("share-login");
+    $("share-login-pw").value = "";
+    setMsg($("share-login-msg"), "");
+    this.shareLoginJob = job;
+    dlg.showModal();
+    $("share-login-pw").focus();
+    if (this.shareLoginBound) return;
+    this.shareLoginBound = true;
+    this.on($("share-login-cancel"), "click", () => dlg.close());
+    this.on($("share-login-form"), "submit", async (e) => {
+      e.preventDefault();
+      const pw = $("share-login-pw").value;
+      if (!pw) { setMsg($("share-login-msg"), m.shareLoginEmpty, "err"); return; }
+      const win = this.openWaitingTab();
+      if (!win) { setMsg($("share-login-msg"), m.sharePopupBlocked, "err"); return; }
+      $("share-login-ok").disabled = true;
+      setMsg($("share-login-msg"), m.shareChecking);
+      try {
+        if (!(await this.checkShareLogin(pw))) {
+          win.close();
+          setMsg($("share-login-msg"), m.shareLoginWrong, "err");
+          $("share-login-pw").select();
+          return;
+        }
+        localStorage.setItem(USER_SETTINGS.shareHandoff.loginKey, pw); // Prompt Reel の自動ログインにもそのまま使われる
+        dlg.close();
+        await this.handoffTo(this.shareLoginJob, win);
+      } catch {
+        win.close();
+        setMsg($("share-login-msg"), m.shareNoServer, "err");
+      } finally {
+        $("share-login-ok").disabled = false;
+      }
+    });
+  }
+
+  async handoffTo(job, win) {
+    const m = USER_SETTINGS.messages;
+    const cfg = USER_SETTINGS.shareHandoff;
+    const target = new URL(USER_SETTINGS.shareAppUrl, location.href);
     try {
       const key = `sm_${job.stamp}_${job.id}_${Math.random().toString(36).slice(2, 8)}`;
       const record = {
