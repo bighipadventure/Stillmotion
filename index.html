@@ -319,6 +319,10 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .mat-check input { margin: 0; }
 .mat-trim { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
 .mat-trim input { width: 78px; }
+.vid-flow { flex: none; }
+.wf-export { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.wf-export .note { margin: 0; }
+.vid-flow button { min-height: 30px; font-size: 13px; }
 @media (max-width: 640px) {
   .mat-list { grid-template-columns: 1fr; }
   .mat-card, .mat-card.mat-has-video, .mat-card.mat-has-audio { grid-template-columns: 1fr; }
@@ -338,9 +342,12 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec[data-level="over"] .spec-bar > span { background: var(--danger); }
 .spec-issues { display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-s); padding: 6px 8px; background: var(--warn-soft); color: var(--on-warn-soft); max-height: 30vh; overflow-y: auto; }
 .spec[data-level="over"] .spec-issues { background: var(--danger-soft); color: var(--ink); }
+.spec[data-level="ok"] .spec-issues { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); }
 .spec-issues ul { margin: 0; padding-left: 16px; font-size: 11px; line-height: 1.45; }
 .spec-issues li.over::marker { content: "⚠ "; color: var(--danger); }
 .spec-issues li.warn::marker { content: "! "; color: var(--lamp); font-weight: 700; }
+.spec-issues li.info::marker { content: "i "; color: var(--accent-text); font-weight: 700; }
+.spec-issues li.info { color: var(--muted); }
 .spec-issues button { align-self: flex-end; min-height: 24px; font-size: 12px; }
 
 /* ===== DROPZONE ===== */
@@ -598,7 +605,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <div class="psec-body">
           <div class="seg" id="flow-mode" role="group" aria-labelledby="flow-title">
             <button type="button" data-flow="image">画像から動画</button>
-            <button type="button" data-flow="ref">素材から動画（Ref2VA）</button>
+            <button type="button" data-flow="ref">素材から動画</button>
           </div>
           <p class="frame-info" id="flow-info"></p>
         </div>
@@ -786,7 +793,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 </main>
 
 <dialog id="materials" aria-labelledby="mat-dlg-title">
-  <div class="dlg-head"><h2 id="mat-dlg-title">素材（素材から動画・Ref2VA）</h2><span class="adv-sub" id="mat-dlg-sub"></span><button id="close-materials">閉じる</button></div>
+  <div class="dlg-head"><h2 id="mat-dlg-title">素材</h2><span class="adv-sub" id="mat-dlg-sub"></span><button id="close-materials">閉じる</button></div>
   <div class="adv-body">
     <label class="dropzone mat-dropzone" id="mat-dlg-drop">
       <input type="file" id="mat-input" multiple accept="image/*,video/*,audio/*,.mkv,.flac,.opus,.m4a" aria-label="素材のファイルを選ぶ">
@@ -937,7 +944,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p>文章AIと動画モデルが同じGPUを取り合わないように、ComfyUI が使っていたGPUメモリを解放します。</p>
         </li>
       </ol>
-      <div class="card"><h4 class="card-title">「素材から動画（Ref2VA）」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡し、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順5では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順6で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
+      <div class="card"><h4 class="card-title">「素材から動画」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡し、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順5では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順6で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
       <div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「AIで修正」は手順3〜4だけ、「このプロンプトで動画を作り直す」は手順5〜9だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
@@ -974,7 +981,11 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
 
     <section class="pane" data-pane="video" hidden>
-      <header class="pane-head"><h3>動画（ComfyUI）</h3><p class="lead">動画を作る ComfyUI の接続先とワークフローです。MiniMax H3 は「MiniMax H3」（公式テンプレート）として最初から入っています。</p></header>
+      <header class="pane-head"><h3>動画（ComfyUI）</h3><p class="lead">動画を作る ComfyUI の接続先とワークフローです。「画像から動画」と「素材から動画」で、使うワークフローを別々に登録します。どちらもテンプレート（「MiniMax H3」「MiniMax H3 Ref2VA」）が最初から入っていて、自分で作ったワークフローも「＋ 新しく追加」で追加できます。</p></header>
+      <div class="seg vid-flow" id="vid-flow" role="group" aria-label="ワークフローの種類">
+        <button type="button" data-flow="image">画像から動画のワークフロー</button>
+        <button type="button" data-flow="ref">素材から動画のワークフロー</button>
+      </div>
       <div class="picker"><label class="field">編集する設定<select id="vid-pick"></select></label><button id="vid-new">＋ 新しく追加</button><button id="vid-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>ComfyUI に接続</h4>
@@ -986,12 +997,15 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
       <div class="card">
         <h4 class="card-title"><span class="num">2</span>ワークフロー</h4>
-        <p class="note">ComfyUI で一度ちゃんと動画が作れたワークフローを、メニューの「ワークフロー」→「エクスポート (API)」で書き出して、ここに入れます。</p>
+        <p class="note" id="wf-note"></p>
         <label class="dropzone" id="wf-drop" style="min-height:70px">
           <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
           <span class="hint" id="wf-hint"><strong>API形式のワークフローJSONをドロップ</strong>クリックして選ぶこともできます</span>
         </label>
-        <div class="row" style="margin-top:10px"><button id="wf-default">既定のワークフロー（MiniMax H3）を使う</button></div>
+        <div class="wf-export">
+          <button id="wf-export">このワークフローを書き出す（ComfyUI 用 JSON）</button>
+          <p class="note" id="wf-export-note">ComfyUI の画面にドロップすると、同じワークフローを開けます。足りないカスタムノードは「Manager」→「Install Missing Custom Nodes」でまとめて入れられ、足りないモデルは ComfyUI で実行したときにエラーとして表示されます。「詳しい設定」で変えた値も入ります。</p>
+        </div>
         <p class="msg" id="wf-msg"></p>
         <div id="map-box">
           <h5 class="sub-title">書き込み先 <span class="badge">自動で選ばれます</span></h5>
@@ -1876,7 +1890,7 @@ const USER_SETTINGS = {
   refs: {
     subfolder: "minimax_h3",
     filePrefix: "stillmotion_",
-    db: "stillmotion-materials", store: "items", key: "current",
+    db: "stillmotion-materials",   // 以前の版で使っていた保存先（開いたときに消す）
     max: { picture: 9, video: 3, audio: 3, total: 12 },
     clip: { min: 2, max: 15, totalPerType: 15 },
     thumbSide: 240,
@@ -1917,10 +1931,10 @@ const USER_SETTINGS = {
     },
     llmHeader: "Reference materials (labels are fixed by the loader; use them exactly and do not add labels for anything else):",
     llmImagesNote: "Attached images, in order: {list}.",
-    flowLabels: { image: "画像から動画", ref: "素材から動画（Ref2VA）" },
+    flowLabels: { image: "画像から動画", ref: "素材から動画" },
     flowInfo: {
       image: "メタデータ入りの画像1枚を、動画の最初（または最後）のフレームにして動かします。",
-      ref: "画像・動画・音声を複数入れて、人物・背景・動き・声などを参考にした動画を作ります。画像のメタデータは使いません。",
+      ref: "画像・動画・音声を複数入れて、人物・背景・動き・声などを参考にした動画を作ります（MiniMax H3 の Ref2VA）。画像のメタデータは使いません。",
     },
   },
 
@@ -1971,6 +1985,19 @@ const USER_SETTINGS = {
     refImageMaxMinVram: 22,      // これ未満なら参照画像は "match"（"max" は数倍重い）
     refVideoRamShare: 0.25,      // 参照動画の展開に使ってよいメインメモリの割合
     refVideoCapPx: 1024,         // 最適化で参照動画を縮める長辺
+    activationHeadroomGb: 0.5,   // モデルの重さのほかに、生成中に使う分（これを残せないと入りきらない扱い）
+    refHeavyBelowVram: 16,       // これ未満なら、素材から動画は重いことを知らせる
+    // [ファイル名, 重さGB, 表示]。上から順に当てはめる（ComfyUI のログの実測と公開情報からの目安）
+    modelWeights: [
+      [/bf16|fp16|fp32/i, 41, "bf16"],
+      [/q8|int8|fp8/i, 21, "8bit"],
+      [/nvfp4|[^a-z]fp4/i, 12, "NVFP4"],
+      [/q6/i, 16, "Q6"],
+      [/q5/i, 13.5, "Q5"],
+      [/q4/i, 11, "Q4"],
+      [/q3/i, 9, "Q3"],
+      [/q2/i, 7.5, "Q2"],
+    ],
     fps: 24,
     warnRatio: 0.85,             // 負荷がこれを超えたら黄色
   },
@@ -2655,6 +2682,13 @@ Tips for better results:
     specSaved: "自動で保存しました。メイン画面の目安に反映されます。",
     specAutoRead: "ComfyUI から PC のスペックを読み取って反映しました: {text}",
     autoSaved: "自動で保存しました。",
+    wfNoteImage: "画像1枚を最初（または最後）のフレームにするワークフローです。ComfyUI で一度ちゃんと動画が作れたワークフローを、メニューの「ワークフロー」→「エクスポート (API)」で書き出して、ここに入れます。画像を読み込むノード（LoadImage）が必要です。",
+    wfNoteRef: "画像・動画・音声の素材を使うワークフローです。ComfyUI で一度ちゃんと動画が作れたワークフローを、メニューの「ワークフロー」→「エクスポート (API)」で書き出して、ここに入れます。素材は Fantastic H3 Media Loader に書き込むので、このノードが入ったワークフローが必要です。",
+    wfWrongFlowRef: "このワークフローには Fantastic H3 Media Loader が入っていないため、「素材から動画」には使えません。画像1枚から作るワークフローなら、上で「画像から動画のワークフロー」を選んでから入れてください。",
+    wfWrongFlowImage: "このワークフローは素材（Fantastic H3 Media Loader）を使うため、「画像から動画」には使えません。上で「素材から動画のワークフロー」を選んでから入れてください。",
+    addWorkflowOption: "＋ 自分のワークフローを追加…",
+    memoryOffloadJob: "動画モデルのうち {gb}GB が VRAM に入りきらず、メインメモリに逃がして生成（とても遅くなる原因です）",
+    memoryOffloadTip: "生成の前に文章AIのモデルを取り外す、GPU を使うほかのアプリや2つ目の ComfyUI を閉じる、より小さい量子化（Q3 など）のモデルにする、のどれかで速くなります。",
     llmNeedNameUrl: "「名前」と「サーバーURL」を入れると自動で保存されます。",
     videoNeedName: "「名前」を入れると自動で保存されます。",
 
@@ -2740,7 +2774,8 @@ Tips for better results:
     modelCustom: "一覧にない名前を入力する…",
     modelsFetched: "モデル {n} 件を取得しました。プルダウンから選んでください。",
     restored: "既定の内容に戻しました（まだ保存されていません。「保存」を押すと確定します）。",
-    defaultWorkflowLoaded: "既定のワークフロー（MiniMax H3）を読み込みました。モデルファイル名が ComfyUI 側と同じか確認してください（編集中の設定なら自動で保存されます。新しく追加するときは「追加して使う」を押します）。",
+    exportNoWorkflow: "書き出すワークフローがありません。先に API 形式のワークフロー JSON を入れてください。",
+    exportDone: "書き出しました（詳しい設定の変更 {n} 件を反映）。ComfyUI の画面にドロップすると開けます。",
   },
 };
 
@@ -2929,6 +2964,7 @@ class SettingsStore {
   }
 
   load() {
+    this.fresh = false;
     try {
       const raw = localStorage.getItem(USER_SETTINGS.storageKey);
       if (raw) {
@@ -2936,6 +2972,7 @@ class SettingsStore {
         if (parsed && parsed.version === USER_SETTINGS.settingsVersion) return this.addMissingDefaults({ ...this.defaults(), ...parsed, defaultsRevision: parsed.defaultsRevision || 0 });
       }
     } catch {}
+    this.fresh = true; // このブラウザに設定がまだない（初めて開いた）
     return this.defaults();
   }
 
@@ -3541,6 +3578,38 @@ class ComfyClient {
     if (!res.ok) throw new Error(`画像を送れませんでした（${res.status}）`);
     const d = await res.json();
     return d.subfolder ? `${d.subfolder}/${d.name}` : d.name;
+  }
+
+  // ComfyUI のログ（/internal/logs/raw）のうち、sinceMs 以降の部分を文字列で返す。読めなければ null
+  async recentLog(sinceMs = 0) {
+    try {
+      const res = await fetch(`${this.base}/internal/logs/raw`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+      const data = await res.json();
+      return (data.entries || []).filter((e) => {
+        const t = Date.parse(String(e.t || "").replace(/(\.\d{3})\d+/, "$1"));
+        return !sinceMs || !Number.isFinite(t) || t >= sinceMs - 5000;
+      }).map((e) => e.m).join("");
+    } catch {
+      return null;
+    }
+  }
+
+  // ログから、動画モデルが VRAM に入りきったか（loaded completely / loaded partially）を読む
+  static parseMemoryLog(text) {
+    const out = { offloadGB: null, loadedGB: null, model: null, weightsGB: null, freeGB: null, complete: false };
+    let current = null;
+    const isEncoder = (name) => /TE|clip|text|qwen|encoder/i.test(name || "");
+    for (const line of String(text).split(/\r?\n/)) {
+      const req = line.match(/Requested to load (\S+)/);
+      if (req) current = req[1];
+      if (isEncoder(current)) continue;
+      const part = line.match(/loaded partially;.*?([\d.]+) MB loaded, ([\d.]+) MB offloaded/);
+      if (part) Object.assign(out, { loadedGB: Number(part[1]) / 1024, offloadGB: Number(part[2]) / 1024, model: current, complete: false });
+      if (/loaded completely;/.test(line)) Object.assign(out, { offloadGB: 0, model: current, complete: true });
+      const tight = line.match(/([\d.]+) GB of weights against ([\d.]+) GB reported free/);
+      if (tight) Object.assign(out, { weightsGB: Number(tight[1]), freeGB: Number(tight[2]) });
+    }
+    return out;
   }
 
   // 何も生成していないか（順番待ちも実行中もない）
@@ -4337,45 +4406,11 @@ class Materials {
     return items.map((i) => this.attachThumb({ ...i }));
   }
 
-  // ブラウザ（IndexedDB）に素材を保存して、ページを開き直しても残す
-  static db() {
-    const cfg = USER_SETTINGS.refs;
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(cfg.db, 1);
-      req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(cfg.store)) req.result.createObjectStore(cfg.store); };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  static async save(items) {
-    const cfg = USER_SETTINGS.refs;
-    const db = await this.db();
-    try {
-      await new Promise((resolve, reject) => {
-        const tx = db.transaction(cfg.store, "readwrite");
-        tx.objectStore(cfg.store).put(items.map((i) => ({ ...i })), cfg.key);
-        tx.oncomplete = resolve;
-        tx.onerror = () => reject(tx.error);
-      });
-    } finally { db.close(); }
-  }
-
+  // 素材はページを開いている間だけ持つ（再読み込み・ブラウザを閉じたときは破棄する）。
+  // 以前の版でブラウザに保存した素材が残っていれば、開いたときに消す
   static async load() {
-    const cfg = USER_SETTINGS.refs;
-    try {
-      const db = await this.db();
-      try {
-        const items = await new Promise((resolve, reject) => {
-          const req = db.transaction(cfg.store).objectStore(cfg.store).get(cfg.key);
-          req.onsuccess = () => resolve(req.result || []);
-          req.onerror = () => reject(req.error);
-        });
-        return items.filter((i) => i && i.blob && cfg.kinds[i.kind]).map((i) => this.attachThumb(i));
-      } finally { db.close(); }
-    } catch {
-      return [];
-    }
+    await this.clear();
+    return [];
   }
 
   static clear() {
@@ -4467,6 +4502,13 @@ class MachineSpec {
     return best.find((g) => g.vram === vram) || best.sort((a, b) => Math.abs(a.vram - (vram || 0)) - Math.abs(b.vram - (vram || 0)))[0];
   }
 
+  // 動画モデルの重さの目安（GB）をファイル名の量子化から見積もる（MiniMax H3 の動画モデル。ログの実測: Ref2VA Q4_0 ≒ 10.9GB）
+  static modelWeightGB(name) {
+    const table = USER_SETTINGS.machine.modelWeights;
+    const hit = table.find(([re]) => re.test(name));
+    return hit ? { gb: hit[1], label: hit[2] } : null;
+  }
+
   // 参照素材の分の重さ（秒に換算）: 画像1枚 ≒ 1/6 秒、動画は生成の長さまで
   extraSeconds(flow, items, seconds) {
     if (flow !== "ref") return 0;
@@ -4540,6 +4582,34 @@ class MachineSpec {
           issues.push({ level: "warn", text: `モデル「${name}」は量子化していない大きな版です。VRAM ${gb(usable)} GB では一部をメインメモリに逃がすため、とても遅くなります。int8 や GGUF 版がおすすめです。` });
         }
       }
+    }
+    // 動画モデルの重さ: 前回の生成のログで分かっていればその値、なければファイル名の量子化から見積もる
+    const report = ctx.report;
+    if (report && report.offloadGB > 0.05) {
+      const when = new Date(report.at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      issues.push({ level: "over", text: `前回の生成（${when}）では、動画モデルのうち ${gb(report.offloadGB)} GB が VRAM に入りきらず、メインメモリに逃がしていました${report.weightsGB ? `（モデル ${gb(report.weightsGB)} GB に対して空き ${gb(report.freeGB)} GB）` : ""}。この状態では1ステップに数分かかることがあり、大きさや長さを下げても大きくは速くなりません。${USER_SETTINGS.messages.memoryOffloadTip}` });
+    } else if (!report) {
+      for (const id of reach) {
+        const inputs = wf[id].inputs || {};
+        for (const key of ["unet_name", "model_name", "ckpt_name"]) {
+          const name = inputs[key];
+          if (typeof name !== "string" || /lora|vae/i.test(name)) continue;
+          const est = MachineSpec.modelWeightGB(name);
+          if (!est) continue;
+          if (est.gb > usable - c.activationHeadroomGb) {
+            issues.push({ level: "warn", text: `動画モデル「${name}」は約 ${est.gb} GB（${est.label} の目安）あり、使える VRAM ${gb(usable)} GB にはすべて入りきりません。一部をメインメモリに逃がして動くため、1ステップに数分かかることがあります（実際の様子は、1回生成すると ComfyUI のログから読み取って表示します）。${USER_SETTINGS.messages.memoryOffloadTip}` });
+          }
+        }
+      }
+    }
+    for (const id of reach) {
+      const node = wf[id];
+      if (node.class_type === "SelectCLIPDevice" && node.inputs?.device === "cpu") {
+        issues.push({ level: "info", text: "文章エンコーダー（Qwen3-VL 32B）を CPU で動かす設定です。VRAM は節約できますが、生成のたびに最初のプロンプトの読み込み（テキストエンコード）に数分〜十数分かかります（ComfyUI のログで、サンプラーの 0/6 が出るまでの時間です）。" });
+      }
+    }
+    if (ctx.flow === "ref" && usable < c.refHeavyBelowVram) {
+      issues.push({ level: "info", text: `素材から動画（Ref2VA）は、参照素材の分だけ画像から動画より重くなります。使える VRAM ${gb(usable)} GB では1本に10分以上かかることが多いので、大きさ 0.2〜0.3・長さ 3〜4 秒・参照動画は短く（または画像だけ）から試してください。` });
     }
     if (ctx.flow === "ref" && this.ram) {
       const used = MachineSpec.refVideoRam(ctx.items);
@@ -4659,6 +4729,11 @@ class MainView {
     this.on($("run-count"), "change", (e) => { this.saveUi({ runCount: Number(e.target.value) }); this.updateRunLabels(); });
     this.on($("last-clear"), "click", () => this.clearLastImage());
     this.on($("sel-video"), "change", (e) => {
+      if (e.target.value === "__add__") {
+        e.target.value = this.store.data.videoActive;
+        this.openSettings("video", { videoFlow: this.store.flow, newVideo: true });
+        return;
+      }
       this.store.data.videoActive = e.target.value;
       (this.store.data.flowVideo ??= {})[this.store.flow] = e.target.value;
       delete this.store.ui.seconds;
@@ -4746,8 +4821,7 @@ class MainView {
     $("sel-llm-field").hidden = llms.length <= 1;
     this.syncFlowWithVideo();
     const videos = Object.entries(d.videoProfiles).filter(([id]) => this.profileFits(id)).map(([id, p]) => [id, p.name]);
-    fillSelect($("sel-video"), videos.length ? videos : [["", "（このモード用のワークフローがありません）"]], d.videoActive);
-    $("sel-video-field").hidden = videos.length === 1;
+    fillSelect($("sel-video"), [...(videos.length ? videos : [["", "（この作り方のワークフローがありません）"]]), ["__add__", USER_SETTINGS.messages.addWorkflowOption]], d.videoActive);
     fillSelect($("run-count"), Array.from({ length: USER_SETTINGS.maxRunCount }, (_, i) => [String(i + 1), `${i + 1}本`]), String(this.store.ui.runCount));
     this.updateRunLabels();
     this.loadModels();
@@ -5641,8 +5715,6 @@ class MainView {
   }
 
   materialsChanged() {
-    clearTimeout(this.materialSaveTimer);
-    this.materialSaveTimer = setTimeout(() => Materials.save(this.materialItems).catch(() => {}), 300);
     for (const [id, url] of this.materialUrls || []) {
       if (!this.materialItems.some((i) => i.id === id)) { URL.revokeObjectURL(url); this.materialUrls.delete(id); }
     }
@@ -5656,10 +5728,6 @@ class MainView {
     if (!item) return;
     Object.assign(item, patch);
     if (rerender) this.materialsChanged();
-    else {
-      clearTimeout(this.materialSaveTimer);
-      this.materialSaveTimer = setTimeout(() => Materials.save(this.materialItems).catch(() => {}), 300);
-    }
   }
 
   moveMaterial(id, dir) {
@@ -5849,6 +5917,7 @@ class MainView {
     const ctx = {
       wf: this.effectiveWorkflow() || {}, mp: this.currentMegapixels(), seconds: Number($("seconds").value),
       flow: this.store.flow, items: this.isRef() ? this.materialItems : [],
+      report: this.store.data.memoryReports?.[this.store.data.videoActive] || null,
     };
     return { spec, ctx, result: spec.evaluate(ctx) };
   }
@@ -5862,7 +5931,7 @@ class MainView {
     const { spec, result } = this.specEvaluation();
     const ratio = result.ratio;
     const c = USER_SETTINGS.machine;
-    const level = result.issues.some((i) => i.level === "over") ? "over" : (result.issues.length || (ratio ?? 0) > c.warnRatio) ? "warn" : "ok";
+    const level = result.issues.some((i) => i.level === "over") ? "over" : (result.issues.some((i) => i.level === "warn") || (ratio ?? 0) > c.warnRatio) ? "warn" : "ok";
     box.dataset.level = level;
     $("spec-bar-fill").style.width = `${Math.min(100, Math.round((ratio ?? 0) * 100))}%`;
     $("spec-text").textContent = `負荷の目安 ${ratio === null ? "—" : `${Math.round(ratio * 100)}%`}（${spec.gpuLabel}）`;
@@ -6240,6 +6309,7 @@ class MainView {
     job.workflow = workflow;
     if (signal.aborted) throw new DOMException("aborted", "AbortError");
     job.promptId = await comfy.queue(workflow);
+    job.queuedAt = Date.now();
     this.setJob(job, { state: "queued", note: "" });
     let steps = "";
     const stopWatch = comfy.watchProgress(job.promptId, (value, max) => {
@@ -6247,9 +6317,13 @@ class MainView {
       this.setJob(job, { state: "running", progress: value / max, note: steps });
     }, () => { if (job.state === "queued") this.setJob(job, { state: "running" }); });
     try {
+      let ticks = 0;
       const info = await comfy.waitFor(job.promptId, signal, (sec) => {
         if (job.state === "running") this.setJob(job, { note: `${steps ? steps + " / " : ""}${sec}秒経過` });
+        // 10秒ごとに ComfyUI のログを見て、動画モデルが VRAM に入りきらなかったら知らせる
+        if (job.state === "running" && !job.memoryChecked && ++ticks % 5 === 0) this.checkMemory(job);
       });
+      if (!job.memoryChecked) await this.checkMemory(job).catch(() => {});
       this.setJob(job, { note: m.downloading });
       const raw = await comfy.fetchVideo(info);
       job.filename = info.filename;
@@ -6267,6 +6341,8 @@ class MainView {
       }
     } finally {
       stopWatch();
+      // 中止したときも、そこまでのログから VRAM の様子を記録する
+      if (!job.memoryChecked) this.checkMemory(job).catch(() => {});
     }
   }
 
@@ -6298,6 +6374,26 @@ class MainView {
       job.lastImage = `${job.file.name}（最初の画像と同じ）`;
     }
     if (frameId) WorkflowMapper.applyMode(workflow, frameId, mode, lastName);
+  }
+
+  // ComfyUI のログから、動画モデルが VRAM に入りきったかを確かめて、ジョブとワークフローごとの記録に残す
+  async checkMemory(job) {
+    const text = await job.comfy.recentLog(job.queuedAt);
+    if (text === null) { job.memoryChecked = true; return; }
+    const r = ComfyClient.parseMemoryLog(text);
+    if (r.offloadGB === null) return; // まだ読み込み前
+    job.memoryChecked = true;
+    const reports = (this.store.data.memoryReports ??= {});
+    const id = job.restore?.videoId;
+    if (r.complete || r.offloadGB < 0.05) {
+      if (id) delete reports[id];
+    } else {
+      job.memoryNote = USER_SETTINGS.messages.memoryOffloadJob.replace("{gb}", r.offloadGB.toFixed(1));
+      if (id) reports[id] = { offloadGB: r.offloadGB, loadedGB: r.loadedGB, weightsGB: r.weightsGB, freeGB: r.freeGB, at: Date.now() };
+      this.renderJobs();
+    }
+    this.store.save();
+    this.updateSpecCheck();
   }
 
   // 素材から動画: 素材を ComfyUI の input/minimax_h3 に送り、Media Loader の media_state を書き込む
@@ -6424,7 +6520,7 @@ class MainView {
     empty.textContent = {
       preparing: `#${job.id} を準備しています…`,
       queued: `#${job.id} は順番待ちです。前の動画が終わると作り始めます。`,
-      running: `#${job.id} を生成中です（${percent}%）。完成するとここで再生できます。`,
+      running: `#${job.id} を生成中です（${percent}%）。完成するとここで再生できます。${job.memoryNote ? `\n${job.memoryNote}` : ""}`,
       error: `#${job.id} は作れませんでした。`,
       canceled: `#${job.id} は中止しました。`,
     }[job.state] || "";
@@ -6517,6 +6613,11 @@ class MainView {
     if (note) {
       const line = el("div", `job-status${job.state === "error" || job.warning ? " err" : ""}`, note);
       line.title = job.warningLong || note;
+      body.append(line);
+    }
+    if (job.memoryNote) {
+      const line = el("div", "job-status err", job.memoryNote);
+      line.title = USER_SETTINGS.messages.memoryOffloadTip;
       body.append(line);
     }
     const actions = el("div", "job-actions");
@@ -6660,10 +6761,41 @@ class SettingsView {
     this.listeners.abort();
   }
 
-  open(pane = null) {
+  open(pane = null, opts = {}) {
+    // 動画（ComfyUI）のタブは、メイン画面の作り方と同じ種類のワークフローから開く
+    if (!this.dialog.open || opts.videoFlow) this.videoFlow = opts.videoFlow || this.store.flow;
     this.loadAll();
+    if (opts.newVideo) this.loadVideo(null);
     this.showPane(pane || this.store.ui.settingsPane || "guide");
     if (!this.dialog.open) this.dialog.showModal();
+  }
+
+  // ===== 動画のワークフロー（画像から動画 / 素材から動画で別々に扱う） =====
+  videoIdsInFlow(flow = this.videoFlow) {
+    const d = this.store.data;
+    return Object.keys(d.videoProfiles).filter((id) => WorkflowMapper.flowOf(d.videoProfiles[id].mapping) === flow);
+  }
+
+  preferredVideo(flow = this.videoFlow) {
+    const d = this.store.data;
+    const ids = this.videoIdsInFlow(flow);
+    const candidates = [flow === this.store.flow ? d.videoActive : null, d.flowVideo?.[flow], flow === "ref" ? USER_SETTINGS.refVideoId : USER_SETTINGS.defaultVideoId];
+    return candidates.find((id) => id && ids.includes(id)) || ids[0] || null;
+  }
+
+  setVideoFlow(flow) {
+    if (flow === this.videoFlow) return;
+    this.videoFlow = flow;
+    this.beforeNew && delete this.beforeNew.video;
+    this.loadVideo(this.preferredVideo(flow));
+  }
+
+  // 保存したワークフローを、その作り方で使うワークフローにする（メイン画面の作り方が同じなら、すぐ切り替わる）
+  useVideo(id) {
+    const d = this.store.data;
+    (d.flowVideo ??= {})[this.videoFlow] = id;
+    if (this.store.flow === this.videoFlow || !d.videoProfiles[d.videoActive]) d.videoActive = id;
+    d.seenGuide = true;
   }
 
   bind() {
@@ -6694,13 +6826,14 @@ class SettingsView {
     this.on($("llm-del"), "click", () => this.deleteEntry("llmProfiles", "llmActive", this.editing.llm, $("llm-msg"), () => this.loadAll()));
 
     this.on($("vid-pick"), "change", (e) => this.loadVideo(e.target.value));
+    document.querySelectorAll("#vid-flow button").forEach((b) => this.on(b, "click", () => this.setVideoFlow(b.dataset.flow)));
     this.on($("vid-new"), "click", () => this.startNew("video"));
     this.on($("vid-cancel"), "click", () => this.cancelNew("video"));
     this.on($("vid-test"), "click", () => this.testComfy());
-    this.on($("wf-file"), "change", (e) => e.target.files[0] && this.loadWorkflowFile(e.target.files[0]));
+    this.on($("wf-file"), "change", (e) => { if (e.target.files[0]) this.loadWorkflowFile(e.target.files[0]); e.target.value = ""; });
     this.bindDrop($("wf-drop"), (f) => this.loadWorkflowFile(f));
     this.on($("vid-save"), "click", () => this.saveVideo());
-    this.on($("wf-default"), "click", () => this.useDefaultWorkflow());
+    this.on($("wf-export"), "click", () => this.exportWorkflow());
     this.on($("vid-del"), "click", () => this.deleteEntry("videoProfiles", "videoActive", this.editing.video, $("vid-msg"), () => this.loadAll()));
 
     this.on($("skill-pick"), "change", (e) => this.loadSkill(e.target.value));
@@ -6762,7 +6895,8 @@ class SettingsView {
   loadAll() {
     const d = this.store.data;
     this.loadLlm(d.llmProfiles[this.editing.llm] ? this.editing.llm : d.llmActive);
-    this.loadVideo(d.videoProfiles[this.editing.video] ? this.editing.video : d.videoActive || null);
+    this.videoFlow ??= this.store.flow;
+    this.loadVideo(this.videoIdsInFlow().includes(this.editing.video) ? this.editing.video : this.preferredVideo());
     this.loadSkill(d.skills[this.editing.skill] ? this.editing.skill : Object.keys(d.skills)[0] || null);
     this.loadStyle(d.styles[this.editing.style] ? this.editing.style : Object.keys(d.styles)[0] || null);
     $("opt-translate").checked = d.translate;
@@ -6912,13 +7046,14 @@ class SettingsView {
   cancelNew(kind) {
     const collection = this.store.data[USER_SETTINGS.editorCollections[kind]];
     const back = this.beforeNew?.[kind];
+    if (kind === "video") { this.loadVideo(this.videoIdsInFlow().includes(back) ? back : this.preferredVideo()); return; }
     this[USER_SETTINGS.editorLoaders[kind]](collection[back] ? back : Object.keys(collection)[0] || null);
   }
 
   syncNewMode(kind) {
     const pre = USER_SETTINGS.editorPrefixes[kind];
     const isNew = !this.editing[kind];
-    const hasAny = Object.keys(this.store.data[USER_SETTINGS.editorCollections[kind]]).length > 0;
+    const hasAny = kind === "video" ? this.videoIdsInFlow().length > 0 : Object.keys(this.store.data[USER_SETTINGS.editorCollections[kind]]).length > 0;
     $(`${pre}-cancel`).hidden = !isNew || !hasAny;
     $(`${pre}-new`).hidden = isNew;
     if (isNew) $(`${pre}-del`).hidden = true;
@@ -7026,8 +7161,7 @@ class SettingsView {
     if (!v.workflow) return;
     if (!v.mapping.prompt || !(v.mapping.image || v.mapping.media)) { setMsg(msg, USER_SETTINGS.messages.mapNeedPromptImage, "err"); return; }
     this.store.data.videoProfiles[id] = v;
-    this.store.data.videoActive = id;
-    this.store.data.seenGuide = true;
+    this.useVideo(id);
     this.store.save();
     this.relabelPicker($("vid-pick"), id, v.name);
     setMsg(msg, USER_SETTINGS.messages.autoSaved, "ok");
@@ -7124,6 +7258,7 @@ class SettingsView {
   }
 
   saveLlm() {
+    clearTimeout(this.autosaveTimers?.llm);
     const p = this.llmFromForm();
     if (!p.name || !p.baseUrl || !p.model) { setMsg($("llm-msg"), "「名前」「サーバーURL」「モデル」はすべて必要です。", "err"); return; }
     const id = this.editing.llm || uid();
@@ -7138,14 +7273,21 @@ class SettingsView {
   // VIDEO
   loadVideo(id) {
     const d = this.store.data;
-    this.editing.video = id && d.videoProfiles[id] ? id : null;
-    fillSelect($("vid-pick"), [...this.pickerEntries(d.videoProfiles), ...(this.editing.video ? [] : [["", "（新しい設定）"]])], this.editing.video || "");
+    const m = USER_SETTINGS.messages;
+    this.videoFlow ??= this.store.flow;
+    const ids = this.videoIdsInFlow();
+    this.editing.video = id && ids.includes(id) ? id : null;
+    const inFlow = Object.fromEntries(ids.map((x) => [x, d.videoProfiles[x]]));
+    fillSelect($("vid-pick"), [...this.pickerEntries(inFlow), ...(this.editing.video ? [] : [["", "（新しい設定）"]])], this.editing.video || "");
+    document.querySelectorAll("#vid-flow button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.videoFlow)));
+    const ref = this.videoFlow === "ref";
+    $("wf-note").textContent = ref ? m.wfNoteRef : m.wfNoteImage;
     fillSelect($("vid-style"), this.pickerEntries(d.styles, ["h3", USER_SETTINGS.refStyleId]));
     const v = d.videoProfiles[this.editing.video];
     this.pendingWorkflow = v ? { workflow: v.workflow, name: v.workflowName } : null;
     $("vid-name").value = v?.name || "";
     $("vid-url").value = v?.comfyUrl || USER_SETTINGS.defaultComfyUrl;
-    $("vid-style").value = v?.styleId || Object.keys(d.styles)[0];
+    $("vid-style").value = v?.styleId || (ref && d.styles[USER_SETTINGS.refStyleId] ? USER_SETTINGS.refStyleId : Object.keys(d.styles)[0]);
     $("vid-seconds").value = v?.seconds ?? USER_SETTINGS.defaultSeconds;
     $("vid-free").checked = v?.freeVram ?? true;
     $("wf-hint").firstChild.textContent = v ? `登録済み: ${v.workflowName}` : "API形式のワークフローJSONをドロップ";
@@ -7157,7 +7299,8 @@ class SettingsView {
 
   renderMapping(wf, mapping) {
     const grid = $("map-grid");
-    grid.replaceChildren(...USER_SETTINGS.slots.map((slot) => {
+    const hidden = this.videoFlow === "ref" ? "image" : "media";
+    grid.replaceChildren(...USER_SETTINGS.slots.filter((slot) => slot.key !== hidden).map((slot) => {
       const label = document.createElement("label");
       label.className = "field";
       label.textContent = slot.label;
@@ -7182,6 +7325,12 @@ class SettingsView {
       try { parsed = JSON.parse(await readFileText(file)); } catch { throw new UserError(USER_SETTINGS.messages.workflowInvalid); }
       const wf = WorkflowMapper.validate(parsed);
       const mapping = WorkflowMapper.detect(wf);
+      const flow = WorkflowMapper.flowOf(mapping);
+      if (flow !== this.videoFlow) {
+        setMsg(msg, this.videoFlow === "ref" ? USER_SETTINGS.messages.wfWrongFlowRef : USER_SETTINGS.messages.wfWrongFlowImage, "err");
+        $("wf-file").value = "";
+        return;
+      }
       this.pendingWorkflow = { workflow: wf, name: file.name };
       this.renderMapping(wf, mapping);
       $("wf-hint").firstChild.textContent = `読み込み済み: ${file.name}`;
@@ -7197,16 +7346,16 @@ class SettingsView {
     }
   }
 
-  useDefaultWorkflow() {
-    const wf = clone(USER_SETTINGS.defaultWorkflow);
-    const mapping = WorkflowMapper.detect(wf);
-    this.pendingWorkflow = { workflow: wf, name: USER_SETTINGS.defaultWorkflowName };
-    this.renderMapping(wf, mapping);
-    $("wf-hint").firstChild.textContent = `読み込み済み: ${USER_SETTINGS.defaultWorkflowName}`;
-    if (this.store.data.styles.h3) $("vid-style").value = "h3";
-    if (!$("vid-name").value.trim()) $("vid-name").value = USER_SETTINGS.defaultVideoName;
-    setMsg($("wf-msg"), `${WorkflowMapper.summary(mapping)}\n${USER_SETTINGS.messages.defaultWorkflowLoaded}`, "ok");
-    if (this.editing.video) this.autosave("video", 1500);
+  // 設定中のワークフローを ComfyUI で開ける JSON（API 形式）で書き出す。メイン画面の「詳しい設定」で変えた値も当てる
+  exportWorkflow() {
+    const msg = $("wf-msg");
+    if (!this.pendingWorkflow?.workflow) { setMsg(msg, USER_SETTINGS.messages.exportNoWorkflow, "err"); return; }
+    const id = this.editing.video;
+    const overrides = id ? this.store.ui.overrides?.[id] || {} : {};
+    const wf = WorkflowParams.apply(this.pendingWorkflow.workflow, overrides);
+    const base = ($("vid-name").value.trim() || this.pendingWorkflow.name || "workflow").replace(/\.json$/i, "").replace(/[\\/:*?"<>|]+/g, "_");
+    downloadBlob(new Blob([JSON.stringify(wf, null, 2)], { type: "application/json" }), `${base}.json`);
+    setMsg(msg, USER_SETTINGS.messages.exportDone.replace("{n}", Object.keys(overrides).length), "ok");
   }
 
   async testComfy() {
@@ -7222,6 +7371,7 @@ class SettingsView {
   }
 
   saveVideo() {
+    clearTimeout(this.autosaveTimers?.video);
     const msg = $("vid-msg");
     const name = $("vid-name").value.trim();
     if (!name) { setMsg(msg, USER_SETTINGS.messages.nameRequired, "err"); return; }
@@ -7235,11 +7385,11 @@ class SettingsView {
       styleId: $("vid-style").value, seconds: Number($("vid-seconds").value) || USER_SETTINGS.defaultSeconds,
       freeVram: $("vid-free").checked,
     };
-    this.store.data.videoActive = id;
-    this.store.data.seenGuide = true;
+    this.useVideo(id);
     this.store.save();
     this.loadVideo(id);
-    setMsg(msg, `「${name}」を${USER_SETTINGS.messages.saved}メイン画面でこの設定を使います。`, "ok");
+    setMsg(msg, `「${name}」を${USER_SETTINGS.messages.saved}メイン画面の「${USER_SETTINGS.refs.flowLabels[this.videoFlow]}」でこの設定を使います。`, "ok");
+    this.onChange();
   }
 
   // SKILLS
@@ -7352,7 +7502,7 @@ class App {
     this.store = new SettingsStore();
     this.statusBar = new StatusBar(this.store);
     this.settings = new SettingsView(this.store, () => this.onSettingsChanged(), async () => { await this.main.cancel(); await Materials.clear(); });
-    this.main = new MainView(this.store, this.statusBar, (pane) => this.settings.open(typeof pane === "string" ? pane : null));
+    this.main = new MainView(this.store, this.statusBar, (pane, opts) => this.settings.open(typeof pane === "string" ? pane : null, opts || {}));
     this.listeners = new AbortController();
     const signal = this.listeners.signal;
     $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
@@ -7371,7 +7521,12 @@ class App {
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
     this.statusBar.refresh();
-    if (!this.store.data.seenGuide) this.settings.open("guide");
+    // 設定画面を自動で開くのは、このブラウザに設定がまだないとき（初めて開いたとき）だけ
+    if (this.store.fresh) {
+      this.store.data.seenGuide = true;
+      this.store.save();
+      this.settings.open("guide");
+    }
   }
 
   onSettingsChanged() {
