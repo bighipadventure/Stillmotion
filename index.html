@@ -206,16 +206,35 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .prop-top .prop-label { padding-top: 3px; }
 .prop-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .prop-label output { color: var(--ink); font-weight: 700; }
-.wfp-head { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; }
-.wfp-head button { margin-left: auto; min-height: 22px; padding: 0 8px; font-size: 11px; }
-.wfp-group { margin-top: 6px; }
-.wfp-title { font-size: 11px; font-weight: 700; color: var(--muted); margin: 0 0 3px; }
-.wfp-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 3px; }
+/* 詳しい設定（モーダル） */
+.adv-open { width: 100%; justify-content: flex-start; gap: 8px; background: var(--surface-2); }
+.adv-badge { font-size: 11px; color: var(--accent-text); font-weight: 700; }
+.adv-badge:empty { display: none; }
+.adv-arrow { margin-left: auto; font-size: 16px; color: var(--muted); }
+dialog#advanced {
+  width: min(900px, 100vw - 24px); height: min(760px, 100dvh - 24px); max-width: none; max-height: none;
+  padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+}
+dialog#advanced[open] { display: flex; flex-direction: column; }
+dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
+.adv-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
+.adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.adv-gen { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 10px; align-items: start; }
+.adv-gen .field { margin: 0; }
+@media (max-width: 640px) { .adv-gen { grid-template-columns: 1fr; } }
+.adv-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--head); border-top: 1px solid var(--line); }
+.adv-foot .note { margin: 0; }
+.adv-foot .primary { margin-left: auto; min-width: 96px; }
+.wfp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 8px; align-items: start; }
+.wfp-group { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); padding: 6px 8px 4px; }
+.wfp-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.wfp-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 4px; }
 .wfp-row .prop-label { white-space: normal; line-height: 1.25; }
 .wfp-row.changed .prop-label { color: var(--accent-text); font-weight: 700; }
 .wfp-row.changed .prop-label::after { content: " ●"; }
 .wfp-row input[type="checkbox"] { justify-self: start; margin: 0; }
-.wfp-row select, .wfp-row input { min-height: 24px; padding: 1px 6px; font-size: 12px; }
+.wfp-row select, .wfp-row input:not([type="checkbox"]) { min-height: 26px; padding: 1px 6px; font-size: 12px; }
 .wfp-lora { border-left: 2px solid var(--line-strong); padding-left: 6px; margin-bottom: 4px; }
 #seconds-field, #crop-zoom-field { grid-template-columns: 76px minmax(0, 1fr); }
 .side-foot { flex: none; padding: 8px 10px; background: var(--head); border-top: 1px solid var(--line); }
@@ -539,14 +558,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span> <output id="seconds-out">5</output>秒</span>
             <input type="range" id="seconds" min="1" max="15" step="0.5" value="5">
           </label>
-          <details>
-            <summary>詳しい設定</summary>
-            <div class="prop"><span class="prop-label">シード</span><input type="number" id="seed" min="0" placeholder="空欄 = 毎回ランダム" aria-label="シード"></div>
-            <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローのまま）<textarea id="negative" rows="2"></textarea></label>
-            <div class="wfp-head"><span>ワークフローの設定</span><button id="wfp-reset" hidden>ワークフローの値に戻す</button></div>
-            <p class="note" id="wfp-note"></p>
-            <div id="wf-params"></div>
-          </details>
+          <button class="adv-open" id="open-advanced" aria-haspopup="dialog">
+            <span>詳しい設定</span><span class="adv-badge" id="adv-badge"></span><span class="adv-arrow" aria-hidden="true">›</span>
+          </button>
         </div>
       </section>
     </div>
@@ -636,6 +650,29 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
   </section>
 </main>
+
+<dialog id="advanced" aria-labelledby="adv-title">
+  <div class="dlg-head"><h2 id="adv-title">詳しい設定</h2><span class="adv-sub" id="adv-sub"></span><button id="close-advanced">閉じる</button></div>
+  <div class="adv-body">
+    <section class="card">
+      <h4 class="card-title">生成</h4>
+      <div class="adv-gen">
+        <label class="field">シード（空欄 = 毎回ランダム）<input type="number" id="seed" min="0" placeholder="ランダム"></label>
+        <label class="field" id="neg-field">ネガティブプロンプト（空欄ならワークフローのまま）<textarea id="negative" rows="2"></textarea></label>
+      </div>
+    </section>
+    <section class="card">
+      <h4 class="card-title">ワークフローの設定</h4>
+      <p class="note" id="wfp-note"></p>
+      <div class="wfp-grid" id="wf-params"></div>
+    </section>
+  </div>
+  <div class="adv-foot">
+    <button id="wfp-reset" hidden>ワークフローの値に戻す</button>
+    <span class="note">変更はすぐに保存され、次の実行から使われます。</span>
+    <button class="primary" id="done-advanced">閉じる</button>
+  </div>
+</dialog>
 
 <dialog id="settings" aria-labelledby="settings-title">
   <div class="dlg-head"><h2 id="settings-title">設定</h2><button id="close-settings">閉じる</button></div>
@@ -1855,8 +1892,9 @@ Tips for better results:
     helpLeadFound: "ComfyUI 側で、次のデータが足りていません。",
     helpMissingNode: "ノード: ",
     helpMissingModel: "モデル: ",
-    wfpNote: "「{name}」のワークフローの値です。変えた項目には ● が付き、次の実行から使われます（ワークフローごとに保存されます）。",
+    wfpNote: "「{name}」のワークフローの値です。変えた項目には ● が付きます（ワークフローごとに保存されます）。",
     wfpNone: "このワークフローには、ここで変えられる値がありません。",
+    wfpSimpleTitle: "スイッチ・数値",
     wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
     jobDone: "動画 #{n} が完成しました。パネルを押すと下でプレビューできます。",
     jobStarted: "動画 #{n} を ComfyUI に送りました。順番に作られ、完成したものから下の「動画」に表示されます。",
@@ -3156,7 +3194,7 @@ class MainView {
       this.statusBar.refresh();
     });
     this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); });
-    this.on($("seed"), "input", (e) => this.saveUi({ seed: e.target.value }));
+    this.on($("seed"), "input", (e) => { this.saveUi({ seed: e.target.value }); this.updateAdvancedBadge(); });
     this.on($("negative"), "input", (e) => this.saveUi({ negative: e.target.value }));
     this.on($("direction"), "input", (e) => this.saveUi({ direction: e.target.value }));
     this.on($("aspect"), "change", (e) => { this.saveUi({ aspect: e.target.value }); this.updateFrame(); });
@@ -3164,6 +3202,12 @@ class MainView {
     this.on($("change-image"), "click", () => $("file-input").click());
     this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5, zoom: 1 }; this.updateFrame(); });
     this.on($("crop-zoom"), "input", (e) => this.setZoom(100 / Number(e.target.value)));
+    const adv = $("advanced");
+    this.on($("open-advanced"), "click", () => { this.renderWorkflowParams(); adv.showModal(); });
+    this.on($("close-advanced"), "click", () => adv.close());
+    this.on($("done-advanced"), "click", () => adv.close());
+    this.on(adv, "click", (e) => { if (e.target === adv) adv.close(); });
+    this.on(adv, "close", () => this.updateAdvancedBadge());
     this.on($("wfp-reset"), "click", () => {
       delete (this.store.ui.overrides ??= {})[this.store.data.videoActive];
       this.store.save();
@@ -3330,7 +3374,24 @@ class MainView {
     else delete all[id];
     this.store.save();
     $("wfp-reset").hidden = !Object.keys(mine).length;
+    this.updateAdvancedBadge();
     if (param.path.endsWith("|multiple")) this.updateFrame();
+  }
+
+  appendParamRows(wrap, g, specOf, loraList, control) {
+    const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+    let loraBox = null;
+    for (const param of g.params) {
+      const spec = param.key ? specOf(g, param.key) : null;
+      const options = param.kind === "lora-file" ? loraList : Array.isArray(spec?.[0]) ? spec[0] : null;
+      const row = control(param, spec, options);
+      if (param.group) {
+        if (param.kind === "lora-on") { loraBox = el("div", "wfp-lora"); wrap.append(loraBox); }
+        loraBox.append(row);
+      } else {
+        wrap.append(row);
+      }
+    }
   }
 
   async renderWorkflowParams() {
@@ -3338,6 +3399,7 @@ class MainView {
     const box = $("wf-params");
     const token = (this.wfpToken = (this.wfpToken || 0) + 1);
     const cfg = USER_SETTINGS.workflowParams;
+    const m0 = USER_SETTINGS.messages;
     if (!v) { box.replaceChildren(); $("wfp-note").textContent = ""; $("wfp-reset").hidden = true; return; }
     const groups = WorkflowParams.list(v.workflow, v.mapping);
     const rank = (g) => { const i = cfg.order.findIndex((re) => re.test(g.classType)); return i < 0 ? cfg.order.length : i; };
@@ -3396,28 +3458,33 @@ class MainView {
       row.append(el("span", "prop-label", param.label), input);
       return row;
     };
-    const nodes = groups.map((g) => {
+    const simples = groups.filter((g) => g.params.length === 1 && g.params[0].key === "value");
+    if (simples.length) {
+      const merged = { id: "simple", title: m0.wfpSimpleTitle, classType: "", params: [], merged: simples };
+      groups.splice(groups.indexOf(simples[0]), 0, merged);
+      for (const g of simples) groups.splice(groups.indexOf(g), 1);
+    }
+    const nodes = groups.map((group) => {
       const wrap = el("div", "wfp-group");
-      const simple = g.params.length === 1 && g.params[0].key === "value";
-      if (!simple) wrap.append(el("div", "wfp-title", g.title));
-      let loraBox = null;
-      for (const param of g.params) {
-        const spec = param.key ? specOf(g, param.key) : null;
-        const options = param.kind === "lora-file" ? loraList : Array.isArray(spec?.[0]) ? spec[0] : null;
-        const row = control(param, spec, options);
-        if (param.group) {
-          if (param.kind === "lora-on") { loraBox = el("div", "wfp-lora"); wrap.append(loraBox); }
-          loraBox.append(row);
-        } else {
-          wrap.append(row);
-        }
-      }
+      wrap.append(el("div", "wfp-title", group.title));
+      for (const g of group.merged || [group]) this.appendParamRows(wrap, g, specOf, loraList, control);
       return wrap;
     });
     box.replaceChildren(...nodes);
     const m = USER_SETTINGS.messages;
     $("wfp-note").textContent = (groups.length ? m.wfpNote.replace("{name}", v.name) : m.wfpNone) + (groups.length && !reachable ? `\n${m.wfpOffline}` : "");
     $("wfp-reset").hidden = !Object.keys(overrides).length;
+    $("adv-sub").textContent = `動画: ${v.name}`;
+    this.updateAdvancedBadge();
+  }
+
+  // 左パネルのボタンに、変えている内容の要点を出す
+  updateAdvancedBadge() {
+    const parts = [];
+    if ((this.store.ui.seed ?? "").toString().trim() !== "") parts.push("シード固定");
+    const n = Object.keys(this.overridesFor()).length;
+    if (n) parts.push(`${n}件変更`);
+    $("adv-badge").textContent = parts.join("・");
   }
 
   applyVideoProfile() {
