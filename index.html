@@ -533,6 +533,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 .badge { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
 .cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: card; }
 .cards > .card { counter-increment: card; position: relative; padding-left: 42px; }
+.cards > .card.must { border-color: var(--lamp); background: var(--warn-soft); }
+.cards > .card.must .note { color: var(--on-warn-soft); }
+.must-badge { font-size: 11px; font-weight: 700; color: var(--on-lamp); background: var(--lamp); border-radius: 999px; padding: 0 8px; margin-left: 6px; vertical-align: middle; }
 .cards > .card::before {
   content: counter(card); position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; border-radius: 50%;
   background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 11px;
@@ -868,6 +871,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     <section class="pane" data-pane="guide">
       <header class="pane-head"><h3>はじめに</h3><p class="lead">最初の1回だけ、次の準備をします。このページはあなたのPCの ComfyUI とローカルLLMにブラウザから直接つなぐので、画像や設定が外部に送られることはありません。</p></header>
       <ol class="cards">
+        <li class="card must">
+          <h4 class="card-title">「ローカルネットワーク上のデバイスへのアクセス」を許可する <span class="must-badge">必須</span></h4>
+          <p class="note"><strong>このアプリは、このページからあなたのPCの ComfyUI と文章AIに直接つなぎます。この許可がないと、どちらにもまったくつながらず、何も作れません。</strong></p>
+          <p class="note">初めて接続するときに、ブラウザのアドレスバーの下に「ローカル ネットワーク上のデバイスへのアクセス」の確認が出ます。必ず「<strong>許可</strong>」を押してください。</p>
+          <p class="note" style="margin:0">うっかり「ブロック」した・確認が出ないときは、アドレスバー左のアイコン（設定のアイコン）→「サイトの設定」→「ローカル ネットワーク アクセス」を「許可」にして、ページを再読み込みします。Chrome か Edge で開いてください（Safari などでは動かない場合があります）。</p>
+        </li>
         <li class="card">
           <h4 class="card-title">ComfyUI に接続を許可する</h4>
           <p class="note">Stability Matrix で ComfyUI のカードの歯車アイコンを開き、一番下の「Extra Launch Arguments」に次の1行を<strong>そのまま</strong>貼り付けて保存します。</p>
@@ -882,10 +891,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <dt>LM Studio</dt><dd>「Developer」でサーバーを起動し、「Enable CORS」をオン</dd>
             <dt>Ollama</dt><dd>環境変数 <code>OLLAMA_ORIGINS</code> に <code id="origin-2"></code> を設定して起動し直す</dd>
           </dl>
-        </li>
-        <li class="card">
-          <h4 class="card-title">Chrome か Edge で開く</h4>
-          <p class="note" style="margin:0">初回に「ローカルネットワーク上のデバイスへのアクセス」の確認が出たら「許可」を押します。</p>
         </li>
         <li class="card">
           <h4 class="card-title">「文章AI」タブでモデルを選ぶ（自動で保存されます）</h4>
