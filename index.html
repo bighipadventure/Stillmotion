@@ -350,7 +350,7 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec-issues li.info { color: var(--muted); }
 .spec-issues button { align-self: flex-end; min-height: 24px; font-size: 12px; }
 
-textarea.story-text { min-height: 48px; }
+textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、右下の角で高さを変えられる */
 
 /* ===== DROPZONE ===== */
 .dropzone {
@@ -771,7 +771,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </div>
       </div>
       <div class="panel-body">
-        <div class="busy-wrap"><textarea id="story" class="autogrow story-text" rows="2" aria-label="ストーリー（日本語）" placeholder="「最初から実行」を押すと、文章AIが画像を読み取って、どんな場面で、この後どう動くかを日本語で書きます。書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。"></textarea><div class="busy-mask" data-for="story" hidden><span class="busy-spin"></span><span class="busy-text"></span></div></div>
+        <div class="busy-wrap"><textarea id="story" class="story-text" rows="4" aria-label="ストーリー（日本語）" placeholder="「最初から実行」を押すと、文章AIが画像を読み取って、どんな場面で、この後どう動くかを日本語で書きます。書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。"></textarea><div class="busy-mask" data-for="story" hidden><span class="busy-spin"></span><span class="busy-text"></span></div></div>
       </div>
     </section>
 
@@ -4833,6 +4833,13 @@ class MainView {
     ta.style.height = `${ta.scrollHeight + border}px`;
   }
 
+  // 文章AIが書いた・読み込んだ文章が入りきらないときだけ、全部見える高さまで広げる（縮めない。手で変えた高さはそのまま）
+  growToFit(ta) {
+    if (!ta || !ta.offsetParent) return;
+    const border = ta.offsetHeight - ta.clientHeight;
+    if (ta.scrollHeight > ta.clientHeight) ta.style.height = `${ta.scrollHeight + border}px`;
+  }
+
   autoGrowAll() {
     document.querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
   }
@@ -6268,7 +6275,7 @@ class MainView {
       direction: (this.store.ui.direction || "").trim(), images: ctx.images, signal,
     });
     $("story").value = story.trim();
-    this.autoGrow($("story"));
+    this.growToFit($("story"));
     this.doneBusy("story");
     this.setStep("story", "done", "完成");
     return story;
@@ -6529,7 +6536,7 @@ class MainView {
     $("prompt-en").value = job.prompt;
     $("prompt-ja").value = job.promptJa || "";
     $("story").value = job.story || "";
-    this.autoGrow($("story"));
+    this.growToFit($("story"));
     this.setStep("story", job.story ? "done" : "idle", job.story ? `#${job.id}` : "");
     this.currentRun = null;
     this.setStep("image", "done", job.meta ? `${job.meta.width}×${job.meta.height}` : Materials.shortSummary(job.refs || []));
@@ -6625,6 +6632,7 @@ class MainView {
       for (const [id, value] of [["story", t.story], ["prompt-en", t.promptEn], ["prompt-ja", t.promptJa], ["instruction", t.instruction]]) {
         $(id).value = value || "";
         if ($(id).classList.contains("autogrow")) this.autoGrow($(id));
+        else if (id === "story") this.growToFit($(id));
       }
       this.setStep("story", t.story ? "done" : "idle", "");
       this.setStep("prompt", t.promptEn ? "done" : "idle", "");
