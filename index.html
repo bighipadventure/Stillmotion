@@ -485,8 +485,14 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job-status.err { color: var(--danger); }
 .job-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .job .progress { height: 3px; }
-.job-actions { display: flex; gap: 4px; flex-wrap: wrap; }
-.job-actions button { min-height: 22px; padding: 0 7px; font-size: 11px; }
+.job { position: relative; }
+.job-act {
+  position: absolute; top: 4px; right: 4px; z-index: 2; min-height: 20px; padding: 0 7px; font-size: 11px; font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, .35); border-radius: 3px; background: rgba(0, 0, 0, .55); color: #fff;
+}
+.job-act:hover:not(:disabled) { background: rgba(0, 0, 0, .8); }
+.job-act.danger { background: #c9252d; border-color: transparent; color: #fff; }
+.job-act.danger:hover:not(:disabled) { background: #a81e25; }
 .preview-label { font-size: 12px; color: var(--muted); }
 .preview-actions { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .preview-label.active { color: var(--accent-text); font-weight: 700; }
@@ -7076,7 +7082,10 @@ class MainView {
     img.alt = "";
     thumb.append(img, el("span", "job-badge"), el("span", "play", "▶"), el("span", "job-now", "プレビュー中"));
     thumb.addEventListener("click", () => { this.selectJob(job); this.restoreJob(job); });
-    card.append(thumb, el("div", "job-body"));
+    // 削除・中止ボタンはサムネイルの右上に重ねる（サムネイル自体がボタンなので、中には入れず兄弟に置く）
+    const act = el("button", "job-act");
+    act.type = "button";
+    card.append(thumb, act, el("div", "job-body"));
     return card;
   }
 
@@ -7121,18 +7130,11 @@ class MainView {
       line.title = USER_SETTINGS.messages.memoryOffloadTip;
       body.append(line);
     }
-    const actions = el("div", "job-actions");
-    const action = (label, fn, cls = "") => {
-      const b = el("button", cls, label);
-      b.addEventListener("click", fn);
-      actions.append(b);
-    };
-    if (pending) {
-      action("中止", () => this.cancelJob(job), "danger");
-    } else {
-      action("削除", () => this.removeJob(job));
-    }
-    body.append(actions);
+    const act = card.querySelector(".job-act");
+    act.textContent = pending ? "中止" : "削除";
+    act.classList.toggle("danger", pending);
+    act.setAttribute("aria-label", `#${job.id} を${pending ? "中止" : "削除"}`);
+    act.onclick = (e) => { e.stopPropagation(); if (pending) this.cancelJob(job); else this.removeJob(job); };
     card.querySelector(".job-body").replaceWith(body);
   }
 
