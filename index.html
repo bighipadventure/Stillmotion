@@ -1926,7 +1926,7 @@ const USER_SETTINGS = {
   story: {
     system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
 Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment. The Stable Diffusion prompt is the most reliable source for the action: find every tag that names an act, action, pose, position or interaction (who does what to whom or with what, with which body part or object) and treat them as facts about the scene. Ignore the negative prompt.
-Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard.
+Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat.
 WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag for an act or object has no natural Japanese word, write the tag word itself in katakana or as-is (this never applies to names - see below).
 NAMES (strict): the image information may contain character names, person names, series titles or artist names. The video model cannot understand them, so never write any of them. Call each person by their visible appearance instead (for example "赤い髪をツインテールにした少女", "茶色の短髪で緑の上着の少年"), and use the same description for the same person every time. You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
@@ -2171,6 +2171,20 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       ] },
     ],
     singleShotModes: ["FL2VA", "L2VA"],
+    // 「なし」を選んだ音の指定は、文章AIまかせにせず、プロンプトの overall_soundscape の先頭にアプリが必ず書き込む
+    // （MiniMax H3 のテンプレートにはネガティブプロンプトがないため、プロンプトで明記するしかない）
+    audioRules: {
+      voice: {
+        en: "No speech: no one speaks, sings, hums or whispers, on or off screen, and the characters' lips never form words.",
+        ja: "セリフなし: 画面の内外で誰も話さず、歌わず、鼻歌もささやきもしない。登場人物の口が言葉を話す動きをすることもない。",
+      },
+      vocal: {
+        en: "No vocal sounds from the characters: no breathing sounds, panting, sighs, gasps, moans, laughter or screams.",
+        ja: "登場人物の声の音なし: 息づかい・あえぎ・ため息・息をのむ音・うめき声・笑い声・叫び声は聞こえない。",
+      },
+    },
+    soundscapeField: "overall_soundscape:",
+    musicField: "non_diegetic_music:",
     directionRule: "User direction (highest priority for content, composition and situation; it may be written in Japanese, so interpret it and write the prompt in English): {text}",
     modeInfo: {
       I2VA: "画像を最初のフレームにして、その続きを動かします。",
@@ -5516,6 +5530,11 @@ class MainView {
         this.on(b, "click", () => {
           this.saveUi({ promptOptions: { ...this.store.ui.promptOptions, [g.key]: value } });
           this.updatePromptOptions();
+          // セリフ・息・BGM を切り替えたら、できているプロンプトの音の指定もすぐ書き直す
+          if (["voice", "vocal", "music"].includes(g.key) && !this.running) {
+            if ($("prompt-en").value.trim()) $("prompt-en").value = this.applyAudioRules($("prompt-en").value);
+            if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
+          }
         });
         return b;
       }));
@@ -5564,6 +5583,46 @@ class MainView {
     if (!ja.trim() || !this.isH3() || this.isRef()) return;
     const body = ja.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trimStart();
     $("prompt-ja").value = `${this.instructionLine()}\n\n${body}`;
+  }
+
+  // 「なし」にした音の指定を、プロンプトに必ず明記する（文章AIが書き忘れても動画モデルに伝わるように）。
+  // 前に書き込んだ文はいったん外してから、いまの指定で書き直すので、何度呼んでも重ならない
+  applyAudioRules(text, lang = "en") {
+    const cfg = USER_SETTINGS.promptOptions;
+    let out = this.stripAudioRules(text);
+    if (!out.trim() || !this.isH3()) return out;
+    const chosen = this.promptOptions();
+    // 素材から動画で、素材の音声（声・セリフ・BGM）を使うときは、素材の指定を優先して書き込まない
+    const refAudio = this.isRef() && this.materialItems.some((i) => i.kind === "audio" || (i.kind === "video" && i.hasAudio && i.audioMode !== "off"));
+    if (refAudio) return out;
+    const rules = ["voice", "vocal"].filter((k) => chosen[k] === "off").map((k) => cfg.audioRules[k][lang === "ja" ? "ja" : "en"]);
+    if (rules.length) {
+      const at = out.indexOf(cfg.soundscapeField);
+      if (at >= 0) {
+        // 「overall_soundscape: 本文」と「overall_soundscape:（改行）本文」のどちらの書き方にも合わせる
+        const start = at + cfg.soundscapeField.length;
+        const lead = out.slice(start).match(/^[ \t]*(\r?\n)?/);
+        const body = out.slice(start + lead[0].length);
+        // N/A（完全な無音）のときは、無音のままにする
+        const gap = lang === "ja" ? "" : " ";
+        if (!/^N\/A\b/.test(body)) out = `${out.slice(0, start)}${lead[1] ? "\n" : " "}${rules.join(gap)}${body ? gap + body : ""}`;
+      } else {
+        out = `${out.trimEnd()}\n\n${cfg.soundscapeField} ${rules.join(lang === "ja" ? "" : " ")}`;
+      }
+    }
+    // BGM なし: non_diegetic_music は必ず N/A
+    if (chosen.music === "off") {
+      out = out.replace(new RegExp(`(^|\\n)(${cfg.musicField})([ \\t]*\\n?)[^\\n]*`), (m, lead, field, sep) => `${lead}${field}${sep.includes("\n") ? "\n" : " "}N/A`);
+    }
+    return out;
+  }
+
+  stripAudioRules(text) {
+    let out = text || "";
+    for (const rule of Object.values(USER_SETTINGS.promptOptions.audioRules)) {
+      for (const sentence of [rule.en, rule.ja]) out = out.split(`${sentence} `).join("").split(sentence).join("");
+    }
+    return out.replace(/[ \t]+$/gm, "");
   }
 
   settingsText() {
@@ -6301,13 +6360,13 @@ class MainView {
   }
 
   async finishPrompt(llm, en, current, signal) {
-    $("prompt-en").value = this.withInstruction(en);
+    $("prompt-en").value = this.applyAudioRules(this.withInstruction(en));
     $("prompt-ja").value = "";
     this.doneBusy("prompt-en");
     if (this.store.data.translate) {
       this.status(USER_SETTINGS.messages.translating);
       this.startBusy("prompt-ja");
-      $("prompt-ja").value = await this.translateToJa(llm, $("prompt-en").value, signal);
+      $("prompt-ja").value = this.applyAudioRules(await this.translateToJa(llm, this.stripAudioRules($("prompt-en").value), signal), "ja");
       this.doneBusy("prompt-ja");
     }
     this.setStep("prompt", "done", current ? "修正済み" : "完成");
@@ -6381,10 +6440,10 @@ class MainView {
       this.status(USER_SETTINGS.messages.translating);
       this.planBusy([to === "ja" ? "prompt-ja" : "prompt-en"]);
       if (to === "ja") {
-        $("prompt-ja").value = await this.translateToJa(llm, src, signal);
+        $("prompt-ja").value = this.applyAudioRules(await this.translateToJa(llm, this.stripAudioRules(src), signal), "ja");
       } else {
-        const body = src.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trim();
-        $("prompt-en").value = this.withInstruction(await llm.translate(body, "en", signal));
+        const body = this.stripAudioRules(src).replace(USER_SETTINGS.promptOptions.instructionPattern, "").trim();
+        $("prompt-en").value = this.applyAudioRules(this.withInstruction(await llm.translate(body, "en", signal)));
       }
       this.status("翻訳しました。");
     });
@@ -6426,8 +6485,9 @@ class MainView {
     const options = this.promptOptions();
     const total = ui.runCount;
     const seedBase = $("seed").value.trim();
-    $("prompt-en").value = this.withInstruction($("prompt-en").value);
+    $("prompt-en").value = this.applyAudioRules(this.withInstruction($("prompt-en").value));
     this.syncJaInstruction();
+    if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
     const shared = {
       profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()),
       prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
