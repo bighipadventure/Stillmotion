@@ -350,6 +350,8 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec-issues li.info { color: var(--muted); }
 .spec-issues button { align-self: flex-end; min-height: 24px; font-size: 12px; }
 
+textarea.story-text { min-height: 48px; }
+
 /* ===== DROPZONE ===== */
 .dropzone {
   display: grid; place-items: center; min-height: 150px; border: 1px dashed var(--line-strong); border-radius: var(--radius-s);
@@ -704,7 +706,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
       <div class="run-row">
         <label class="count-field"><span class="sr-only">本数</span><select id="run-count" aria-label="本数"></select></label>
-        <button class="run big" id="run">実行</button>
+        <button class="run big" id="run" title="ストーリーとプロンプトを作り直してから、動画を作ります">最初から実行</button>
       </div>
       <p class="note" id="run-note">同じ画像・プロンプトで、選んだ本数を作ります。</p>
     </div>
@@ -715,6 +717,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <div class="status-head">
         <ol class="filmstrip" id="filmstrip" aria-label="進み具合">
           <li data-step="image" data-state="idle">画像<small></small></li>
+          <li data-step="story" data-state="idle">ストーリー<small></small></li>
           <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
           <li data-step="video" data-state="idle">動画<small></small></li>
         </ol>
@@ -746,6 +749,19 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
     </div>
 
+    <section class="panel" aria-labelledby="story-title">
+      <div class="panel-head">
+        <h2 id="story-title">ストーリー</h2>
+        <div class="head-tools">
+          <button id="story-regen">ストーリーを作り直す</button>
+          <button id="story-to-prompt">このストーリーでプロンプトを作り直す</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <textarea id="story" class="autogrow story-text" rows="2" aria-label="ストーリー（日本語）" placeholder="「最初から実行」を押すと、文章AIが画像を読み取って、どんな場面で、この後どう動くかを日本語で書きます。書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。"></textarea>
+      </div>
+    </section>
+
     <section class="panel" aria-labelledby="prompt-title">
       <div class="panel-head">
         <h2 id="prompt-title">プロンプト</h2>
@@ -775,7 +791,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </div>
       </div>
       <div class="panel-body">
-        <p class="note" id="gallery-empty">「実行」を押すと、作った動画がここに古い順（左）から並びます。パネルを押すと下で確認できます。</p>
+        <p class="note" id="gallery-empty">「最初から実行」を押すと、作った動画がここに古い順（左）から並びます。パネルを押すと下で確認できます。</p>
         <div class="gallery" id="gallery" aria-label="作った動画"></div>
         <div class="screen" id="screen">
           <p class="empty" id="screen-empty">上のパネルを押すと、ここで確認できます。</p>
@@ -907,7 +923,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
 
     <section class="pane" data-pane="flow" hidden>
-      <header class="pane-head"><h3>動画ができるまで</h3><p class="lead">「実行」を押してから動画が表示されるまでに、裏側で起きていることを順番に並べました。色のついたラベルは「どこで処理されているか」です。どれもあなたのPCの中で行われ、外部のサーバーには送られません。</p></header>
+      <header class="pane-head"><h3>動画ができるまで</h3><p class="lead">「最初から実行」を押してから動画が表示されるまでに、裏側で起きていることを順番に並べました。色のついたラベルは「どこで処理されているか」です。どれもあなたのPCの中で行われ、外部のサーバーには送られません。</p></header>
       <ol class="timeline">
         <li>
           <div class="tl-head"><span class="where browser">ブラウザ</span><strong>画像を読み込む</strong></div>
@@ -918,8 +934,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p>「動画のサイズ」の一覧から選んだ縦横比（ComfyUI の解像度セレクターと同じ型）に合わせて、画像を切り抜くか、余白を足します。この画像が動画の最初のフレーム（L2VA なら最後のフレーム）になります。動画と画像の縦横比がずれていると、動画モデルが画像を引き伸ばしたり、端が欠けたりする原因になります。</p>
         </li>
         <li>
+          <div class="tl-head"><span class="where llm">文章AI</span><strong>画像を読み取って、ストーリーを考えてもらう</strong></div>
+          <p>整えた画像（画像対応モデルのとき）とメタデータを文章AIに渡し、まず「画像の状況」（誰が・どこで・何をしている場面か）を読み取ってもらい、そこから「この後の数秒に何が起きるか」の物語を日本語で考えてもらいます。結果は「ストーリー」欄に出ます。書き直して「このストーリーでプロンプトを作り直す」を押すと、次の手順だけをやり直します。</p>
+        </li>
+        <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>動画用のプロンプトを書いてもらう</strong></div>
-          <p>「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、「プロンプトの指定」（モード・BGM・セリフ・息・動き・カメラ）、メタデータ、整えた画像（画像対応モデルのとき。FL2VA なら最後の画像も）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
+          <p>ストーリー、「プロンプト形式」（書き方のルール）、「スキル」（追加の指示）、「プロンプトの指定」（モード・BGM・セリフ・息・動き・カメラ）、メタデータ、整えた画像（画像対応モデルのとき。FL2VA なら最後の画像も）をまとめて文章AIに渡し、英語のプロンプトを書いてもらいます。SDのプロンプトは単語の羅列ですが、動画モデルには「何が、どう動き、どんな音がするか」を文章で伝えたほうがうまく動きます。</p>
         </li>
         <li>
           <div class="tl-head"><span class="where llm">文章AI</span><strong>日本語訳を作る（設定でONのとき）</strong></div>
@@ -946,8 +966,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p>文章AIと動画モデルが同じGPUを取り合わないように、ComfyUI が使っていたGPUメモリを解放します。</p>
         </li>
       </ol>
-      <div class="card"><h4 class="card-title">「素材から動画」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡し、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順5では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順6で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
-      <div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「AIで修正」は手順3〜4だけ、「このプロンプトで動画を作り直す」は手順5〜9だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
+      <div class="card"><h4 class="card-title">「素材から動画」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3〜4では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡してストーリーを考えてもらい、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順6では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順7で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
+      <div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
@@ -1886,6 +1906,21 @@ const USER_SETTINGS = {
     unet_name: "models/diffusion_models", ckpt_name: "models/checkpoints", vae_name: "models/vae",
     clip_name: "models/text_encoders", clip_name1: "models/text_encoders", clip_name2: "models/text_encoders", lora_name: "models/loras",
   },
+  // ===== ストーリー（プロンプトを書く前に、画像から場面と物語を考えてもらう） =====
+  story: {
+    system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
+Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment.
+Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard.
+Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
+画像の状況: (1-2 sentences describing the scene in the picture right now)
+物語: (3-6 sentences describing, in time order, what happens during the {seconds} seconds - actions, movement of hair, clothes and body, the background, and sounds)`,
+    userHeader: "Image information:",
+    optionsHeader: "Generation settings chosen by the user (Japanese):",
+    directionHeader: "User direction (highest priority):",
+    promptHeader: "Story to depict (planned in Japanese; follow its situation, events, order, actions, environment and sounds, and write them in the required English format):",
+    reviseHeader: "Story to depict (keep the existing prompt's structure, but make it match this story):",
+  },
+
   // ===== 素材から動画（Ref2VA） =====
   // 素材は ComfyUI の input/minimax_h3 に送り、Fantastic H3 Media Loader の media_state に書き込む。
   // 上限やタグ（<Picture 1> など）の付け方は Media Loader / MiniMax H3 公式ノードと同じ。
@@ -2005,9 +2040,13 @@ const USER_SETTINGS = {
     warnRatio: 0.85,             // 負荷がこれを超えたら黄色
   },
 
+  transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 11,
-  legacyDefaultHashes: { style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5"], skill: ["f6e1e724", "647fe80d"] },
+  defaultsRevision: 12,
+  legacyDefaultHashes: {
+    style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
+    refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
+  },
   japanesePattern: /[\u3040-\u30ff\u4e00-\u9fff]/,
   retiredDefaultSkills: { anime: "482f8e16", cinematic: "f666755", subtle: "7a5858c2" },
   legacyWorkflowNames: ["既定（MiniMax H3 画像→動画）", "MiniMax H3 公式テンプレート（画像→動画）"],
@@ -2102,9 +2141,9 @@ const USER_SETTINGS = {
         ["off", "なし", "Non-verbal vocal sounds: none. No breathing or breath sounds, panting, sighs, gasps, moans, laughter, giggles, screams or any other sound from a character's mouth, nose or throat, in any field including overall_soundscape."],
       ] },
       { key: "motion", label: "動き", default: "normal", choices: [
-        ["subtle", "控えめ", "Subject motion: subtle. Keep the characters' and objects' movements small, slow and gentle."],
-        ["normal", "ふつう", "Subject motion: natural, moderate movement that fits the scene."],
-        ["big", "大げさ", "Subject motion: exaggerated. Make the characters' movements large, energetic and expressive, with strong reactions."],
+        ["subtle", "控えめ", "Motion level: subtle. Keep the actions small and calm, but fully alive and physically real (weight shifts, breathing, small gestures), with hair, clothing and the environment still moving continuously; never a frozen or puppet-like pose."],
+        ["normal", "ふつう", "Motion level: natural. Clearly visible, lifelike movement with real weight and momentum: anticipation, follow-through, secondary motion of hair, clothing and soft body parts, and a background that keeps moving."],
+        ["big", "大げさ", "Motion level: large and energetic. Athletic, expressive movement with strong momentum and big amplitude: deep anticipation, explosive action and large follow-through; hair, clothing and soft body parts swing widely and settle with inertia; the environment reacts strongly (gusts of wind, splashes, dust)."],
       ] },
       { key: "camera", label: "カメラ", default: "auto", choices: [
         ["auto", "おまかせ", "Camera: choose the camera work that best fits the scene and the motion setting."],
@@ -2135,7 +2174,7 @@ const USER_SETTINGS = {
   maxRunCount: 8,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
-  progressWeights: { image: 0.1, prompt: 0.3, video: 0.6 },
+  progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
   skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
   slots: [
     { key: "prompt", label: "プロンプト", kind: "str" },
@@ -2166,14 +2205,23 @@ non_diegetic_music: ...
 
 integrated_multimodal_description is the main body, written along the timeline:
 - Start [Shot 1] with the overall style and initial composition derived from the picture, e.g. "[Shot 1] 2D-animated, a medium shot frames ...". Common styles: Cinematic, live-action, 2D-animated, 3D CG, claymation, watercolor, vintage film.
-- Keep character identity, clothing, colors, key objects and spatial relationships consistent with the picture(s).
+- Keep character identity, clothing, colors, key objects and spatial relationships consistent with the picture(s), while the body, hair, clothing and surroundings move freely.
 - Every detail must correspond to something visible or audible: subject appearance and position, scene and key props, actions and reactions, shot changes, speech, and synchronized diegetic sound.
 - Do not add a timestamp to [Shot 1]. Each later shot starts with a strictly increasing cut time inside the duration, e.g. "[Shot 2] At 00:03.500, the camera cuts to ...". Cut only to introduce new information; for a small change in distance or angle use camera motion instead.
 - Camera motion = motion type + optional amplitude + optional speed, written as a natural sentence inside the shot, e.g. "The camera pushes in with small amplitude at slow speed toward the folded letter." Motion types: zoom in / zoom out, push in / pull out, pan left / pan right, truck left / truck right, tilt up / tilt down, pedestal up / pedestal down, arc shot, tracking shot, static shot, shake slightly / shake strongly, POV, roll clockwise / roll counterclockwise. Amplitude: with small amplitude / with large amplitude. Speed: at slow speed / at fast speed. Omit them for medium amplitude and normal speed.
 - Speakers (only when voices are allowed): a stable ID such as (S1); describe the voice when the speaker first appears; only the language tag and the spoken words go inside <d>, e.g. The girl with a bright, clear voice (S1) says: <d>[Japanese] おはよう！</d>
 - Text actually visible on screen goes in double quotation marks, verbatim.
 
-overall_soundscape: 1–4 English sentences in one paragraph covering ambient sound and physical action sounds (footsteps, fabric, objects), plus non-verbal vocal sounds such as breathing or laughter only when voices are allowed. Do not repeat dialogue or diegetic music. Use N/A only for complete silence.
+MOTION REALISM (apply at every motion setting; the motion setting changes only the amplitude and energy, never the realism):
+- Write movement as physics with weight and momentum, not as poses that change. Break every action into anticipation, action, follow-through and settling. For a jump: she bends her knees and swings her arms back, pushes off the ground, her arms swing up as her body rises, then she lands on the balls of her feet and her knees bend deeply to absorb the impact before she straightens up.
+- Repeated actions (jumping, running, dancing) show every cycle completely at a believable rhythm for the duration (about one jump per second), with slight natural variation between cycles.
+- Secondary motion follows the body with a slight delay: hair lifts on the way up, trails behind, bounces on landing and then settles; loose clothing, skirts, sleeves and ribbons flutter and swing; the arms swing for balance; soft parts of the body move with natural inertia and settle after each impact; the chest and shoulders rise and fall with breathing.
+- Show contact with the ground and the surroundings: feet pressing into sand or grass, small puffs of dust, splashes, shadows moving with the body.
+- The environment is never frozen. Give every shot continuous ambient motion that fits the place: leaves trembling and branches swaying at different rhythms in the wind, grass rippling, waves rolling in, breaking into foam and sliding back, reflections shimmering on water, sunlight flickering through leaves, clouds drifting, petals or dust floating in the air.
+- Name movements with concrete verbs, directions, speeds and timing (for example "at 00:01.200 she lands"), never with vague words such as "moves naturally" or "dynamic".
+- Even with subtle motion, keep the body and the scene alive: weight shifts, breathing, hair and clothes stirring, the background moving. Consistency means keeping the same identity, outfit and place, not a frozen pose.
+
+overall_soundscape: 1–4 English sentences in one paragraph covering ambient sound and physical action sounds that match the motion (footsteps and landing thumps, fabric swishes, wind in leaves, waves, objects), plus non-verbal vocal sounds such as breathing or laughter only when voices are allowed. Do not repeat dialogue or diegetic music. Use N/A only for complete silence.
 non_diegetic_music: 1–3 English sentences on instrumentation, tempo, rhythm and dynamic changes, without abstract mood words; or N/A.
 
 Example (I2VA):
@@ -2221,7 +2269,16 @@ detailed_description: the main body, normally 350-500 English words distributed 
 - Speakers (only when voices are allowed): a subject who speaks keeps its label and gets a speaker ID in the order of vocal events in the target video, e.g. <Subject 2> (S1) turns and says, <d>[Japanese] ...</d>. Only the language tag and the words go inside <d>. Cite <Audio N> where an audio relationship is active ("in the clear voice timbre referenced from <Audio 1>"). When only timbre or style is referenced, do not copy the original words.
 - Text visible on screen goes in double quotation marks, verbatim.
 
-overall_soundscape: 1-4 English sentences on ambience and physical sounds across the whole video; state the copy or reference relationship of a reference audio here when that audio is ambience or sound effects. Do not repeat dialogue. N/A only for complete silence.
+MOTION REALISM (apply at every motion setting; the motion setting changes only the amplitude and energy, never the realism):
+- Write movement as physics with weight and momentum, not as poses that change. Break every action into anticipation, action, follow-through and settling. For a jump: she bends her knees and swings her arms back, pushes off the ground, her arms swing up as her body rises, then she lands on the balls of her feet and her knees bend deeply to absorb the impact before she straightens up.
+- Repeated actions (jumping, running, dancing) show every cycle completely at a believable rhythm for the duration (about one jump per second), with slight natural variation between cycles.
+- Secondary motion follows the body with a slight delay: hair lifts on the way up, trails behind, bounces on landing and then settles; loose clothing, skirts, sleeves and ribbons flutter and swing; the arms swing for balance; soft parts of the body move with natural inertia and settle after each impact; the chest and shoulders rise and fall with breathing.
+- Show contact with the ground and the surroundings: feet pressing into sand or grass, small puffs of dust, splashes, shadows moving with the body.
+- The environment is never frozen. Give every shot continuous ambient motion that fits the place: leaves trembling and branches swaying at different rhythms in the wind, grass rippling, waves rolling in, breaking into foam and sliding back, reflections shimmering on water, sunlight flickering through leaves, clouds drifting, petals or dust floating in the air.
+- Name movements with concrete verbs, directions, speeds and timing (for example "at 00:01.200 she lands"), never with vague words such as "moves naturally" or "dynamic".
+- Even with subtle motion, keep the body and the scene alive: weight shifts, breathing, hair and clothes stirring, the background moving. Consistency means keeping the same identity, outfit and place, not a frozen pose.
+
+overall_soundscape: 1-4 English sentences on ambience and physical sounds that match the motion (landing thumps, fabric swishes, wind in leaves, waves) across the whole video; state the copy or reference relationship of a reference audio here when that audio is ambience or sound effects. Do not repeat dialogue. N/A only for complete silence.
 non_diegetic_music: audience-only background music (instrumentation, tempo, dynamic development), or the copy or reference relationship of a reference audio used as the score, or N/A.
 
 Example:
@@ -2279,6 +2336,7 @@ Tips for better results:
 - Always match the total duration of the description to the requested video length (0.5–15 seconds).
 - Keep reference labels consistent (e.g. <Picture 1>) across every section.
 - Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".
+- Make motion physical: anticipation, follow-through, secondary motion of hair, clothing and soft body parts, ground contact, and continuous motion in the environment (wind in trees, waves, light). The motion setting changes only the amplitude.
 - When using keyframes (I2VA / FL2VA / L2VA), clearly state how the first and/or last frame connects to the timeline.` },
     h3writingref: { name: "h3-prompt-writing-ref2va", description: "MiniMax H3 公式スキル・素材から動画（既定）", body: `Official MiniMax H3 skill "h3-prompt-writing" (MiniMax-AI/MiniMax-H3, skills/h3-prompt-writing), adapted for the full-reference mode (Ref2VA). The prompt format above summarizes its guide references/ref-en.txt (docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md).
 
@@ -2297,7 +2355,8 @@ Tips for better results:
 - Match the total duration of the description to the requested video length.
 - Reference video frames are cut to the target length, so use only what fits in that time.
 - When the user gives no role, prefer reference generation for pictures and videos, and audio reference for audio.
-- Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".` },
+- Prefer concrete visual and audio details over abstract words like "cinematic" or "beautiful".
+- Make motion physical: anticipation, follow-through, secondary motion of hair, clothing and soft body parts, ground contact, and continuous motion in the environment (wind in trees, waves, light). The motion setting changes only the amplitude.` },
   },
   defaultWorkflow: {
     "92": {
@@ -2669,6 +2728,9 @@ Tips for better results:
   },
   messages: {
     needImage: "先に画像を入れてください。",
+    generatingStory: "文章AIが画像を読み取って、ストーリーを考えています…",
+    storyDone: "ストーリーを作りました。直したいところがあれば書き直して「このストーリーでプロンプトを作り直す」を押してください。",
+    storyPromptDone: "ストーリーに合わせてプロンプトを作り直しました。「このプロンプトで動画を作り直す」で動画を作れます。",
     frameRef: "素材の画像や動画は ComfyUI 側でこの大きさに合わせて縮小されます（切り抜きはしません）。",
     needMaterials: "先に「素材」に画像か動画を入れてください（音声だけでは作れません）。",
     materialsProblem: "素材に直すところがあります: ",
@@ -2699,7 +2761,7 @@ Tips for better results:
     llmNeedNameUrl: "「名前」と「サーバーURL」を入れると自動で保存されます。",
     videoNeedName: "「名前」を入れると自動で保存されます。",
 
-    needPrompt: "英語プロンプトが空です。先に「実行」してください。",
+    needPrompt: "英語プロンプトが空です。先に「最初から実行」してください。",
     needInstruction: "修正の指示を入力してください（例: もっと動きを大きく）。",
     needJa: "日本語欄が空です。",
     needLlm: "文章AIの設定がまだです。「設定」→「文章AI（LLM）」で設定してください。",
@@ -2965,6 +3027,9 @@ class SettingsStore {
     const legacy = USER_SETTINGS.legacyDefaultHashes;
     if (data.styles.h3 && legacy.style.includes(textHash(data.styles.h3.text))) data.styles.h3 = clone(USER_SETTINGS.defaultStyles.h3);
     if (data.skills[sid] && legacy.skill.includes(textHash(data.skills[sid].body))) data.skills[sid] = clone(USER_SETTINGS.defaultSkills[sid]);
+    // 素材から動画の既定の形式・スキルも、手を入れていなければ新しい内容にする
+    if (data.styles[refStyle] && legacy.refStyle.includes(textHash(data.styles[refStyle].text))) data.styles[refStyle] = clone(USER_SETTINGS.defaultStyles[refStyle]);
+    if (data.skills[refSid] && legacy.refSkill.includes(textHash(data.skills[refSid].body))) data.skills[refSid] = clone(USER_SETTINGS.defaultSkills[refSid]);
     for (const [id, hash] of Object.entries(USER_SETTINGS.retiredDefaultSkills)) {
       if (data.skills[id] && textHash(data.skills[id].body) === hash) delete data.skills[id];
     }
@@ -2980,6 +3045,7 @@ class SettingsStore {
       const raw = localStorage.getItem(USER_SETTINGS.storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
+        for (const key of USER_SETTINGS.transientUiKeys) delete parsed.ui?.[key];
         if (parsed && parsed.version === USER_SETTINGS.settingsVersion) return this.addMissingDefaults({ ...this.defaults(), ...parsed, defaultsRevision: parsed.defaultsRevision || 0 });
       }
     } catch {}
@@ -2987,8 +3053,11 @@ class SettingsStore {
     return this.defaults();
   }
 
+  // 入力した文章（狙いたい構図・ネガティブプロンプト）はページを開いている間だけ使い、ブラウザには保存しない
   save() {
-    localStorage.setItem(USER_SETTINGS.storageKey, JSON.stringify(this.data));
+    const ui = { ...this.data.ui };
+    for (const key of USER_SETTINGS.transientUiKeys) delete ui[key];
+    localStorage.setItem(USER_SETTINGS.storageKey, JSON.stringify({ ...this.data, ui }));
   }
 
   replace(data) {
@@ -3262,17 +3331,33 @@ class LlmClient {
     return this.post([{ role: "system", content: system }, { role: "user", content }], this.profile.temperature, signal);
   }
 
-  generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal, refText = null }) {
+  // 画像の情報（SD のメタデータ）を文章AI向けの文にする
+  static metaText(meta, lastMeta) {
+    let text = `Stable Diffusion prompt: ${meta.cleanPrompt || "(none)"}\n` +
+      `Negative prompt (for reference only): ${meta.negative || "(none)"}\n` +
+      `Model: ${meta.model || "unknown"}\nImage size: ${meta.width}x${meta.height}`;
+    if (lastMeta) text += `\nLast frame Stable Diffusion prompt: ${lastMeta.cleanPrompt || "(none)"}`;
+    return text;
+  }
+
+  // 画像を読み取り、場面と物語を日本語で考えてもらう
+  generateStory({ seconds, contextText, optionsText, direction, images, signal }) {
+    const cfg = USER_SETTINGS.story;
+    const system = cfg.system.replaceAll("{seconds}", String(seconds));
+    let user = `${cfg.userHeader}\n${contextText}\n\n${cfg.optionsHeader}\n${optionsText}`;
+    if (direction) user += `\n\n${cfg.directionHeader} ${direction}`;
+    return this.chat(system, user, this.profile.vision ? images : null, signal);
+  }
+
+  generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal, refText = null, story = "" }) {
     let system = style.text.replaceAll("{seconds}", String(seconds));
     if (skills.length) {
       system += `\n\n${USER_SETTINGS.skillPreamble}\n` +
         skills.map((s) => `\n<skill name="${s.name}">\n${s.body}\n</skill>`).join("\n");
     }
     if (settingsText) system += `\n\n${settingsText}`;
-    let user = refText ?? (`Stable Diffusion prompt: ${meta.cleanPrompt || "(none)"}\n` +
-      `Negative prompt (for reference only): ${meta.negative || "(none)"}\n` +
-      `Model: ${meta.model || "unknown"}\nImage size: ${meta.width}x${meta.height}`);
-    if (lastMeta) user += `\nLast frame Stable Diffusion prompt: ${lastMeta.cleanPrompt || "(none)"}`;
+    let user = refText ?? LlmClient.metaText(meta, lastMeta);
+    if (story.trim()) user += `\n\n${current ? USER_SETTINGS.story.reviseHeader : USER_SETTINGS.story.promptHeader}\n${story.trim()}`;
     if (current) {
       user += `\n\nCurrent video prompt:\n${current}\n\nRewrite the video prompt following this instruction (it may be written in Japanese): ${instruction}`;
     }
@@ -4814,6 +4899,8 @@ class MainView {
       if (e.dataTransfer.files[0]) this.loadLastImage(e.dataTransfer.files[0]);
     });
     this.on($("run"), "click", () => this.runAll());
+    this.on($("story-regen"), "click", () => this.regenerateStory());
+    this.on($("story-to-prompt"), "click", () => this.storyToPrompt());
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
     this.on($("to-ja"), "click", () => this.translate("ja"));
@@ -4950,7 +5037,7 @@ class MainView {
 
   updateRunLabels() {
     const n = this.store.ui.runCount;
-    $("run").textContent = n > 1 ? `実行（${n}本）` : "実行";
+    $("run").textContent = n > 1 ? `最初から実行（${n}本）` : "最初から実行";
     $("rerun-video").textContent = n > 1 ? `このプロンプトで動画を作り直す（${n}本）` : "このプロンプトで動画を作り直す";
   }
 
@@ -5145,7 +5232,7 @@ class MainView {
       this.setStep("image", "done", meta.format === "none" ? "メタデータなし" : `${meta.width}×${meta.height}`);
       this.setStep("prompt", "idle", "");
       this.renderJobs();
-      this.status(meta.format === "none" ? USER_SETTINGS.messages.noMetadata : "画像を読み込みました。「実行」を押してください。");
+      this.status(meta.format === "none" ? USER_SETTINGS.messages.noMetadata : "画像を読み込みました。「最初から実行」を押してください。");
     } catch (err) {
       this.setStep("image", "error", "");
       this.status(`画像を読み込めません: ${err.message}`, true);
@@ -5540,8 +5627,8 @@ class MainView {
     const run = this.currentRun ? this.jobs.filter((j) => this.currentRun.has(j.id) && j.state !== "canceled") : [];
     const jobPart = (j) => (j.state === "running" ? j.progress : this.isPending(j) ? 0 : 1);
     const video = run.length ? run.reduce((n, j) => n + jobPart(j), 0) / run.length : 0;
-    const ratio = Math.min(1, w.image * part(stateOf("image")) + w.prompt * part(stateOf("prompt")) + w.video * video);
-    const busy = stateOf("prompt") === "active" || run.some((j) => this.isPending(j) && !(j.state === "running" && j.progress));
+    const ratio = Math.min(1, w.image * part(stateOf("image")) + w.story * part(stateOf("story")) + w.prompt * part(stateOf("prompt")) + w.video * video);
+    const busy = stateOf("story") === "active" || stateOf("prompt") === "active" || run.some((j) => this.isPending(j) && !(j.state === "running" && j.progress));
     const pct = Math.round(ratio * 100);
     $("progress-bar").style.width = `${pct}%`;
     $("progress").classList.toggle("busy", busy);
@@ -5550,7 +5637,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt"]) $(id).disabled = busy;
     document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.updatePromptOptions();
     else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
@@ -5821,6 +5908,9 @@ class MainView {
     $("mat-dlg-problems").replaceChildren(...notes.map((n) => el("p", n.err ? "mat-problem" : "mat-warn", n.text)));
     $("mat-clear").disabled = !items.length;
     const c = Materials.counts(items);
+    // 入力中の欄があると、作り直すときの blur で change が走り、描き直しが入れ子になるので先に確定させる
+    const focused = document.activeElement;
+    if (focused && $("materials").contains(focused) && focused.closest(".mat-list")) { focused.blur(); return this.renderMaterials(); }
     document.querySelectorAll("#materials .mat-kind").forEach((section) => {
       const kind = section.dataset.kind;
       const list = ordered.filter((i) => i.kind === kind);
@@ -6047,24 +6137,14 @@ class MainView {
   }
 
   // PROMPT
-  async makePrompt(signal, current = null, instruction = null) {
-    this.requireSource();
-    const llm = this.requireLlm();
-    this.running.phase = "prompt";
-    this.currentRun = null;
-    this.setStep("prompt", "active", current ? "修正中" : "作成中");
-    this.status(USER_SETTINGS.messages.generatingPrompt);
+  // 文章AIに渡す材料（画像と、メタデータまたは素材の一覧）
+  async llmContext() {
     const size = this.frameSize();
+    const seconds = Number($("seconds").value);
     if (this.isRef()) {
-      const seconds = Number($("seconds").value);
       const { urls, labels } = await Materials.llmImages(this.materialItems);
-      const en = await llm.generatePrompt({
-        style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
-        meta: null, images: urls, settingsText: this.settingsText(), seconds, current, instruction, signal,
-        refText: Materials.describeForLlm(this.materialItems, { seconds, size, aspect: Number(this.store.ui.megapixels) ? this.store.ui.aspect : "", labels: this.store.llm?.vision ? labels : [] }),
-      });
-      await this.finishPrompt(llm, en, current, signal);
-      return;
+      const refText = Materials.describeForLlm(this.materialItems, { seconds, size, aspect: Number(this.store.ui.megapixels) ? this.store.ui.aspect : "", labels: this.store.llm?.vision ? labels : [] });
+      return { size, seconds, images: urls, meta: null, lastMeta: null, refText, contextText: refText };
     }
     const frame = this.fittedFrame(size);
     const images = [frame ? this.toDataUrl(frame, frame.width, frame.height) : this.toDataUrl(this.img, this.meta.width, this.meta.height)];
@@ -6074,12 +6154,54 @@ class MainView {
       images.push(this.toDataUrl(last, last.width, last.height));
     }
     const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
+    const lastMeta = fl2va && this.last ? this.last.meta : null;
+    return { size, seconds, images, meta, lastMeta, refText: null, contextText: LlmClient.metaText(meta, lastMeta) };
+  }
+
+  // ストーリー用に、プロンプトの指定を日本語で並べる
+  storyOptionsText() {
+    const cfg = USER_SETTINGS.promptOptions;
+    const chosen = this.promptOptions();
+    const lines = cfg.groups.filter((g) => chosen[g.key] && !(this.isRef() && g.key === "mode") && (this.isH3() || !cfg.h3Only.includes(g.key)))
+      .map((g) => `${g.label}: ${(g.choices.find(([v]) => v === chosen[g.key]) || [])[1] || chosen[g.key]}`);
+    if (this.isRef()) lines.push("作り方: 素材から動画（素材の使い方の指定を優先）");
+    else if (this.isH3()) lines.push(`モードの意味: ${cfg.modeInfo[chosen.mode]}`);
+    lines.push(`長さ: ${$("seconds").value}秒`);
+    return lines.join("\n");
+  }
+
+  // STORY: 画像を読み取って、場面と物語を日本語で考えてもらう（プロンプトはこれを元に書く）
+  async makeStory(signal) {
+    this.requireSource();
+    const llm = this.requireLlm();
+    this.running.phase = "story";
+    this.currentRun = null;
+    this.setStep("story", "active", "作成中");
+    this.status(USER_SETTINGS.messages.generatingStory);
+    const ctx = await this.llmContext();
+    const story = await llm.generateStory({
+      seconds: ctx.seconds, contextText: ctx.contextText, optionsText: this.storyOptionsText(),
+      direction: (this.store.ui.direction || "").trim(), images: ctx.images, signal,
+    });
+    $("story").value = story.trim();
+    this.autoGrow($("story"));
+    this.setStep("story", "done", "完成");
+    return story;
+  }
+
+  // PROMPT
+  async makePrompt(signal, current = null, instruction = null) {
+    this.requireSource();
+    const llm = this.requireLlm();
+    this.running.phase = "prompt";
+    this.currentRun = null;
+    this.setStep("prompt", "active", current ? "修正中" : "作成中");
+    this.status(USER_SETTINGS.messages.generatingPrompt);
+    const ctx = await this.llmContext();
     const en = await llm.generatePrompt({
-      style: this.store.styleFor(this.store.video),
-      skills: this.store.activeSkillObjects(),
-      meta, images, settingsText: this.settingsText(), lastMeta: fl2va && this.last ? this.last.meta : null,
-      seconds: Number($("seconds").value),
-      current, instruction, signal,
+      style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
+      meta: ctx.meta, images: ctx.images, settingsText: this.settingsText(), lastMeta: ctx.lastMeta,
+      seconds: ctx.seconds, current, instruction, signal, refText: ctx.refText, story: $("story").value,
     });
     await this.finishPrompt(llm, en, current, signal);
   }
@@ -6099,13 +6221,33 @@ class MainView {
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }
 
+  // 最初から実行: ストーリー → プロンプト → 動画
   runAll() {
     this.scrollToTop();
     this.guard(async (signal) => {
       this.requireSource();
       this.requireVideo();
+      await this.makeStory(signal);
       await this.makePrompt(signal);
       this.startJobs();
+    });
+  }
+
+  // ストーリーだけ作り直す
+  regenerateStory() {
+    this.guard(async (signal) => {
+      await this.makeStory(signal);
+      this.status(USER_SETTINGS.messages.storyDone);
+    });
+  }
+
+  // 書き直したストーリーを元に、プロンプトを作り直す（動画は作らない）
+  storyToPrompt() {
+    this.guard(async (signal) => {
+      this.requireSource();
+      if (!$("story").value.trim()) await this.makeStory(signal);
+      await this.makePrompt(signal);
+      this.status(USER_SETTINGS.messages.storyPromptDone);
     });
   }
 
@@ -6191,7 +6333,7 @@ class MainView {
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
       img: this.img, meta: this.meta, file: this.file, last: options.mode === "FL2VA" && this.last ? { ...this.last } : null, options,
       flow: this.store.flow, refs: null,
-      direction: (ui.direction || "").trim(),
+      direction: (ui.direction || "").trim(), story: $("story").value,
       skills: this.store.activeSkillObjects().map((s) => s.name), style: this.store.styleFor(v)?.name,
       llm: this.store.llm?.name, llmModel: this.store.llm?.model,
       restore: this.restoreSnapshot(),
@@ -6287,6 +6429,9 @@ class MainView {
     this.refresh();
     $("prompt-en").value = job.prompt;
     $("prompt-ja").value = job.promptJa || "";
+    $("story").value = job.story || "";
+    this.autoGrow($("story"));
+    this.setStep("story", job.story ? "done" : "idle", job.story ? `#${job.id}` : "");
     this.currentRun = null;
     this.setStep("image", "done", job.meta ? `${job.meta.width}×${job.meta.height}` : Materials.shortSummary(job.refs || []));
     this.setStep("prompt", "done", `#${job.id}`);
@@ -6684,7 +6829,7 @@ class MainView {
       format: USER_SETTINGS.metadataFormat, version: USER_SETTINGS.metadataVersion,
       app: USER_SETTINGS.appName, app_url: USER_SETTINGS.pagesUrl, created: new Date().toISOString(),
       prompt: { en: job.prompt, ja: job.promptJa }, negative: job.negative || "",
-      direction: job.direction, options: job.options,
+      direction: job.direction, story: job.story || "", options: job.options,
       video: {
         seconds: job.seconds, aspect: job.aspect, megapixels: job.megapixels, fit: job.fit,
         width: job.size?.width ?? null, height: job.size?.height ?? null, seed: job.values?.seed ?? null,
