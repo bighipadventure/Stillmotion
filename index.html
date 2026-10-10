@@ -6580,12 +6580,15 @@ class MainView {
     }
   }
 
-  // 状態のファイル名は、動画のファイル名（拡張子だけ .json）にする。
+  // 状態のファイル名は、ComfyUI が作った動画のファイル名（拡張子だけ .json）にする。
   // プレビュー中の完成した動画 → いちばん新しい完成した動画 → まだ動画がなければ日時
   stateFileName() {
     const done = this.jobs.filter((j) => j.state === "done" && j.blob);
     const job = done.includes(this.selectedJob) ? this.selectedJob : done[done.length - 1];
-    return job ? `${this.videoFileName(job).replace(/\.\w+$/, "")}.json` : `${USER_SETTINGS.fileNamePrefix}state_${timestamp()}.json`;
+    if (!job) return `${USER_SETTINGS.fileNamePrefix}state_${timestamp()}.json`;
+    // ComfyUI が付けた名前（例: MiniMax_H3_00069_.mp4 → MiniMax_H3_00069_.json）
+    const name = String(job.filename || this.videoFileName(job)).split(/[\\/]/).pop();
+    return `${name.replace(/\.\w+$/, "")}.json`;
   }
 
   videoFileName(job) {
