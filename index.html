@@ -483,6 +483,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job-title { font-weight: 700; font-size: 12px; line-height: 1.35; }
 .job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .job-status.err { color: var(--danger); }
+.job-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .job .progress { height: 3px; }
 .job-actions { display: flex; gap: 4px; flex-wrap: wrap; }
 .job-actions button { min-height: 22px; padding: 0 7px; font-size: 11px; }
@@ -6727,6 +6728,7 @@ class MainView {
         // 10秒ごとに ComfyUI のログを見て、動画モデルが VRAM に入りきらなかったら知らせる
         if (job.state === "running" && !job.memoryChecked && ++ticks % 5 === 0) this.checkMemory(job);
       });
+      job.finishedAt = Date.now();
       if (!job.memoryChecked) await this.checkMemory(job).catch(() => {});
       this.setJob(job, { note: m.downloading });
       const raw = await comfy.fetchVideo(info);
@@ -6868,6 +6870,8 @@ class MainView {
   }
 
   setJob(job, patch) {
+    // ComfyUI が作り始めた時刻（順番待ちの時間は生成時間に含めない）
+    if (patch.state === "running" && !job.startedAt) job.startedAt = Date.now();
     Object.assign(job, patch);
     this.renderJobs();
   }
@@ -6949,6 +6953,16 @@ class MainView {
     this.updateScreen();
   }
 
+  // 生成にかかった時間と完成時刻（例: 「生成 2分05秒・13:05 完成」）
+  jobTiming(job) {
+    if (job.state !== "done" || !job.finishedAt) return null;
+    const start = job.startedAt || job.queuedAt;
+    const sec = start ? Math.max(0, Math.round((job.finishedAt - start) / 1000)) : null;
+    const took = sec === null ? "" : sec < 60 ? `${sec}秒` : `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, "0")}秒`;
+    const at = new Date(job.finishedAt).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+    return { sec, text: `${took ? `生成 ${took}・` : ""}${at} 完成`, title: `生成にかかった時間: ${took || "不明"}（順番待ちを除く）\n完成: ${new Date(job.finishedAt).toLocaleString("ja-JP")}` };
+  }
+
   jobLabel(job) {
     const batch = job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : "";
     return `#${job.id}${batch}　${job.aspect.split(" ")[0]} / ${job.seconds}秒 / ${job.options.mode}`;
@@ -7008,6 +7022,12 @@ class MainView {
     if (!pending && spinner) spinner.remove();
     const body = el("div", "job-body");
     body.append(el("div", "job-title", this.jobLabel(job)));
+    const timing = this.jobTiming(job);
+    if (timing) {
+      const line = el("div", "job-time", timing.text);
+      line.title = timing.title;
+      body.append(line);
+    }
     if (pending) {
       const bar = el("div", "progress");
       const fill = el("div");
@@ -7050,6 +7070,7 @@ class MainView {
       app: USER_SETTINGS.appName, app_url: USER_SETTINGS.pagesUrl, created: new Date().toISOString(),
       prompt: { en: job.prompt, ja: job.promptJa }, negative: job.negative || "",
       direction: job.direction, story: job.story || "", options: job.options,
+      generation: { seconds: this.jobTiming(job)?.sec ?? null, completed: job.finishedAt ? new Date(job.finishedAt).toISOString() : null },
       video: {
         seconds: job.seconds, aspect: job.aspect, megapixels: job.megapixels, fit: job.fit,
         width: job.size?.width ?? null, height: job.size?.height ?? null, seed: job.values?.seed ?? null,
