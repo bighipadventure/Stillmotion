@@ -4979,7 +4979,7 @@ class MainView {
     });
     this.on($("dl-video"), "click", () => {
       const job = this.selectedJob;
-      if (job?.blob) downloadBlob(job.blob, `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`);
+      if (job?.blob) downloadBlob(job.blob, this.videoFileName(job));
     });
     this.on($("dl-prompt"), "click", () => this.selectedJob && this.downloadPrompt(this.selectedJob));
     this.on($("post-share"), "click", () => this.selectedJob && this.postToShareApp(this.selectedJob));
@@ -6572,12 +6572,24 @@ class MainView {
         last: this.last ? await entry(this.last.file, "last.png") : null,
         materials: await Promise.all(this.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) }))),
       };
-      const name = `${USER_SETTINGS.fileNamePrefix}state_${timestamp()}.json`;
+      const name = this.stateFileName();
       downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
       this.status(m.stateSaved.replace("{name}", name));
     } catch (err) {
       this.status(m.stateFailed + err.message, true);
     }
+  }
+
+  // 状態のファイル名は、動画のファイル名（拡張子だけ .json）にする。
+  // プレビュー中の完成した動画 → いちばん新しい完成した動画 → まだ動画がなければ日時
+  stateFileName() {
+    const done = this.jobs.filter((j) => j.state === "done" && j.blob);
+    const job = done.includes(this.selectedJob) ? this.selectedJob : done[done.length - 1];
+    return job ? `${this.videoFileName(job).replace(/\.\w+$/, "")}.json` : `${USER_SETTINGS.fileNamePrefix}state_${timestamp()}.json`;
+  }
+
+  videoFileName(job) {
+    return `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`;
   }
 
   async loadState(file) {
@@ -7129,7 +7141,7 @@ class MainView {
       const key = `sm_${job.stamp}_${job.id}_${Math.random().toString(36).slice(2, 8)}`;
       const record = {
         source: "stillmotion", createdAt: Date.now(), blob: job.blob, mime: job.blob.type || "video/mp4",
-        name: `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`, meta: this.jobRecord(job),
+        name: this.videoFileName(job), meta: this.jobRecord(job),
       };
       const db = await this.handoffDb();
       await new Promise((resolve, reject) => {
