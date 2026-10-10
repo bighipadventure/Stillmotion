@@ -1909,16 +1909,17 @@ const USER_SETTINGS = {
   // ===== ストーリー（プロンプトを書く前に、画像から場面と物語を考えてもらう） =====
   story: {
     system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
-Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment.
-Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard.
+Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment. The Stable Diffusion prompt is the most reliable source for the action: find every tag that names an act, action, pose, position or interaction (who does what to whom or with what, with which body part or object) and treat them as facts about the scene. Ignore the negative prompt.
+Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard.
+WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag has no natural Japanese word, write the tag word itself in katakana or as-is. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
-画像の状況: (1-2 sentences describing the scene in the picture right now)
+画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
 物語: (3-6 sentences describing, in time order, what happens during the {seconds} seconds - actions, movement of hair, clothes and body, the background, and sounds)`,
     userHeader: "Image information:",
     optionsHeader: "Generation settings chosen by the user (Japanese):",
     directionHeader: "User direction (highest priority):",
-    promptHeader: "Story to depict (planned in Japanese; follow its situation, events, order, actions, environment and sounds, and write them in the required English format):",
-    reviseHeader: "Story to depict (keep the existing prompt's structure, but make it match this story):",
+    promptHeader: "Story to depict (planned in Japanese; follow its situation, events, order, actions, environment and sounds, and write them in the required English format. Name every act, action, pose and body part with the same concrete, specific English words as the Stable Diffusion tags - never soften or replace them with vague or euphemistic words):",
+    reviseHeader: "Story to depict (keep the existing prompt's structure, but make it match this story. Keep every act and action named concretely with the Stable Diffusion tag words - no vague or euphemistic wording):",
   },
 
   // ===== 素材から動画（Ref2VA） =====
