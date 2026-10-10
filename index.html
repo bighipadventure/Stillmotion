@@ -459,6 +459,18 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 }
 .job[data-state="queued"] .job-thumb .spinner, .job[data-state="preparing"] .job-thumb .spinner { border-top-color: rgba(255, 255, 255, .85); animation-duration: 1.6s; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* 文章AIが書いている欄（思考中）と、順番を待っている欄（待機中） */
+.busy-wrap { position: relative; margin-top: 3px; }
+label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
+.busy-mask {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; z-index: 1;
+  border-radius: var(--radius-s); background: color-mix(in srgb, var(--surface) 94%, transparent); color: var(--ink); font-size: 13px;
+}
+.busy-mask[hidden] { display: none; }
+.busy-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent-text); animation: spin .9s linear infinite; }
+.busy-mask[data-state="waiting"] { color: var(--muted); }
+.busy-mask[data-state="waiting"] .busy-spin { border-top-color: var(--muted); animation-duration: 1.8s; }
+@media (prefers-reduced-motion: reduce) { .busy-spin { animation-duration: 3s; } }
 .job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .12s; }
 .job[data-state="done"] .job-thumb:hover .play, .job[data-state="done"] .job-thumb:focus-visible .play { opacity: 1; }
 .job-badge { position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 700; border-radius: 3px; padding: 0 6px; background: var(--film-cell); color: var(--film-ink); }
@@ -591,6 +603,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
     <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
   </div>
+  <button class="quiet" id="save-state" title="画像・素材・設定・ストーリー・プロンプトを1つの JSON ファイルに保存します。そのファイルを画面にドロップすると、この状態に戻せます">状態を保存</button>
   <button class="quiet" id="open-flow">動画ができるまで</button>
   <button class="quiet" id="open-settings">設定</button>
 </header>
@@ -634,7 +647,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="dropzone" id="dropzone">
             <input type="file" id="file-input" accept="image/png,image/*" aria-label="画像を選ぶ">
             <canvas id="frame-canvas" tabindex="0" aria-label="動画の最初のフレーム" hidden></canvas>
-            <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックでも選べます）</span>
+            <span class="hint" id="drop-hint"><strong>画像をここにドロップ</strong>メタデータ入りのPNG（クリックでも選べます）。「状態を保存」で保存した JSON をドロップすると、そのときの状態に戻ります</span>
           </div>
           <div class="row" id="frame-actions" hidden>
             <button id="change-image">別の画像</button>
@@ -758,7 +771,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </div>
       </div>
       <div class="panel-body">
-        <textarea id="story" class="autogrow story-text" rows="2" aria-label="ストーリー（日本語）" placeholder="「最初から実行」を押すと、文章AIが画像を読み取って、どんな場面で、この後どう動くかを日本語で書きます。書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。"></textarea>
+        <div class="busy-wrap"><textarea id="story" class="autogrow story-text" rows="2" aria-label="ストーリー（日本語）" placeholder="「最初から実行」を押すと、文章AIが画像を読み取って、どんな場面で、この後どう動くかを日本語で書きます。書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。"></textarea><div class="busy-mask" data-for="story" hidden><span class="busy-spin"></span><span class="busy-text"></span></div></div>
       </div>
     </section>
 
@@ -772,8 +785,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
       <div class="panel-body">
         <div class="pair">
-          <label class="field">英語（動画にはこちらを使います）<textarea id="prompt-en" rows="8"></textarea></label>
-          <label class="field" id="prompt-ja-field">日本語訳（確認・編集用）<textarea id="prompt-ja" rows="8"></textarea></label>
+          <label class="field">英語（動画にはこちらを使います）<div class="busy-wrap"><textarea id="prompt-en" rows="8"></textarea><div class="busy-mask" data-for="prompt-en" hidden><span class="busy-spin"></span><span class="busy-text"></span></div></div></label>
+          <label class="field" id="prompt-ja-field">日本語訳（確認・編集用）<div class="busy-wrap"><textarea id="prompt-ja" rows="8"></textarea><div class="busy-mask" data-for="prompt-ja" hidden><span class="busy-spin"></span><span class="busy-text"></span></div></div></label>
         </div>
         <div class="revise-row">
           <textarea id="instruction" class="autogrow" rows="1" placeholder="AIへの修正指示（例: 髪が風で大きくなびくように）　Ctrl+Enter で修正" aria-label="AIに修正してもらう指示"></textarea>
@@ -1147,6 +1160,8 @@ const USER_SETTINGS = {
   pagesUrl: "https://bighipadventure.github.io/Stillmotion/",
   pagesOrigin: "https://bighipadventure.github.io",
   fileNamePrefix: "stillmotion_",
+  // 「状態を保存」の JSON（画面にドロップすると、その状態に戻す）
+  state: { format: "stillmotion-state", version: 1 },
   storageKey: "sd2video.settings.v1",
   storagePrefixes: ["sd2video."],
   textInputTypes: ["text", "number", "url", "password", "search", "email"],
@@ -1911,7 +1926,8 @@ const USER_SETTINGS = {
     system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
 Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment. The Stable Diffusion prompt is the most reliable source for the action: find every tag that names an act, action, pose, position or interaction (who does what to whom or with what, with which body part or object) and treat them as facts about the scene. Ignore the negative prompt.
 Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard.
-WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag has no natural Japanese word, write the tag word itself in katakana or as-is. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
+WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag for an act or object has no natural Japanese word, write the tag word itself in katakana or as-is (this never applies to names - see below).
+NAMES (strict): the image information may contain character names, person names, series titles or artist names. The video model cannot understand them, so never write any of them. Call each person by their visible appearance instead (for example "赤い髪をツインテールにした少女", "茶色の短髪で緑の上着の少年"), and use the same description for the same person every time. You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
 画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
 物語: (3-6 sentences describing, in time order, what happens during the {seconds} seconds - actions, movement of hair, clothes and body, the background, and sounds)`,
@@ -2176,6 +2192,8 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
+  // 画像の情報に入っているキャラクター名・人名は動画モデルには通じないので、見た目で言い換えさせる（ストーリーとプロンプトの両方）
+  namingRule: `CHARACTER NAMES (strict): the image information may contain character names, person names, series or franchise titles, or artist names (tags such as "firstname lastname", "name (series)", "series name"). The video model has no idea who they are, so never write any of them. Refer to each person by their visible appearance instead - apparent sex and age, hair color and style, eye color, outfit, and other distinctive features - and keep using the same description for the same person every time (for example "the girl with long red hair in twin tails"). You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. If the input story contains names, replace them with appearance descriptions.`,
   skillPreamble: "Also apply the following skills. If a skill conflicts with the required output format above, keep the output format.",
   slots: [
     { key: "prompt", label: "プロンプト", kind: "str" },
@@ -2730,6 +2748,8 @@ Tips for better results:
   messages: {
     needImage: "先に画像を入れてください。",
     generatingStory: "文章AIが画像を読み取って、ストーリーを考えています…",
+    busyThinking: "思考中...",
+    busyWaiting: "待機中...",
     storyDone: "ストーリーを作りました。直したいところがあれば書き直して「このストーリーでプロンプトを作り直す」を押してください。",
     storyPromptDone: "ストーリーに合わせてプロンプトを作り直しました。「このプロンプトで動画を作り直す」で動画を作れます。",
     frameRef: "素材の画像や動画は ComfyUI 側でこの大きさに合わせて縮小されます（切り抜きはしません）。",
@@ -2832,6 +2852,16 @@ Tips for better results:
     shareFailed: "Prompt Reel に渡せませんでした: ",
     shareOpening: "Prompt Reel を開いています…",
     jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
+    stateSaving: "いまの状態をファイルにまとめています…",
+    stateSaved: "いまの状態を {name} に保存しました。このファイルを画面にドロップすると、この状態に戻せます。",
+    stateLoading: "保存した状態を読み込んでいます…",
+    stateLoaded: "保存した状態（{date}）に戻しました。",
+    stateInvalid: "Stillmotion の「状態を保存」で保存したファイルではないため、読み込めません。",
+    stateBusy: "ストーリーやプロンプトを作っている間は、状態を読み込めません。",
+    stateFailed: "状態を読み込めません: ",
+    stateNoVideo: "ワークフロー「{name}」がこのブラウザにないため、いまのワークフローのままにしました。",
+    stateNoLlm: "文章AI「{name}」がこのブラウザにないため、いまの文章AIのままにしました。",
+    stateDropHere: "画像は左の枠に、素材は素材の枠にドロップしてください（「状態を保存」の JSON は画面のどこにドロップしても読み込めます）。",
     screenEmpty: "上のパネルを押すと、ここで確認できます。",
     restoreBusy: "プロンプトを作っている間は、設定を戻せません（プレビューだけ切り替えました）。",
     jobFailed: "動画 #{n} は作れませんでした: {err}",
@@ -3357,6 +3387,7 @@ class LlmClient {
         skills.map((s) => `\n<skill name="${s.name}">\n${s.body}\n</skill>`).join("\n");
     }
     if (settingsText) system += `\n\n${settingsText}`;
+    system += `\n\n${USER_SETTINGS.namingRule}`;
     let user = refText ?? LlmClient.metaText(meta, lastMeta);
     if (story.trim()) user += `\n\n${current ? USER_SETTINGS.story.reviseHeader : USER_SETTINGS.story.promptHeader}\n${story.trim()}`;
     if (current) {
@@ -4829,12 +4860,25 @@ class MainView {
   bind() {
     const drop = $("dropzone");
     this.on($("file-input"), "change", (e) => e.target.files[0] && this.loadImage(e.target.files[0]));
+    this.on($("save-state"), "click", () => this.saveState());
+    // 「状態を保存」の JSON は、画面のどこにドロップしても読み込む（枠の上に落としたときは枠の側で振り分ける）
+    this.on(document, "dragover", (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); });
+    this.on(document, "drop", (e) => {
+      if (e.defaultPrevented || ![...(e.dataTransfer?.types || [])].includes("Files")) return;
+      e.preventDefault();
+      if (e.target.closest?.("dialog")) return;
+      const state = [...e.dataTransfer.files].find((f) => MainView.isStateFile(f));
+      if (state) this.loadState(state);
+      else this.status(USER_SETTINGS.messages.stateDropHere, true);
+    });
     this.on(drop, "dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
     this.on(drop, "dragleave", () => drop.classList.remove("over"));
     this.on(drop, "drop", (e) => {
       e.preventDefault();
       drop.classList.remove("over");
-      if (e.dataTransfer.files[0]) this.loadImage(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (MainView.isStateFile(file)) this.loadState(file);
+      else if (file) this.loadImage(file);
     });
     this.on($("sel-llm"), "change", (e) => { this.store.data.llmActive = e.target.value; this.store.save(); this.statusBar.refresh(); this.loadModels(); });
     this.on($("sel-model"), "change", (e) => {
@@ -4897,7 +4941,9 @@ class MainView {
     this.on(lastDrop, "drop", (e) => {
       e.preventDefault();
       lastDrop.classList.remove("over");
-      if (e.dataTransfer.files[0]) this.loadLastImage(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (MainView.isStateFile(file)) this.loadState(file);
+      else if (file) this.loadLastImage(file);
     });
     this.on($("run"), "click", () => this.runAll());
     this.on($("story-regen"), "click", () => this.regenerateStory());
@@ -5663,6 +5709,7 @@ class MainView {
       if (this.running.phase) this.setStep(this.running.phase, err.name === "AbortError" ? "idle" : "error", "");
     } finally {
       this.running = null;
+      this.planBusy([]);
       this.setBusy(false);
     }
   }
@@ -5786,7 +5833,10 @@ class MainView {
       this.on(zone, "drop", (e) => {
         e.preventDefault();
         zone.classList.remove("over");
-        if (!this.running) this.addMaterials([...e.dataTransfer.files]);
+        const files = [...e.dataTransfer.files];
+        const state = files.find((f) => MainView.isStateFile(f));
+        if (state) this.loadState(state);
+        else if (!this.running) this.addMaterials(files);
       });
     }
     this.on($("mat-input"), "change", (e) => { this.addMaterials([...e.target.files]); e.target.value = ""; });
@@ -6171,6 +6221,38 @@ class MainView {
     return lines.join("\n");
   }
 
+  // 文章AIがこれから書く欄の順番（先頭が「思考中」、残りが「待機中」）
+  planBusy(ids) {
+    this.busyQueue = ids.filter(Boolean);
+    this.renderBusy();
+  }
+
+  // その欄を書き始める（前の欄は済んだものとして外す）
+  startBusy(id) {
+    const q = this.busyQueue || [];
+    const at = q.indexOf(id);
+    this.busyQueue = at >= 0 ? q.slice(at) : [id, ...q];
+    this.renderBusy();
+  }
+
+  doneBusy(id) {
+    this.busyQueue = (this.busyQueue || []).filter((x) => x !== id);
+    this.renderBusy();
+  }
+
+  renderBusy() {
+    const m = USER_SETTINGS.messages;
+    const q = this.busyQueue || [];
+    document.querySelectorAll(".busy-mask").forEach((mask) => {
+      const id = mask.dataset.for;
+      const state = q[0] === id ? "thinking" : q.includes(id) ? "waiting" : "";
+      mask.hidden = !state;
+      mask.dataset.state = state;
+      mask.querySelector(".busy-text").textContent = state === "thinking" ? m.busyThinking : state === "waiting" ? m.busyWaiting : "";
+      $(id).setAttribute("aria-busy", String(!!state));
+    });
+  }
+
   // STORY: 画像を読み取って、場面と物語を日本語で考えてもらう（プロンプトはこれを元に書く）
   async makeStory(signal) {
     this.requireSource();
@@ -6178,6 +6260,7 @@ class MainView {
     this.running.phase = "story";
     this.currentRun = null;
     this.setStep("story", "active", "作成中");
+    this.startBusy("story");
     this.status(USER_SETTINGS.messages.generatingStory);
     const ctx = await this.llmContext();
     const story = await llm.generateStory({
@@ -6186,6 +6269,7 @@ class MainView {
     });
     $("story").value = story.trim();
     this.autoGrow($("story"));
+    this.doneBusy("story");
     this.setStep("story", "done", "完成");
     return story;
   }
@@ -6197,6 +6281,7 @@ class MainView {
     this.running.phase = "prompt";
     this.currentRun = null;
     this.setStep("prompt", "active", current ? "修正中" : "作成中");
+    this.startBusy("prompt-en");
     this.status(USER_SETTINGS.messages.generatingPrompt);
     const ctx = await this.llmContext();
     const en = await llm.generatePrompt({
@@ -6210,9 +6295,12 @@ class MainView {
   async finishPrompt(llm, en, current, signal) {
     $("prompt-en").value = this.withInstruction(en);
     $("prompt-ja").value = "";
+    this.doneBusy("prompt-en");
     if (this.store.data.translate) {
       this.status(USER_SETTINGS.messages.translating);
+      this.startBusy("prompt-ja");
       $("prompt-ja").value = await this.translateToJa(llm, $("prompt-en").value, signal);
+      this.doneBusy("prompt-ja");
     }
     this.setStep("prompt", "done", current ? "修正済み" : "完成");
   }
@@ -6228,6 +6316,7 @@ class MainView {
     this.guard(async (signal) => {
       this.requireSource();
       this.requireVideo();
+      this.planBusy(["story", "prompt-en", this.store.data.translate && "prompt-ja"]);
       await this.makeStory(signal);
       await this.makePrompt(signal);
       this.startJobs();
@@ -6237,6 +6326,7 @@ class MainView {
   // ストーリーだけ作り直す
   regenerateStory() {
     this.guard(async (signal) => {
+      this.planBusy(["story"]);
       await this.makeStory(signal);
       this.status(USER_SETTINGS.messages.storyDone);
     });
@@ -6246,6 +6336,7 @@ class MainView {
   storyToPrompt() {
     this.guard(async (signal) => {
       this.requireSource();
+      this.planBusy([!$("story").value.trim() && "story", "prompt-en", this.store.data.translate && "prompt-ja"]);
       if (!$("story").value.trim()) await this.makeStory(signal);
       await this.makePrompt(signal);
       this.status(USER_SETTINGS.messages.storyPromptDone);
@@ -6265,6 +6356,7 @@ class MainView {
     this.guard(async (signal) => {
       if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
       if (!instruction.trim()) throw new UserError(USER_SETTINGS.messages.needInstruction);
+      this.planBusy(["prompt-en", this.store.data.translate && "prompt-ja"]);
       await this.makePrompt(signal, $("prompt-en").value, instruction);
       $("instruction").value = "";
       this.autoGrow($("instruction"));
@@ -6279,6 +6371,7 @@ class MainView {
       const llm = this.requireLlm();
       this.running.phase = null;
       this.status(USER_SETTINGS.messages.translating);
+      this.planBusy([to === "ja" ? "prompt-ja" : "prompt-en"]);
       if (to === "ja") {
         $("prompt-ja").value = await this.translateToJa(llm, src, signal);
       } else {
@@ -6381,12 +6474,8 @@ class MainView {
     };
   }
 
-  // サムネイルを押したとき: プロンプトと左パネルを、その動画を作ったときの内容に戻す
-  restoreJob(job) {
-    const m = USER_SETTINGS.messages;
-    const r = job.restore;
-    if (!r) return;
-    if (this.running) { this.status(m.restoreBusy, true); return; }
+  // 保存しておいた左パネルの設定（restoreSnapshot の形）を戻す
+  applyRestore(r) {
     const d = this.store.data;
     if (d.videoProfiles[r.videoId]) d.videoActive = r.videoId;
     if (d.llmProfiles[r.llmId]) {
@@ -6403,6 +6492,15 @@ class MainView {
     if (!d.videoProfiles[r.videoId]) d.videoActive = this.pickVideoForFlow(restoredFlow);
     if (d.videoActive) (d.flowVideo ??= {})[restoredFlow] = d.videoActive;
     this.store.save();
+  }
+
+  // サムネイルを押したとき: プロンプトと左パネルを、その動画を作ったときの内容に戻す
+  restoreJob(job) {
+    const m = USER_SETTINGS.messages;
+    const r = job.restore;
+    if (!r) return;
+    if (this.running) { this.status(m.restoreBusy, true); return; }
+    this.applyRestore(r);
 
     if (r.ui.flow === "ref") {
       this.setMaterials(Materials.snapshot(r.refs || job.refs || []));
@@ -6437,6 +6535,119 @@ class MainView {
     this.setStep("image", "done", job.meta ? `${job.meta.width}×${job.meta.height}` : Materials.shortSummary(job.refs || []));
     this.setStep("prompt", "done", `#${job.id}`);
     this.status(m.jobRestored.replace("{n}", job.id));
+  }
+
+  // ===== 状態の保存と復元（JSON） =====
+  // 画像・最後のフレーム・素材はファイルの中身ごと（data URL）入れる。作った動画の一覧は入れない
+  static isStateFile(file) {
+    return !!file && (/\.json$/i.test(file.name) || file.type === "application/json");
+  }
+
+  async saveState() {
+    const m = USER_SETTINGS.messages;
+    const toData = (blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    const entry = async (file, name) => ({ name: file.name || name, type: file.type || "", data: await toData(file) });
+    this.status(m.stateSaving);
+    try {
+      const settings = this.restoreSnapshot();
+      settings.ui.runCount = this.store.ui.runCount;
+      const state = {
+        format: USER_SETTINGS.state.format, version: USER_SETTINGS.state.version, savedAt: new Date().toISOString(),
+        settings, videoName: this.store.video?.name || "", llmName: this.store.llm?.name || "",
+        texts: { story: $("story").value, promptEn: $("prompt-en").value, promptJa: $("prompt-ja").value, instruction: $("instruction").value },
+        image: this.file ? { ...(await entry(this.file, "image.png")), focus: { ...this.focus } } : null,
+        last: this.last ? await entry(this.last.file, "last.png") : null,
+        materials: await Promise.all(this.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) }))),
+      };
+      const name = `${USER_SETTINGS.fileNamePrefix}state_${timestamp()}.json`;
+      downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
+      this.status(m.stateSaved.replace("{name}", name));
+    } catch (err) {
+      this.status(m.stateFailed + err.message, true);
+    }
+  }
+
+  async loadState(file) {
+    const m = USER_SETTINGS.messages;
+    if (this.running) { this.status(m.stateBusy, true); return; }
+    let state;
+    try { state = JSON.parse(await file.text()); } catch { state = null; }
+    if (state?.format !== USER_SETTINGS.state.format || !state.settings?.ui) { this.status(m.stateInvalid, true); return; }
+    this.status(m.stateLoading);
+    const fromEntry = async (e) => {
+      const blob = await (await fetch(e.data)).blob();
+      return new File([blob], e.name, { type: e.type || blob.type });
+    };
+    try {
+      const d = this.store.data;
+      const r = clone(state.settings);
+      const notes = [];
+      // 別のブラウザで保存したときは id が合わないので、名前で探す
+      const byName = (profiles, name) => Object.keys(profiles).find((id) => profiles[id].name === name);
+      if (!d.videoProfiles[r.videoId]) {
+        const id = state.videoName && byName(d.videoProfiles, state.videoName);
+        if (id) r.videoId = id;
+        else if (state.videoName) notes.push(m.stateNoVideo.replace("{name}", state.videoName));
+      }
+      if (!d.llmProfiles[r.llmId]) {
+        const id = state.llmName && byName(d.llmProfiles, state.llmName);
+        if (id) r.llmId = id;
+        else if (state.llmName) notes.push(m.stateNoLlm.replace("{name}", state.llmName));
+      }
+      r.activeSkills ??= [];
+      r.overrides ??= {};
+      // ファイルは先にすべて取り出してから、画面を書き換える
+      const image = state.image ? await fromEntry(state.image) : null;
+      const last = state.last ? await fromEntry(state.last) : null;
+      const items = [];
+      for (const { file: e, ...rest } of state.materials || []) items.push(Materials.attachThumb({ ...rest, blob: await fromEntry(e) }));
+
+      this.currentRun = null;
+      this.applyRestore(r);
+      if (image) {
+        await this.loadImage(image);
+        if (this.meta && state.image.focus) this.focus = { ...state.image.focus };
+      } else {
+        this.clearImage();
+      }
+      if (last) await this.loadLastImage(last);
+      else if (this.last) this.clearLastImage();
+      this.setMaterials(items);
+      this.statusBar.refresh();
+      this.refresh();
+      if (this.meta) this.updateFrame();
+      const t = state.texts || {};
+      for (const [id, value] of [["story", t.story], ["prompt-en", t.promptEn], ["prompt-ja", t.promptJa], ["instruction", t.instruction]]) {
+        $(id).value = value || "";
+        if ($(id).classList.contains("autogrow")) this.autoGrow($(id));
+      }
+      this.setStep("story", t.story ? "done" : "idle", "");
+      this.setStep("prompt", t.promptEn ? "done" : "idle", "");
+      this.setStep("video", "idle", "");
+      const date = new Date(state.savedAt);
+      this.status([m.stateLoaded.replace("{date}", isNaN(date) ? "日時不明" : date.toLocaleString("ja-JP")), ...notes].join(" "), notes.length > 0);
+    } catch (err) {
+      this.status(m.stateFailed + err.message, true);
+    }
+  }
+
+  // 画像を外す（保存した状態に画像がないとき）
+  clearImage() {
+    this.file = null;
+    this.meta = null;
+    this.img = null;
+    if (this.previewUrl) { URL.revokeObjectURL(this.previewUrl); this.previewUrl = null; }
+    $("frame-canvas").hidden = true;
+    $("drop-hint").hidden = false;
+    $("frame-actions").hidden = true;
+    $("dropzone").classList.remove("has-image");
+    $("meta-box").hidden = true;
+    if (!this.isRef()) this.setStep("image", "idle", "");
   }
 
   jobThumb(job) {
