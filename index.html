@@ -473,10 +473,17 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) { .busy-spin { animation-duration: 3s; } }
 .job-thumb .play { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; color: #fff; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .12s; }
 .job[data-state="done"] .job-thumb:hover .play, .job[data-state="done"] .job-thumb:focus-visible .play { opacity: 1; }
-.job-badge { position: absolute; left: 4px; top: 4px; font-size: 11px; font-weight: 700; border-radius: 3px; padding: 0 6px; background: var(--film-cell); color: var(--film-ink); }
-.job[data-state="running"] .job-badge { background: var(--film-active); color: var(--film-active-ink); }
-.job[data-state="done"] .job-badge { background: var(--lamp); color: var(--on-lamp); }
-.job[data-state="error"] .job-badge { background: var(--film-error); color: var(--film-error-ink); }
+/* 状態の表示: ボタンに見えないよう、枠や背景のない「色つきの点＋文字」にする。上端に薄い影を敷いて読めるようにする */
+.job-thumb::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 30px; background: linear-gradient(rgba(0, 0, 0, .55), rgba(0, 0, 0, 0)); pointer-events: none; }
+.job-badge {
+  position: absolute; left: 7px; top: 4px; height: 20px; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .7); pointer-events: none;
+}
+.job-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #b8b8b8; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+.job[data-state="running"] .job-badge::before { background: #f0a63a; }
+.job[data-state="done"] .job-badge::before { background: #4fd18f; }
+.job[data-state="error"] .job-badge::before { background: #ff6b6b; }
+.job[data-state="canceled"] .job-badge { color: rgba(255, 255, 255, .75); }
 .job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
 .job:not([aria-current="true"]) .job-now { display: none; }
 .job-body { padding: 5px 7px 7px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
@@ -485,9 +492,10 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job-status.err { color: var(--danger); }
 .job-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .job .progress { height: 3px; }
-.job { position: relative; }
+.job { position: relative; cursor: pointer; }
 .job-act {
   position: absolute; top: 4px; right: 4px; z-index: 2; min-height: 20px; padding: 0 7px; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1;
   border: 1px solid rgba(255, 255, 255, .35); border-radius: 3px; background: rgba(0, 0, 0, .55); color: #fff;
 }
 .job-act:hover:not(:disabled) { background: rgba(0, 0, 0, .8); }
@@ -2210,6 +2218,8 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   },
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
+  // このアプリで再生する動画・音声の、最初の音量バーの位置（0〜1）。あとで変えた音量はそのまま
+  initialVolume: 0.5,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
@@ -4800,6 +4810,7 @@ class MachineSpec {
 class MainView {
   constructor(store, statusBar, openSettings) {
     this.store = store;
+    $("video").volume = USER_SETTINGS.initialVolume;
     this.statusBar = statusBar;
     this.openSettings = openSettings;
     this.listeners = new AbortController();
@@ -6128,6 +6139,7 @@ class MainView {
       const media = el(item.kind === "video" ? "video" : "audio");
       media.controls = true;
       media.preload = "none";
+      media.volume = USER_SETTINGS.initialVolume;
       media.src = this.materialUrl(item);
       if (item.kind === "video") { media.muted = false; media.playsInline = true; media.poster = item.thumb || ""; }
       card.classList.add(`mat-has-${item.kind}`);
@@ -7081,7 +7093,13 @@ class MainView {
     else img.hidden = true;
     img.alt = "";
     thumb.append(img, el("span", "job-badge"), el("span", "play", "▶"), el("span", "job-now", "プレビュー中"));
-    thumb.addEventListener("click", () => { this.selectJob(job); this.restoreJob(job); });
+    // カードのどこを押しても選べる。画像の部分を押したときは、完成していればそのまま再生する
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".job-act")) return;
+      this.selectJob(job);
+      this.restoreJob(job);
+      if (thumb.contains(e.target) && job.url) $("video").play().catch(() => {});
+    });
     // 削除・中止ボタンはサムネイルの右上に重ねる（サムネイル自体がボタンなので、中には入れず兄弟に置く）
     const act = el("button", "job-act");
     act.type = "button";
