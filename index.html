@@ -420,6 +420,10 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 
 /* ===== STATUS ===== */
 .status-panel { padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; }
+/* 全体の進み具合は、下にスクロールしても常に上に出しておく */
+.col-output > .status-panel { position: sticky; top: 0; z-index: 6; box-shadow: 0 1px 0 var(--line); }
+.status-panel .help-box { max-height: 40vh; overflow-y: auto; }
+@media (max-width: 860px) { .col-output > .status-panel { top: var(--topbar-h); } }
 .status-head { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
 #cancel { min-height: 24px; padding: 1px 10px; }
 .filmstrip { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; flex: none; }
@@ -795,6 +799,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" id="long-info"></p>
           <div class="prop"><span class="prop-label" id="long-scene-label">場面転換</span><div class="seg" id="long-scene" role="group" aria-labelledby="long-scene-label"></div></div>
           <p class="note" id="long-scene-info"></p>
+          <div class="prop"><span class="prop-label" id="long-end-label">最後の区間</span><div class="seg" id="long-end" role="group" aria-labelledby="long-end-label"></div></div>
+          <p class="note" id="long-end-info"></p>
           <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を Stable Diffusion で作る</label>
           <p class="note" id="long-sd-info"></p>
         </div>
@@ -2133,6 +2139,12 @@ Write the result in natural Japanese only, in exactly this form and nothing else
         key: "If the story moves to another place, time or composition at this moment, change the location, background, lighting and camera tags boldly; keep the people and their appearance.", denoise: null, keep: 0.3 },
     },
     defaultScene: "normal",
+    // 最後の区間の終わり方: fl2va は「終わりの画像」まで（最初と最後のフレームを決める）、i2va は最後のフレームを決めずに成り行きに任せる
+    ends: {
+      fl2va: { label: "終わりの画像", info: "最後の区間も「最初の画像 → 終わりの画像」の FL2VA で作ります。動画の終わりの絵を決められます（Stable Diffusion がオフのときは、「終わりの画像」のエリアに画像を入れたときだけ FL2VA になります）。" },
+      i2va: { label: "成り行き", info: "最後の区間は最後のフレームを決めずに I2VA で作り、動きの終わりは成り行きに任せます（「終わりの画像」は作りません）。" },
+    },
+    defaultEnd: "fl2va",
     sdPollMs: 700,
     keySystem: `You write a Stable Diffusion prompt for one still image: the keyframe at the boundary between two clips of a longer video - the last moment of clip {a}, which is also the first moment of clip {b}.
 Start from the base Stable Diffusion prompt and keep everything that defines the people and the style exactly as written: character tags and character names (Stable Diffusion understands them), appearance, hair, eyes, outfit, body, quality and style tags, artist tags, LoRA tags such as <lora:name:0.8>, and the weight syntax such as (tag:1.2).
@@ -2213,7 +2225,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「Stable Diffusion」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
       sdNoModel: "ComfyUI にモデル「{name}」が見つかりません。元の画像と同じモデル（checkpoint）を ComfyUI の models/checkpoints に入れてください。",
-      sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → 次のつなぎの画像」の FL2VA で作ります（区間1は元の画像から、最後の区間は「終わりの画像」まで。すべての区間の継ぎ目が同じ画像になるので、つなぎ目がそろいます）。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
+      sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → 次のつなぎの画像」の FL2VA で作ります（区間1は元の画像から、最後の区間は「終わりの画像」まで。ただし「最後の区間」を「成り行き」にしたときは、最後の区間だけ I2VA。すべての区間の継ぎ目が同じ画像になるので、つなぎ目がそろいます）。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
       sdInfoOff: "オフのときは、前の区間の動画の最後のフレームから次の区間を作ります。",
       promptHint: "「動画」欄や区間の動画を押すと、その動画を作ったときのプロンプトがここに出ます。",
     },
@@ -7391,6 +7403,17 @@ class MainView {
     return USER_SETTINGS.long.scenes[this.longScene()];
   }
 
+  // 最後の区間の終わり方（fl2va: 終わりの画像まで / i2va: 成り行きに任せる）
+  longEnd() {
+    return USER_SETTINGS.long.ends[this.store.ui.longEnd] ? this.store.ui.longEnd : USER_SETTINGS.long.defaultEnd;
+  }
+
+  // つなぎの画像を使う境目の最後の番号（成り行きに任せるときは「終わりの画像」を使わない）
+  keyMax() {
+    const n = this.longSegs?.length || 0;
+    return this.longEnd() === "i2va" ? n - 1 : n;
+  }
+
   // つなぎの画像を Stable Diffusion で作るか
   longSdOn() {
     return !!this.store.ui.longSd;
@@ -7417,6 +7440,17 @@ class MainView {
       return b;
     }));
     $("long-scene-info").textContent = cfg.scenes[scene].info;
+    const end = this.longEnd();
+    $("long-end").replaceChildren(...Object.entries(cfg.ends).map(([key, e]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = e.label;
+      b.setAttribute("aria-pressed", String(key === end));
+      b.disabled = !!this.running;
+      this.on(b, "click", () => { this.saveUi({ longEnd: key }); this.fillLongOptions(); this.renderLong(); });
+      return b;
+    }));
+    $("long-end-info").textContent = cfg.ends[end].info;
     $("long-sd").checked = this.longSdOn();
     $("long-sd-info").textContent = this.longSdOn() ? cfg.messages.sdInfoOn : cfg.messages.sdInfoOff;
   }
@@ -7569,7 +7603,7 @@ class MainView {
     $("long-list").replaceChildren(...segs.flatMap((seg, i) => {
       const row = this.longRow(seg, i, t);
       t += seg.seconds;
-      return [row, this.longKeyCard(i + 1)];
+      return i + 1 <= this.keyMax() ? [row, this.longKeyCard(i + 1)] : [row];
     }));
     $("long-sum").textContent = segs.length ? `${segs.length}区間・合計 ${Math.round(t * 10) / 10}秒` : "";
     this.updateLongStates();
@@ -7997,7 +8031,8 @@ class MainView {
     const useSd = this.longSdOn();
     const fillFor = (i) => (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
     // つなぎの画像（Stable Diffusion で作ったもの・読み込んだもの）。区間 b の最初＝区間 b-1 の最後
-    const keyOf = (b) => (b > 0 && b <= n ? this.keyHolder(b).key : null);
+    const kmax = this.keyMax();
+    const keyOf = (b) => (b > 0 && b <= kmax ? this.keyHolder(b).key : null);
     for (const i of order) {
       const seg = segs[i];
       if (!seg.text.trim() && !seg.instruction.trim() && !seg.prompt.trim()) throw new UserError(fillFor(i)(m.needText));
@@ -8006,11 +8041,12 @@ class MainView {
     }
     // つなぎの画像を新しく作る境目（区間 b の最初＝区間 b-1 の最後）
     // （最後の区間の終わりにも画像を作り、すべての区間を「最初の画像 → 最後の画像」の FL2VA にして、継ぎ目をそろえる）
-    const keyList = useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b <= n && !this.keyHolder(b).key).sort((a, b) => a - b) : [];
+    const keyList = useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b <= kmax && !this.keyHolder(b).key).sort((a, b) => a - b) : [];
     if (keyList.length && (!this.meta || this.meta.format === "none" || !this.meta.prompt)) throw new UserError(m.sdNeedMeta);
     // 区間ごとのモード（あとで決まる画像に頼らず、ここで決めておく）
     const modeOf = (i) => {
       if (!this.isH3()) return "I2VA";
+      if (i + 1 > kmax) return "I2VA"; // 最後の区間を成り行きに任せる
       if (useSd || keyOf(i + 1)) return "FL2VA";
       return segs[i + 1]?.first && !set.has(i + 1) ? "FL2VA" : "I2VA";
     };
@@ -8176,7 +8212,7 @@ class MainView {
       // つなぎの画像がなければ、前の区間の動画の最後のフレーム
       out.prevImg = h.key?.img || this.longSegs[b - 2]?.last?.img || null;
     }
-    if (b + 1 <= n) {
+    if (b + 1 <= this.keyMax()) {
       const h = this.keyHolder(b + 1);
       out.nextPrompt = promptOf(h, b + 1);
       out.nextImg = h.key?.img || null;
@@ -8339,7 +8375,7 @@ class MainView {
       return this.toDataUrl(c, c.width || c.naturalWidth, c.height || c.naturalHeight);
     };
     const useSd = this.longSdOn();
-    const keyOf = (b) => (b > 0 && b <= segs.length ? this.keyHolder(b).key : null);
+    const keyOf = (b) => (b > 0 && b <= this.keyMax() ? this.keyHolder(b).key : null);
     const start = i === 0 ? this.baseFrame() : keyOf(i) || (!useSd && !set.has(i - 1) ? segs[i - 1].last : null);
     const end = this.segCtx?.mode === "FL2VA" ? keyOf(i + 1) || (useSd ? null : segs[i + 1]?.first) : null;
     const images = [picture(start || this.baseFrame())];
