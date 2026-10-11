@@ -459,6 +459,31 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 }
 .job[data-state="queued"] .job-thumb .spinner, .job[data-state="preparing"] .job-thumb .spinner { border-top-color: rgba(255, 255, 255, .85); animation-duration: 1.6s; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* 長い動画: 区間の一覧 */
+.long-total { display: inline-flex; align-items: center; gap: 4px; }
+.long-total input { width: 84px; }
+.long-list { display: flex; flex-direction: column; gap: 8px; }
+.long-row { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); padding: 8px; display: grid; grid-template-columns: 148px 1fr; gap: 10px; }
+.long-row[data-picked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
+.long-row[data-current="true"] { box-shadow: 0 0 0 2px var(--lamp); }
+.long-thumb { position: relative; padding: 0; border: none; border-radius: var(--radius-s); background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; display: grid; place-items: center; color: var(--film-ink); font-size: 11px; }
+.long-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.long-thumb:disabled { cursor: default; opacity: 1; }
+.long-thumb .spinner { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--lamp); animation: spin .9s linear infinite; }
+.long-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.long-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.long-head .long-name { font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.long-head .long-time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.long-sec { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); }
+.long-sec input { width: 64px; min-height: 24px; padding: 0 4px; }
+.long-state { color: var(--muted); }
+.long-state.err { color: var(--danger); }
+.long-head .long-del { margin-left: auto; min-height: 22px; padding: 0 7px; font-size: 11px; }
+.long-main textarea { width: 100%; }
+.long-main details summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.long-main details textarea { margin-top: 4px; font-size: 12px; }
+@media (max-width: 720px) { .long-row { grid-template-columns: 1fr; } }
+
 /* 文章AIが書いている欄（思考中）と、順番を待っている欄（待機中） */
 .busy-wrap { position: relative; margin-top: 3px; }
 label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
@@ -516,6 +541,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .run-block { display: flex; flex-direction: column; gap: 4px; }
 .run-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px; }
 .run-row .count-field { margin: 0; }
+.run-row:has(.count-field[hidden]) { grid-template-columns: minmax(0, 1fr); }
 .run-row select, .run-row button.big { height: var(--run-height); margin: 0; }
 .run-row select { padding: 0 6px; font-size: 13px; }
 .run-block .note { margin: 0; font-size: 11px; }
@@ -636,6 +662,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="seg" id="flow-mode" role="group" aria-labelledby="flow-title">
             <button type="button" data-flow="image">画像から動画</button>
             <button type="button" data-flow="ref">素材から動画</button>
+            <button type="button" data-flow="long">長い動画</button>
           </div>
           <p class="frame-info" id="flow-info"></p>
         </div>
@@ -672,6 +699,14 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <summary>画像の情報（メタデータ）</summary>
             <pre id="meta-text"></pre>
           </details>
+        </div>
+      </section>
+
+      <section class="psec" id="sec-long" aria-labelledby="long-title" hidden>
+        <h2 class="psec-title" id="long-title">長い動画</h2>
+        <div class="psec-body">
+          <label class="prop"><span class="prop-label">全体の長さ</span><span class="long-total"><input type="number" id="long-total" min="1" max="600" step="0.5" aria-label="全体の長さ（秒）"> 秒</span></label>
+          <p class="note" id="long-info"></p>
         </div>
       </section>
 
@@ -790,7 +825,23 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
     </section>
 
-    <section class="panel" aria-labelledby="prompt-title">
+    <section class="panel" id="long-panel" aria-labelledby="long-panel-title" hidden>
+      <div class="panel-head">
+        <h2 id="long-panel-title">区間 <span class="head-count" id="long-count"></span></h2>
+        <div class="head-tools">
+          <button id="long-add">区間を追加</button>
+          <button id="long-play">通して再生</button>
+          <button id="long-join">つないで1本にする</button>
+          <button class="primary" id="long-gen">まだの区間を作る</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <p class="note" id="long-empty">「最初から実行」を押すと、文章AIが全体のストーリーを区間に分けて、1区間ずつ順番に動画を作ります。前の区間の最後のフレームが、次の区間の最初のフレームになります。</p>
+        <div class="long-list" id="long-list"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="prompt-panel" aria-labelledby="prompt-title">
       <div class="panel-head">
         <h2 id="prompt-title">プロンプト</h2>
         <div class="head-tools">
@@ -995,7 +1046,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </li>
       </ol>
       <div class="card"><h4 class="card-title">「素材から動画」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3〜4では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡してストーリーを考えてもらい、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順6では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順7で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
-      <div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
+      <div class="card"><h4 class="card-title">「長い動画」のとき</h4><p class="note" style="margin:0">手順3で、全体のストーリーを区間（「1区間の長さ」ごと）に分けてもらいます。そのあと区間ごとに手順4〜10をくり返し、1区間ずつ順番に作ります。2つ目からの区間は、前の区間の動画から取り出した最後のフレームを最初の画像にします（I2VA）。作り直す区間のすぐ後ろの区間がもうあり、その区間は作り直さないときは、その区間の最初のフレームで終わるように FL2VA で作るので、継ぎ目がずれません。「つないで1本にする」は、ブラウザの中（ffmpeg.wasm）で区間の動画をつなぎ、継ぎ目で重なる1コマを落として1本の MP4 にします（初回だけ約30MBを読み込みます）。</p></div><div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
@@ -1953,6 +2004,56 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     reviseHeader: "Story to depict (keep the existing prompt's structure, but make it match this story. Keep every act and action named concretely with the Stable Diffusion tag words - no vague or euphemistic wording):",
   },
 
+  // ===== 長い動画 =====
+  // 区間ごとに動画を作り、前の区間の最後のフレームを次の区間の最初のフレームにしてつなぐ。
+  // 作り直す区間の次の区間がすでにあれば、その最初のフレームを最後のフレームにした FL2VA で作る。
+  long: {
+    defaultTotal: 20, minTotal: 1, maxTotal: 600,
+    // 区間の動画を1本につなぐ ffmpeg.wasm（初回だけ CDN から読み込む。約30MB）
+    ffmpeg: {
+      lib: "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm",
+      core: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm",
+    },
+    encode: { preset: "veryfast", crf: 18, audioBitrate: "192k" },
+    planRules: `The video is split into {n} consecutive clips that are generated one after another: each clip starts from the last frame of the previous clip. So the story must flow continuously across the clips - the same people, outfits and place unless the story itself changes them - and every clip contains one clear, continuous piece of the action that fits its length (do not cram too much into a short clip, and do not let a clip stand still). Clip lengths: {list}.
+Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown):
+画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
+物語: (the whole story in time order, 3-8 sentences)
+区間1: (2-4 sentences: what happens during clip 1, in time order and concretely - actions, movement of hair, clothes and body, the background, and sounds)
+(then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
+    planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
+    firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
+    continueRule: "This clip is part {k} of {n} of one continuous longer video. <Picture 1> is the exact last frame of the previous clip: start from that frame with the action already in motion and continue it smoothly from the very first frame - no pause, no reset and no new pose at the start.",
+    endRule: "Picture 2 is the exact first frame of the next clip: arrive at that frame exactly at the end of this clip, matching its pose, position and framing.",
+    promptHeader: "Story of the whole video and of this clip (planned in Japanese). Write the prompt only for THIS clip, continuing from the previous clip and leading into the next one. Name every act, action, pose and body part with the same concrete, specific English words as the Stable Diffusion tags:",
+    messages: {
+      info: "区間の長さは「生成」の「1区間の長さ」で決まります（区間ごとの長さは右の一覧で変えられます）。",
+      planning: "文章AIが画像を読み取って、全体のストーリーを区間に分けています…",
+      planned: "ストーリーを {n} 区間に分けました。",
+      planFailed: "文章AIの答えから区間を読み取れませんでした。もう一度試すか、区間の内容を手で書いてください。",
+      prompting: "区間{k}のプロンプトを書いています…",
+      generating: "区間{k}の動画を作っています…",
+      frames: "区間{k}の最初と最後のフレームを取り出しています…",
+      framesFailed: "区間{k}の動画からフレームを取り出せませんでした（このブラウザで再生できない形式の可能性があります）。",
+      done: "区間をすべて作りました。「通して再生」で確認し、「つないで1本にする」で1本の動画にできます。",
+      needPrev: "区間{k}の前の区間（区間{p}）がまだできていないため、作れません。前の区間から作ってください。",
+      needSegments: "まだ区間がありません。「最初から実行」を押すか、「区間を追加」で区間を作ってください。",
+      needText: "区間{k}の内容が空です。区間の内容を書くか、「ストーリーを作り直す」を押してください。",
+      nothing: "作る区間がありません（すべてできています）。作り直したい区間にチェックを入れてください。",
+      needAll: "まだできていない区間があります（区間{k}）。すべての区間を作ってからつないでください。",
+      jobFailed: "区間{k}の動画を作れなかったので、ここで止めました。",
+      loadingFfmpeg: "動画をつなぐ準備をしています（初回だけ、つなぐためのプログラム 約30MB を読み込みます）…",
+      ffmpegFailed: "動画をつなぐプログラムを読み込めませんでした（インターネットに接続しているか確かめてください）: ",
+      joining: "区間をつないでいます… {p}%",
+      joined: "{n} 区間をつないで、{s} 秒の動画にしました。「動画を保存」で保存できます。",
+      joinFailed: "動画をつなげませんでした: ",
+      playing: "▶ 通して再生中: 区間{k} / {n}",
+      segPreview: "区間{k}の動画です（区間の動画を押しても、左の設定は変わりません）。",
+      joinedPreview: "つないだ長い動画です（押しても、左の設定は変わりません）。",
+      removeConfirm: "区間{k}を一覧から消しますか？（作った動画は「動画」欄に残ります）",
+    },
+  },
+
   // ===== 素材から動画（Ref2VA） =====
   // 素材は ComfyUI の input/minimax_h3 に送り、Fantastic H3 Media Loader の media_state に書き込む。
   // 上限やタグ（<Picture 1> など）の付け方は Media Loader / MiniMax H3 公式ノードと同じ。
@@ -2004,6 +2105,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     flowInfo: {
       image: "メタデータ入りの画像1枚を、動画の最初（または最後）のフレームにして動かします。",
       ref: "画像・動画・音声を複数入れて、人物・背景・動き・声などを参考にした動画を作ります（MiniMax H3 の Ref2VA）。画像のメタデータは使いません。",
+      long: "画像1枚から、短い区間をつないだ長い動画を作ります。1区間ずつ作るので、低スペックのPCでも長い動画を作れます（そのぶん時間はかかります）。",
     },
   },
 
@@ -3152,6 +3254,9 @@ class SettingsStore {
   // いまの作り方: "image"（画像から動画）か "ref"（素材から動画・Ref2VA）
   get flow() { return this.data.ui.flow === "ref" ? "ref" : "image"; }
 
+  // 画面の作り方: "image" / "ref" / "long"（長い動画。ワークフローは画像から動画と同じものを使う）
+  get uiFlow() { return ["ref", "long"].includes(this.data.ui.flow) ? this.data.ui.flow : "image"; }
+
   static isDefaultSkill(id) {
     return id === USER_SETTINGS.defaultSkillId || id === USER_SETTINGS.refSkillId;
   }
@@ -3411,7 +3516,43 @@ class LlmClient {
     return this.chat(system, user, this.profile.vision ? images : null, signal);
   }
 
-  generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal, refText = null, story = "" }) {
+  // 長い動画: 全体のストーリーを区間に分けてもらう
+  generatePlan({ total, lengths, contextText, optionsText, direction, story, images, signal }) {
+    const scfg = USER_SETTINGS.story;
+    const lcfg = USER_SETTINGS.long;
+    const head = scfg.system.split("Write the result in natural Japanese only")[0].replaceAll("{seconds}", String(total));
+    const list = lengths.map((sec, i) => `区間${i + 1} = ${sec} seconds`).join(", ");
+    const system = `${head}${lcfg.planRules.replaceAll("{n}", String(lengths.length)).replace("{list}", list)}`;
+    let user = `${scfg.userHeader}\n${contextText}\n\n${scfg.optionsHeader}\n${optionsText}`;
+    if (direction) user += `\n\n${scfg.directionHeader} ${direction}`;
+    if (story) user += `\n\n${lcfg.planKeepStory}\n${story}`;
+    return this.chat(system, user, this.profile.vision ? images : null, signal);
+  }
+
+  // 文章AIの答えを「全体のストーリー」と「区間ごとの内容」に分ける
+  static parsePlan(text, n) {
+    const segments = Array(n).fill("");
+    const head = [];
+    let cur = -1;
+    const toHalf = (x) => x.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+    for (const raw of String(text).replace(/\r/g, "").split("\n")) {
+      const line = toHalf(raw).replace(/\*\*/g, "");
+      const m = line.match(/^\s*[-・]?\s*区間\s*(\d+)\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*(.*)$/);
+      if (m) {
+        cur = Number(m[1]) - 1;
+        if (cur >= 0 && cur < n) segments[cur] = m[2].trim();
+        continue;
+      }
+      if (cur >= 0 && cur < n) {
+        if (line.trim()) segments[cur] += (segments[cur] ? "\n" : "") + line.trim();
+      } else if (cur < 0) {
+        head.push(raw);
+      }
+    }
+    return { story: head.join("\n").trim(), segments };
+  }
+
+  generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal, refText = null, story = "", segment = false }) {
     let system = style.text.replaceAll("{seconds}", String(seconds));
     if (skills.length) {
       system += `\n\n${USER_SETTINGS.skillPreamble}\n` +
@@ -3420,7 +3561,7 @@ class LlmClient {
     if (settingsText) system += `\n\n${settingsText}`;
     system += `\n\n${USER_SETTINGS.namingRule}`;
     let user = refText ?? LlmClient.metaText(meta, lastMeta);
-    if (story.trim()) user += `\n\n${current ? USER_SETTINGS.story.reviseHeader : USER_SETTINGS.story.promptHeader}\n${story.trim()}`;
+    if (story.trim()) user += `\n\n${segment ? USER_SETTINGS.long.promptHeader : current ? USER_SETTINGS.story.reviseHeader : USER_SETTINGS.story.promptHeader}\n${story.trim()}`;
     if (current) {
       user += `\n\nCurrent video prompt:\n${current}\n\nRewrite the video prompt following this instruction (it may be written in Japanese): ${instruction}`;
     }
@@ -4987,6 +5128,7 @@ class MainView {
     this.on($("run"), "click", () => this.runAll());
     this.on($("story-regen"), "click", () => this.regenerateStory());
     this.on($("story-to-prompt"), "click", () => this.storyToPrompt());
+    this.bindLong();
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
     this.on($("to-ja"), "click", () => this.translate("ja"));
@@ -5288,7 +5430,7 @@ class MainView {
     $("seconds").value = seconds;
     $("seconds-out").textContent = seconds;
     $("seconds").disabled = !lengthOk && !!v;
-    $("seconds-caption").textContent = "長さ";
+    $("seconds-caption").textContent = this.isLong() ? "1区間の長さ" : "長さ";
     $("seconds-field").title = lengthOk || !v ? "" : `動画の長さ${USER_SETTINGS.messages.lengthLocked}`;
     const negOk = !!m.negative;
     $("negative").disabled = !negOk;
@@ -5567,6 +5709,8 @@ class MainView {
   promptOptions() {
     const chosen = { ...this.store.ui.promptOptions };
     if (this.isRef()) chosen.mode = "Ref2VA";
+    // 長い動画: モードは区間ごとに決まる（前後の区間しだいで I2VA か FL2VA）
+    if (this.isLong()) chosen.mode = this.segCtx?.mode || "I2VA";
     if (chosen.camera === "cuts" && USER_SETTINGS.promptOptions.singleShotModes.includes(chosen.mode)) chosen.camera = "auto";
     if (!this.isH3()) {
       chosen.mode = "I2VA";
@@ -5575,7 +5719,7 @@ class MainView {
     return chosen;
   }
 
-  instructionLine(seconds = Number($("seconds").value)) {
+  instructionLine(seconds = this.segCtx?.seconds ?? Number($("seconds").value)) {
     const cfg = USER_SETTINGS.promptOptions;
     return cfg.instructionLines[this.promptOptions().mode].replace("{S}", seconds.toFixed(2));
   }
@@ -5650,7 +5794,8 @@ class MainView {
       .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2])
       .map((line) => (ref ? line.replaceAll("integrated_multimodal_description", "detailed_description") : line));
     if (this.isH3() && !ref) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
-    if (chosen.mode === "FL2VA" && !this.last) lines.push(cfg.lastSameAsFirst);
+    if (chosen.mode === "FL2VA" && !this.last && !this.segCtx) lines.push(cfg.lastSameAsFirst);
+    if (this.segCtx) lines.push(...this.segCtx.rules);
     if (ref) lines.push(cfg.refRolesWin);
     const direction = (this.store.ui.direction || "").trim();
     if (direction) lines.push(cfg.directionRule.replace("{text}", direction));
@@ -5676,8 +5821,8 @@ class MainView {
         document.querySelector('#prompt-options [data-group="camera"][data-value="auto"]').setAttribute("aria-pressed", "true");
       }
     }
-    $("mode-info").textContent = this.isRef() ? "" : h3 ? cfg.modeInfo[mode] + (singleShot && ui.camera === "cuts" ? `\n${cfg.cutsSingleShot}` : "") : cfg.notH3;
-    $("last-box").hidden = mode !== "FL2VA";
+    $("mode-info").textContent = this.isRef() || this.isLong() ? "" : h3 ? cfg.modeInfo[mode] + (singleShot && ui.camera === "cuts" ? `\n${cfg.cutsSingleShot}` : "") : cfg.notH3;
+    $("last-box").hidden = mode !== "FL2VA" || this.isLong();
   }
 
   async loadLastImage(file) {
@@ -5768,7 +5913,8 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join"]) $(id).disabled = busy;
+    $("long-list").querySelectorAll("input, textarea, .long-del").forEach((el) => { el.disabled = busy; });
     document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.updatePromptOptions();
     else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
@@ -5777,6 +5923,7 @@ class MainView {
       $("aspect").disabled = true;
       document.querySelectorAll("#fit-mode button").forEach((b) => { b.disabled = true; });
     }
+    if (!busy && this.longSegs) this.updateLongButtons();
     this.updateCancel();
   }
 
@@ -5842,6 +5989,10 @@ class MainView {
     return this.store.flow === "ref";
   }
 
+  isLong() {
+    return this.store.uiFlow === "long";
+  }
+
   // その作り方で使えるワークフローか
   profileFits(id, flow = this.store.flow) {
     const p = this.store.data.videoProfiles[id];
@@ -5871,12 +6022,13 @@ class MainView {
   }
 
   setFlow(flow) {
-    if (this.running || flow === this.store.flow) return;
+    if (this.running || flow === this.store.uiFlow) return;
     const d = this.store.data;
     d.flowVideo ??= {};
     if (d.videoActive) d.flowVideo[this.store.flow] = d.videoActive;
     this.store.ui.flow = flow;
-    d.videoActive = this.pickVideoForFlow(flow);
+    // 長い動画は、画像から動画と同じワークフローを使う
+    d.videoActive = this.pickVideoForFlow(this.store.flow);
     this.store.save();
     this.refresh();
     this.statusBar.refresh();
@@ -5885,15 +6037,24 @@ class MainView {
   applyFlowUi() {
     const ref = this.isRef();
     const cfg = USER_SETTINGS.refs;
-    document.querySelectorAll("#flow-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.store.flow)));
-    $("flow-info").textContent = cfg.flowInfo[this.store.flow];
+    const long = this.isLong();
+    document.querySelectorAll("#flow-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.store.uiFlow)));
+    $("flow-info").textContent = cfg.flowInfo[this.store.uiFlow];
+    $("sec-long").hidden = !long;
+    $("long-panel").hidden = !long;
+    $("prompt-panel").hidden = long;
+    $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
+    $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
+    $("seconds-caption").textContent = long ? "1区間の長さ" : "長さ";
+    $("run-count").closest(".count-field").hidden = long;
+    if (long) this.renderLong();
     $("sec-image").hidden = ref;
     $("sec-materials").hidden = !ref;
     $("fit-field").hidden = ref;
-    $("popt-mode").hidden = ref;
-    $("popt-mode-seg").hidden = ref;
+    $("popt-mode").hidden = ref || long;
+    $("popt-mode-seg").hidden = ref || long;
     document.querySelector('#filmstrip li[data-step="image"]').firstChild.textContent = ref ? "素材" : "画像";
-    $("run-note").textContent = ref ? "同じ素材・プロンプトで、選んだ本数を作ります。" : "同じ画像・プロンプトで、選んだ本数を作ります。";
+    $("run-note").textContent = long ? "全体のストーリーを区間に分けて、1区間ずつ順番に作ります。" : ref ? "同じ素材・プロンプトで、選んだ本数を作ります。" : "同じ画像・プロンプトで、選んだ本数を作ります。";
     if (!this.running) {
       if (ref) this.setStep("image", this.materialItems.length ? "done" : "idle", Materials.shortSummary(this.materialItems));
       else this.setStep("image", this.meta ? "done" : "idle", this.meta ? `${this.meta.width}×${this.meta.height}` : "");
@@ -6398,6 +6559,7 @@ class MainView {
   // 最初から実行: ストーリー → プロンプト → 動画
   runAll() {
     this.scrollToTop();
+    if (this.isLong()) { this.runLong(); return; }
     this.guard(async (signal) => {
       this.requireSource();
       this.requireVideo();
@@ -6410,6 +6572,7 @@ class MainView {
 
   // ストーリーだけ作り直す
   regenerateStory() {
+    if (this.isLong()) { this.guard((signal) => this.planLong(signal, false)); return; }
     this.guard(async (signal) => {
       this.planBusy(["story"]);
       await this.makeStory(signal);
@@ -6419,6 +6582,7 @@ class MainView {
 
   // 書き直したストーリーを元に、プロンプトを作り直す（動画は作らない）
   storyToPrompt() {
+    if (this.isLong()) { this.guard((signal) => this.planLong(signal, !!$("story").value.trim())); return; }
     this.guard(async (signal) => {
       this.requireSource();
       this.planBusy([!$("story").value.trim() && "story", "prompt-en", this.store.data.translate && "prompt-ja"]);
@@ -6585,6 +6749,7 @@ class MainView {
     const m = USER_SETTINGS.messages;
     const r = job.restore;
     if (!r) return;
+    if (job.segment || job.joined) { this.showLongJob(job); return; }
     if (this.running) { this.status(m.restoreBusy, true); return; }
     this.applyRestore(r);
 
@@ -6623,6 +6788,571 @@ class MainView {
     this.status(m.jobRestored.replace("{n}", job.id));
   }
 
+  // ===== 長い動画（区間をつないだ動画） =====
+  // 区間ごとに I2VA で作り、前の区間の最後のフレームを次の区間の最初のフレームにする。
+  // 作り直す区間の次の区間がすでにあり、その区間を一緒に作り直さないときは、次の区間の最初のフレームで終わる FL2VA にする。
+  newSeg(g = {}) {
+    return {
+      id: uid(), seconds: Number(g.seconds) || Number($("seconds").value) || 5, text: g.text || "",
+      prompt: g.prompt || "", promptFor: g.prompt ? g.text || "" : "", promptMode: "", promptManual: !!g.prompt,
+      picked: false, job: null, pendingJob: null, first: null, last: null, error: "",
+    };
+  }
+
+  longTotal() {
+    const cfg = USER_SETTINGS.long;
+    return Math.min(cfg.maxTotal, Math.max(cfg.minTotal, Number(this.store.ui.longTotal) || cfg.defaultTotal));
+  }
+
+  // 全体の長さを、1区間の長さに近い区間に分ける（0.5秒きざみ。区間の長さはワークフローの範囲に収める）
+  static layoutLong(total, len, min, max) {
+    let n = Math.max(1, Math.round(total / len));
+    if (total / n > max) n = Math.ceil(total / max);
+    if (total / n < min) n = Math.max(1, Math.floor(total / min));
+    const halves = Math.round(total * 2);
+    const each = Math.floor(halves / n);
+    let rest = halves - each * n;
+    return Array.from({ length: n }, () => (each + (rest-- > 0 ? 1 : 0)) / 2);
+  }
+
+  secondsRange() {
+    return { min: Number($("seconds").min) || 0.5, max: Number($("seconds").max) || 15 };
+  }
+
+  bindLong() {
+    const cfg = USER_SETTINGS.long;
+    this.longSegs ??= [];
+    $("long-total").value = this.longTotal();
+    $("long-info").textContent = cfg.messages.info;
+    this.on($("long-total"), "change", () => {
+      const v = Math.min(cfg.maxTotal, Math.max(cfg.minTotal, Math.round((Number($("long-total").value) || cfg.defaultTotal) * 2) / 2));
+      $("long-total").value = v;
+      this.saveUi({ longTotal: v });
+      this.relayoutLong(v);
+    });
+    this.on($("long-add"), "click", () => {
+      this.longSegs.push(this.newSeg());
+      this.syncLongTotal();
+      this.renderLong();
+    });
+    this.on($("long-gen"), "click", () => this.makeLongSegments());
+    this.on($("long-play"), "click", () => this.playThrough());
+    this.on($("long-join"), "click", () => this.joinSegments());
+    this.on($("video"), "ended", () => this.onVideoEnded());
+  }
+
+  // 区間の長さの合計を「全体の長さ」に反映する
+  syncLongTotal() {
+    const sum = this.longSegs.reduce((t, g) => t + g.seconds, 0);
+    if (!sum) return;
+    $("long-total").value = sum;
+    this.saveUi({ longTotal: sum });
+  }
+
+  // 全体の長さを変えたとき、区間の数と長さを分け直す（書いてある内容と作った動画は、同じ番号の区間に残す）
+  relayoutLong(total) {
+    if (!this.longSegs.length) return;
+    const { min, max } = this.secondsRange();
+    const lengths = MainView.layoutLong(total, Number($("seconds").value) || 5, min, max);
+    this.longSegs = lengths.map((sec, i) => {
+      const g = this.longSegs[i] || this.newSeg();
+      g.seconds = sec;
+      return g;
+    });
+    this.renderLong();
+  }
+
+  renderLong() {
+    const segs = (this.longSegs ??= []);
+    $("long-empty").hidden = segs.length > 0;
+    let t = 0;
+    $("long-list").replaceChildren(...segs.map((seg, i) => {
+      const row = this.longRow(seg, i, t);
+      t += seg.seconds;
+      return row;
+    }));
+    $("long-count").textContent = segs.length ? `${segs.length}区間・合計 ${Math.round(t * 10) / 10}秒` : "";
+    this.updateLongStates();
+    if (this.running) $("long-list").querySelectorAll("input, textarea, .long-del").forEach((el) => { el.disabled = true; });
+    $("long-list").querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
+  }
+
+  longRow(seg, i, start) {
+    const m = USER_SETTINGS.long.messages;
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    const clock = (x) => `${Math.floor(x / 60)}:${(x % 60).toFixed(1).padStart(4, "0")}`;
+    const row = el("div", "long-row");
+    row.dataset.id = seg.id;
+    row.dataset.picked = String(seg.picked);
+    const thumb = el("button", "long-thumb");
+    thumb.type = "button";
+    thumb.setAttribute("aria-label", `区間${i + 1}の動画を再生`);
+    this.on(thumb, "click", () => {
+      if (!seg.job?.url) return;
+      this.selectJob(seg.job);
+      this.showLongJob(seg.job);
+      $("video").play().catch(() => {});
+    });
+    const main = el("div", "long-main");
+    const head = el("div", "long-head");
+    const name = el("label", "long-name");
+    const pick = el("input");
+    pick.type = "checkbox";
+    pick.checked = seg.picked;
+    pick.setAttribute("aria-label", `区間${i + 1}を作り直す区間に選ぶ`);
+    this.on(pick, "change", () => {
+      seg.picked = pick.checked;
+      row.dataset.picked = String(seg.picked);
+      this.updateLongButtons();
+    });
+    name.append(pick, `区間${i + 1}`);
+    const time = el("span", "long-time", `${clock(start)}〜${clock(start + seg.seconds)}`);
+    const secLabel = el("label", "long-sec");
+    const sec = el("input");
+    sec.type = "number";
+    const range = this.secondsRange();
+    sec.min = String(range.min);
+    sec.max = String(range.max);
+    sec.step = "0.5";
+    sec.value = String(seg.seconds);
+    sec.setAttribute("aria-label", `区間${i + 1}の長さ（秒）`);
+    this.on(sec, "change", () => {
+      seg.seconds = Math.min(range.max, Math.max(range.min, Math.round((Number(sec.value) || seg.seconds) * 2) / 2));
+      this.syncLongTotal();
+      this.renderLong();
+    });
+    secLabel.append(sec, "秒");
+    const state = el("span", "long-state");
+    const del = el("button", "long-del", "消す");
+    del.type = "button";
+    this.on(del, "click", () => {
+      if (!confirm(m.removeConfirm.replace("{k}", i + 1))) return;
+      this.longSegs.splice(i, 1);
+      this.syncLongTotal();
+      this.renderLong();
+    });
+    head.append(name, time, secLabel, state, del);
+    const text = el("textarea", "autogrow");
+    text.rows = 2;
+    text.value = seg.text;
+    text.placeholder = "この区間で起きること（日本語）";
+    text.setAttribute("aria-label", `区間${i + 1}の内容`);
+    this.on(text, "input", () => { seg.text = text.value; this.autoGrow(text); });
+    const details = el("details");
+    const summary = el("summary", "", "プロンプト（英語。区間を作るときに文章AIが書きます。手で直すと、そのまま使います）");
+    const prompt = el("textarea");
+    prompt.rows = 6;
+    prompt.value = seg.prompt;
+    prompt.setAttribute("aria-label", `区間${i + 1}のプロンプト`);
+    this.on(prompt, "input", () => {
+      seg.prompt = prompt.value;
+      seg.promptManual = true;
+      seg.promptFor = seg.text;
+    });
+    details.append(summary, prompt);
+    main.append(head, text, details);
+    row.append(thumb, main);
+    return row;
+  }
+
+  // 区間の行のうち、生成の進み具合で変わる部分だけを書き換える（入力中の欄を作り直さないように）
+  updateLongStates() {
+    if (!this.longSegs) return;
+    const states = USER_SETTINGS.jobStates;
+    for (const seg of this.longSegs) {
+      const row = $("long-list").querySelector(`.long-row[data-id="${seg.id}"]`);
+      if (!row) continue;
+      const pending = seg.pendingJob && this.isPending(seg.pendingJob) ? seg.pendingJob : null;
+      const state = row.querySelector(".long-state");
+      state.textContent = pending ? `${states[pending.state]}${pending.note ? `（${pending.note.split("\n")[0]}）` : ""}`
+        : seg.error || (seg.job ? `完成 #${seg.job.id}（${seg.job.options.mode}）` : "まだありません");
+      state.classList.toggle("err", !!seg.error && !pending);
+      const thumb = row.querySelector(".long-thumb");
+      const src = (pending || seg.job)?.thumb || "";
+      const img = thumb.querySelector("img");
+      if (src && img?.getAttribute("src") !== src) {
+        const next = document.createElement("img");
+        next.src = src;
+        next.alt = "";
+        thumb.replaceChildren(next);
+      } else if (!src && !img && !thumb.textContent) {
+        thumb.textContent = "まだありません";
+      }
+      const spinner = thumb.querySelector(".spinner");
+      if (pending && !spinner) { const sp = document.createElement("span"); sp.className = "spinner"; thumb.append(sp); }
+      if (!pending && spinner) spinner.remove();
+      thumb.disabled = !seg.job?.url;
+      row.dataset.current = String(!!seg.job && (seg.job === this.selectedJob || seg.pendingJob === this.selectedJob));
+    }
+    this.updateLongButtons();
+  }
+
+  updateLongButtons() {
+    const segs = this.longSegs || [];
+    const picked = segs.filter((g) => g.picked).length;
+    const missing = segs.filter((g) => !g.job).length;
+    $("long-gen").textContent = picked ? `選んだ区間を作る（${picked}）` : "まだの区間を作る";
+    const all = segs.length > 0 && segs.every((g) => g.job?.url);
+    $("long-gen").disabled = !!this.running || !segs.length || (!picked && !missing);
+    $("long-play").disabled = !all;
+    $("long-join").disabled = !!this.running || !all;
+  }
+
+  showLongJob(job) {
+    const m = USER_SETTINGS.long.messages;
+    this.status(job.joined ? m.joinedPreview : m.segPreview.replace("{k}", job.segment.index + 1));
+    this.updateLongStates();
+  }
+
+  // 最初から実行: ストーリーを区間に分けて、すべての区間を順番に作る
+  runLong() {
+    this.guard(async (signal) => {
+      this.requireSource();
+      this.requireVideo();
+      await this.planLong(signal, false, true);
+      await this.generateSegments(signal, this.longSegs.map((_, i) => i));
+    });
+  }
+
+  // 全体のストーリーを考えて、区間ごとの内容に分けてもらう。keepStory なら、いまのストーリーのまま区間だけ分け直す
+  async planLong(signal, keepStory, fresh = false) {
+    const cfg = USER_SETTINGS.long;
+    this.requireSource();
+    const llm = this.requireLlm();
+    const { min, max } = this.secondsRange();
+    const total = this.longTotal();
+    const old = this.longSegs || [];
+    const lengths = fresh || !old.length ? MainView.layoutLong(total, Number($("seconds").value) || 5, min, max) : old.map((g) => g.seconds);
+    const sum = lengths.reduce((t, x) => t + x, 0);
+    this.running.phase = "story";
+    this.currentRun = null;
+    this.setStep("story", "active", "区間分け");
+    this.status(cfg.messages.planning);
+    this.planBusy(["story"]);
+    const ctx = await this.llmContext();
+    const optionsText = this.storyOptionsText().replace(/^長さ: .*$/m, `長さ: 全体 ${sum}秒（${lengths.length}区間）`);
+    const text = await llm.generatePlan({
+      total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
+      story: keepStory ? $("story").value.trim() : "", images: ctx.images, signal,
+    });
+    const plan = LlmClient.parsePlan(text, lengths.length);
+    if (!plan.segments.some((x) => x.trim())) throw new UserError(cfg.messages.planFailed);
+    if (!keepStory) {
+      $("story").value = plan.story || text.trim();
+      this.growToFit($("story"));
+    }
+    // 作り直しでは、作った動画は同じ番号の区間に残す（「最初から実行」では新しい区間にする）
+    this.longSegs = lengths.map((sec, i) => {
+      const g = (!fresh && old[i]) || this.newSeg();
+      g.seconds = sec;
+      if (plan.segments[i]) g.text = plan.segments[i];
+      return g;
+    });
+    this.doneBusy("story");
+    this.setStep("story", "done", `${lengths.length}区間`);
+    this.syncLongTotal();
+    this.renderLong();
+    this.status(cfg.messages.planned.replace("{n}", lengths.length));
+  }
+
+  makeLongSegments() {
+    const m = USER_SETTINGS.long.messages;
+    const segs = this.longSegs || [];
+    if (!segs.length) { this.status(m.needSegments, true); return; }
+    const picked = segs.map((g, i) => (g.picked ? i : -1)).filter((i) => i >= 0);
+    const list = picked.length ? picked : segs.map((g, i) => (g.job ? -1 : i)).filter((i) => i >= 0);
+    if (!list.length) { this.status(m.nothing, true); return; }
+    this.guard((signal) => this.generateSegments(signal, list));
+  }
+
+  baseFrame() {
+    return { img: this.img, file: this.file, meta: this.meta, isBase: true };
+  }
+
+  // 区間を番号の小さい順に1つずつ作る（前の区間の最後のフレームから続ける）
+  async generateSegments(signal, indices) {
+    const cfg = USER_SETTINGS.long;
+    const m = cfg.messages;
+    const segs = this.longSegs || [];
+    if (!segs.length) throw new UserError(m.needSegments);
+    this.requireSource();
+    this.requireVideo();
+    const llm = this.requireLlm();
+    const set = new Set(indices);
+    for (const i of [...set].sort((a, b) => a - b)) {
+      const seg = segs[i];
+      const n = segs.length;
+      const fill = (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
+      if (!seg.text.trim() && !seg.prompt.trim()) throw new UserError(fill(m.needText));
+      const start = i === 0 ? this.baseFrame() : segs[i - 1].last;
+      if (!start) throw new UserError(fill(m.needPrev));
+      // 次の区間がもうあって、今回は作り直さないなら、その最初のフレームで終わる FL2VA にする
+      const next = segs[i + 1];
+      const end = next?.first && !set.has(i + 1) && this.isH3() ? next.first : null;
+      const mode = end ? "FL2VA" : "I2VA";
+      const rules = [i === 0 ? fill(cfg.firstRule) : fill(cfg.continueRule)];
+      if (end) rules.push(cfg.endRule);
+      this.segCtx = { mode, seconds: seg.seconds, rules };
+      seg.error = "";
+      try {
+        if (!seg.prompt.trim() || seg.promptFor !== seg.text || (!seg.promptManual && seg.promptMode !== mode)) {
+          this.running.phase = "prompt";
+          this.setStep("prompt", "active", `区間${i + 1}`);
+          this.status(fill(m.prompting));
+          seg.prompt = await this.makeSegmentPrompt(llm, i, start, end, signal);
+          Object.assign(seg, { promptFor: seg.text, promptMode: mode, promptManual: false });
+        }
+        seg.prompt = this.applyAudioRules(this.withInstruction(seg.prompt));
+        this.setStep("prompt", "done", `区間${i + 1}`);
+        this.renderLong();
+        this.running.phase = "video";
+        this.status(fill(m.generating));
+        const job = this.segmentJob(seg, i, start, end);
+        seg.pendingJob = job;
+        this.updateLongStates();
+        await this.runJob(job);
+        seg.pendingJob = null;
+        if (signal.aborted || job.state === "canceled") throw new DOMException("aborted", "AbortError");
+        if (job.state !== "done") {
+          seg.error = fill(m.jobFailed);
+          throw new UserError(`${fill(m.jobFailed)}${job.note ? `\n${job.note}` : ""}`);
+        }
+        this.status(fill(m.frames));
+        const frames = await MainView.extractFrames(job.blob, `segment${i + 1}`).catch(() => null);
+        if (!frames) throw new UserError(fill(m.framesFailed));
+        Object.assign(seg, { job, first: frames.first, last: frames.last, picked: false });
+        this.renderLong();
+      } finally {
+        this.segCtx = null;
+        seg.pendingJob = null;
+        this.updateLongStates();
+      }
+    }
+    this.status(m.done);
+  }
+
+  async makeSegmentPrompt(llm, i, start, end, signal) {
+    const segs = this.longSegs;
+    const seg = segs[i];
+    const size = this.frameSize();
+    const picture = (f) => {
+      const c = size ? FrameFitter.render(f.img, size, f.isBase ? this.store.ui.fit : "crop", f.isBase ? this.focus : { x: 0.5, y: 0.5, zoom: 1 }) : f.img;
+      return this.toDataUrl(c, c.width || c.naturalWidth, c.height || c.naturalHeight);
+    };
+    const images = [picture(start)];
+    if (end) images.push(picture(end));
+    const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
+    const parts = [`全体の物語:\n${$("story").value.trim()}`];
+    if (i > 0) parts.push(`前の区間（区間${i}）: ${segs[i - 1].text}`);
+    parts.push(`この区間（区間${i + 1} / 全${segs.length}区間、${seg.seconds}秒）: ${seg.text}`);
+    if (segs[i + 1]) parts.push(`次の区間（区間${i + 2}）: ${segs[i + 1].text}`);
+    return llm.generatePrompt({
+      style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
+      meta, images, settingsText: this.settingsText(), lastMeta: null, seconds: seg.seconds,
+      current: null, instruction: null, signal, refText: null, story: parts.join("\n"), segment: true,
+    });
+  }
+
+  // 区間1本ぶんの動画の依頼（ふつうの動画と同じく「動画」欄に並び、個別に保存できる）
+  segmentJob(seg, i, start, end) {
+    const v = this.store.video;
+    const ui = this.store.ui;
+    const seedBase = $("seed").value.trim();
+    const shared = {
+      profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()),
+      prompt: seg.prompt.trim(), promptJa: "", seconds: seg.seconds, negative: $("negative").value.trim(),
+      aspect: ui.aspect, megapixels: Number(ui.megapixels),
+      fit: start.isBase ? ui.fit : "crop", focus: start.isBase ? { ...this.focus } : { x: 0.5, y: 0.5, zoom: 1 },
+      img: start.img, meta: start.meta, file: start.file,
+      last: end ? { file: end.file, meta: end.meta, img: end.img } : null, options: this.promptOptions(),
+      flow: "image", refs: null, direction: (ui.direction || "").trim(), story: seg.text,
+      skills: this.store.activeSkillObjects().map((s) => s.name), style: this.store.styleFor(v)?.name,
+      llm: this.store.llm?.name, llmModel: this.store.llm?.model,
+      restore: this.restoreSnapshot(), segment: { index: i, count: this.longSegs.length },
+    };
+    shared.thumb = this.jobThumb(shared);
+    const job = {
+      ...shared, id: ++this.jobSeq, stamp: timestamp(), state: "preparing", note: "", progress: 0, warning: "", warningLong: "",
+      controller: new AbortController(), comfy: null, promptId: null, blob: null, url: null, ext: ".mp4", filename: "",
+      seedInput: seedBase === "" ? "" : String(Number(seedBase) + i), batchIndex: 1, batchTotal: 1,
+      values: null, size: null, lastImage: null,
+    };
+    this.jobs.push(job);
+    this.currentRun = new Set([job.id]);
+    this.renderJobs();
+    const gallery = $("gallery");
+    gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
+    return job;
+  }
+
+  // 動画の最初と最後のフレームを PNG にして取り出す（次の区間の最初の画像・前の区間の最後の画像に使う）
+  static async extractFrames(blob, name) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const video = await Materials.loadMedia("video", url);
+      if (!video.videoWidth) throw new Error("no video");
+      const grab = async (time, suffix) => {
+        await Materials.seek(video, time);
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        return MainView.frameFromCanvas(canvas, `${name}_${suffix}`);
+      };
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      const first = await grab(0.001, "first");
+      const last = await grab(Math.max(0.001, duration - 0.01), "last");
+      video.removeAttribute("src");
+      video.load();
+      return { first, last };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  static async frameFromCanvas(canvas, name) {
+    const file = await FrameFitter.toFile(canvas, name);
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+    return { img, file, meta: { format: "none", prompt: "", negative: "", seed: null, model: "", width: canvas.width, height: canvas.height } };
+  }
+
+  // 区間を順番に続けて再生する（つなぐ前の確認用）
+  playThrough() {
+    const m = USER_SETTINGS.long.messages;
+    const segs = this.longSegs || [];
+    const missing = segs.findIndex((g) => !g.job?.url);
+    if (!segs.length) { this.status(m.needSegments, true); return; }
+    if (missing >= 0) { this.status(m.needAll.replace("{k}", missing + 1), true); return; }
+    this.playlist = { jobs: segs.map((g) => g.job), at: 0 };
+    this.playAt(0);
+  }
+
+  playAt(i) {
+    this.playlist.at = i;
+    this.selectJob(this.playlist.jobs[i], true);
+    const video = $("video");
+    video.loop = false;
+    video.play().catch(() => {});
+  }
+
+  onVideoEnded() {
+    if (!this.playlist) return;
+    const next = this.playlist.at + 1;
+    if (next < this.playlist.jobs.length) { this.playAt(next); return; }
+    this.playlist = null;
+    $("video").loop = true;
+    this.selectJob(this.selectedJob);
+  }
+
+  // 区間の動画をブラウザの中で1本につなぐ（ffmpeg.wasm）。継ぎ目で重なる1コマ（次の区間の最初のコマ）は落とす
+  joinSegments() {
+    this.guard(async (signal) => {
+      const cfg = USER_SETTINGS.long;
+      const m = cfg.messages;
+      const segs = this.longSegs || [];
+      if (!segs.length) throw new UserError(m.needSegments);
+      const missing = segs.findIndex((g) => !g.job?.blob);
+      if (missing >= 0) throw new UserError(m.needAll.replace("{k}", missing + 1));
+      this.running.phase = null;
+      this.status(m.loadingFfmpeg);
+      let ff;
+      try {
+        ff = await this.loadFfmpeg();
+      } catch (err) {
+        throw new UserError(m.ffmpegFailed + (err?.message || err));
+      }
+      const started = Date.now();
+      const jobs = segs.map((g) => g.job);
+      const total = jobs.reduce((t, j) => t + (j.duration || j.seconds), 0);
+      const fps = WorkflowMapper.samplingInfo(jobs[0].workflow || jobs[0].profile.workflow).fps || 24;
+      const names = [];
+      const onLog = ({ message }) => {
+        const t = String(message).match(/time=(\d+):(\d+):([\d.]+)/);
+        if (t) this.status(m.joining.replace("{p}", Math.min(99, Math.round(((+t[1] * 3600 + +t[2] * 60 + +t[3]) / total) * 100))));
+      };
+      const abort = () => { ff.terminate(); this.ffmpeg = null; };
+      ff.on("log", onLog);
+      signal.addEventListener("abort", abort);
+      try {
+        this.status(m.joining.replace("{p}", 0));
+        for (const [i, j] of jobs.entries()) {
+          const name = `seg${i}${j.ext || ".mp4"}`;
+          await ff.writeFile(name, new Uint8Array(await j.blob.arrayBuffer()));
+          names.push(name);
+        }
+        const audio = (await Promise.all(jobs.map((j) => Materials.mp4HasAudio(j.blob)))).every((x) => x !== false);
+        let code = await ff.exec(MainView.joinArgs(names, fps, audio));
+        if (code !== 0 && audio && !signal.aborted) code = await ff.exec(MainView.joinArgs(names, fps, false));
+        if (signal.aborted) throw new DOMException("aborted", "AbortError");
+        if (code !== 0) throw new UserError(`${m.joinFailed}ffmpeg のエラー（${code}）`);
+        const data = await ff.readFile("out.mp4");
+        const raw = new Blob([data], { type: "video/mp4" });
+        const base = jobs[0];
+        const joined = {
+          ...base, id: ++this.jobSeq, stamp: timestamp(), state: "done", note: "", progress: 1, warning: "", warningLong: "", memoryNote: "",
+          controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4",
+          filename: `${String(base.filename || "stillmotion").replace(/\.\w+$/, "")}_long.mp4`,
+          seconds: Math.round(total * 10) / 10, duration: total,
+          prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"), promptJa: "", story: $("story").value,
+          segment: null, last: null, lastImage: null, batchIndex: 1, batchTotal: 1,
+          joined: { segments: jobs.map((j, i) => ({ index: i + 1, seconds: j.seconds, mode: j.options.mode, story: segs[i].text, seed: j.values?.seed ?? null, comfy_filename: j.filename || null })) },
+          queuedAt: started, startedAt: started, finishedAt: Date.now(),
+        };
+        joined.blob = await this.embedMetadata(joined, raw);
+        joined.url = URL.createObjectURL(joined.blob);
+        this.jobs.push(joined);
+        this.selectJob(joined);
+        const gallery = $("gallery");
+        gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
+        this.status(m.joined.replace("{n}", jobs.length).replace("{s}", joined.seconds));
+      } catch (err) {
+        if (signal.aborted) throw new DOMException("aborted", "AbortError");
+        throw err instanceof UserError ? err : new UserError(m.joinFailed + (err?.message || err));
+      } finally {
+        signal.removeEventListener("abort", abort);
+        if (this.ffmpeg) {
+          ff.off("log", onLog);
+          for (const name of [...names, "out.mp4"]) await ff.deleteFile(name).catch(() => {});
+        }
+      }
+    });
+  }
+
+  static joinArgs(names, fps, audio) {
+    const e = USER_SETTINGS.long.encode;
+    const filters = [];
+    names.forEach((_, i) => {
+      filters.push(`[${i}:v]${i ? "trim=start_frame=1," : ""}setpts=PTS-STARTPTS[v${i}]`);
+      if (audio) filters.push(`[${i}:a]${i ? `atrim=start=${(1 / fps).toFixed(4)},` : ""}asetpts=PTS-STARTPTS[a${i}]`);
+    });
+    filters.push(`${names.map((_, i) => `[v${i}]${audio ? `[a${i}]` : ""}`).join("")}concat=n=${names.length}:v=1:a=${audio ? 1 : 0}[v]${audio ? "[a]" : ""}`);
+    return [
+      ...names.flatMap((name) => ["-i", name]), "-filter_complex", filters.join(";"), "-map", "[v]",
+      ...(audio ? ["-map", "[a]", "-c:a", "aac", "-b:a", e.audioBitrate] : ["-an"]),
+      "-c:v", "libx264", "-preset", e.preset, "-crf", String(e.crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", "out.mp4",
+    ];
+  }
+
+  // ffmpeg.wasm を CDN から読み込む（ワーカーは同じオリジンの blob URL から、CDN のモジュールを import して動かす）
+  async loadFfmpeg() {
+    if (this.ffmpeg) return this.ffmpeg;
+    const cfg = USER_SETTINGS.long.ffmpeg;
+    const { FFmpeg } = await import(`${cfg.lib}/index.js`);
+    const ff = new FFmpeg();
+    const worker = URL.createObjectURL(new Blob([`import "${cfg.lib}/worker.js";`], { type: "text/javascript" }));
+    await ff.load({ classWorkerURL: worker, coreURL: `${cfg.core}/ffmpeg-core.js`, wasmURL: `${cfg.core}/ffmpeg-core.wasm` });
+    this.ffmpeg = ff;
+    return ff;
+  }
+
+
   // ===== 状態の保存と復元（JSON） =====
   // 画像・最後のフレーム・素材はファイルの中身ごと（data URL）入れる。作った動画の一覧は入れない
   static isStateFile(file) {
@@ -6649,6 +7379,8 @@ class MainView {
         image: this.file ? { ...(await entry(this.file, "image.png")), focus: { ...this.focus } } : null,
         last: this.last ? await entry(this.last.file, "last.png") : null,
         materials: await Promise.all(this.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) }))),
+        // 長い動画の区間（内容・長さ・プロンプトだけ。区間の動画は入れない）
+        long: { segments: (this.longSegs || []).map((g) => ({ seconds: g.seconds, text: g.text, prompt: g.prompt })) },
       };
       const name = this.stateFileName();
       downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
@@ -6728,6 +7460,8 @@ class MainView {
         if ($(id).classList.contains("autogrow")) this.autoGrow($(id));
         else if (id === "story") this.growToFit($(id));
       }
+      this.longSegs = (state.long?.segments || []).map((g) => this.newSeg(g));
+      this.renderLong();
       this.setStep("story", t.story ? "done" : "idle", "");
       this.setStep("prompt", t.promptEn ? "done" : "idle", "");
       this.setStep("video", "idle", "");
@@ -6979,14 +7713,17 @@ class MainView {
   removeJob(job) {
     if (this.isPending(job)) return;
     if (job.url) URL.revokeObjectURL(job.url);
+    // 長い動画の区間の動画を消したときは、その区間を「まだ」に戻す
+    for (const g of this.longSegs || []) if (g.job === job) Object.assign(g, { job: null, first: null, last: null });
     this.jobs = this.jobs.filter((j) => j !== job);
     if (this.selectedJob === job) this.selectJob(null);
     else this.renderJobs();
   }
 
-  selectJob(job) {
+  selectJob(job, keepPlaylist = false) {
     this.selectedJob = job;
     const video = $("video");
+    if (!keepPlaylist && this.playlist) { this.playlist = null; video.loop = true; }
     if (job?.url) {
       video.poster = job.thumb;
       if (video.getAttribute("src") !== job.url) video.src = job.url;
@@ -7001,7 +7738,9 @@ class MainView {
     $("dl-video").disabled = !job?.blob;
     $("dl-prompt").disabled = !job;
     $("post-share").disabled = !job?.blob;
-    $("player-label").textContent = job ? `▶ プレビュー中: #${job.id}${job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : ""}` : "";
+    $("player-label").textContent = this.playlist
+      ? USER_SETTINGS.long.messages.playing.replace("{k}", this.playlist.at + 1).replace("{n}", this.playlist.jobs.length)
+      : job ? `▶ プレビュー中: #${job.id}${job.segment ? `（区間${job.segment.index + 1}）` : ""}${job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : ""}` : "";
     $("player-label").classList.toggle("active", !!job);
     this.renderJobs();
   }
@@ -7044,6 +7783,7 @@ class MainView {
     this.updateProgress();
     this.syncCards();
     this.updateScreen();
+    if (this.longSegs?.length) this.updateLongStates();
   }
 
   // 生成にかかった時間と完成時刻（例: 「生成 2分05秒・13:05 完成」）
@@ -7057,6 +7797,8 @@ class MainView {
   }
 
   jobLabel(job) {
+    if (job.joined) return `#${job.id}　長い動画 ${job.seconds}秒（${job.joined.segments.length}区間）`;
+    if (job.segment) return `#${job.id}　区間${job.segment.index + 1} / ${job.seconds}秒 / ${job.options.mode}`;
     const batch = job.batchTotal > 1 ? `（${job.batchIndex}/${job.batchTotal}）` : "";
     return `#${job.id}${batch}　${job.aspect.split(" ")[0]} / ${job.seconds}秒 / ${job.options.mode}`;
   }
@@ -7178,6 +7920,8 @@ class MainView {
       source_image: job.flow === "ref" ? null : { file: job.file?.name || null, metadata: job.meta }, last_image: job.lastImage,
       ...(job.flow === "ref" ? { references: Materials.record(job.refs || []) } : {}),
       comfy_filename: job.filename || null,
+      ...(job.segment ? { long_segment: { index: job.segment.index + 1, count: job.segment.count } } : {}),
+      ...(job.joined ? { long_video: job.joined } : {}),
     };
   }
 
