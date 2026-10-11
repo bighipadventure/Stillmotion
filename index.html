@@ -498,7 +498,25 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-list { display: flex; flex-direction: column; gap: 8px; }
 #prompt-panel.long-view .head-tools, #prompt-panel.long-view .revise-row { display: none; }
 #prompt-panel.long-view textarea { background: var(--surface); }
-.long-foot { display: flex; align-items: flex-start; gap: 10px; min-height: 22px; }
+/* 区間の間のつなぎの画像のエリア */
+.long-keycard { display: grid; grid-template-columns: 180px 1fr; gap: 10px; margin: 0 0 0 24px; padding: 8px; border: 1px dashed var(--line-strong); border-radius: var(--radius-s); background: var(--surface); position: relative; }
+.long-keycard::before { content: "↓"; position: absolute; left: -18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; }
+.long-keycard[data-has="true"] { border-style: solid; border-color: var(--lamp); }
+.long-keycard.over { border-color: var(--accent-text); background: color-mix(in srgb, var(--accent-text) 8%, var(--surface)); }
+.long-keythumb { position: relative; padding: 0; border: none; border-radius: var(--radius-s); background: var(--film); min-height: 90px; height: 100%; overflow: hidden; display: grid; place-items: center; color: var(--film-ink); font-size: 11px; white-space: pre-line; text-align: center; cursor: pointer; }
+.long-keythumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.long-keymain { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 12px; }
+.long-keyhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.long-keysrc { color: var(--muted); }
+.long-keytools { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+.long-keytools button { min-height: 24px; padding: 0 8px; font-size: 11px; }
+.long-keyinfo summary, .long-keyprompt summary { cursor: pointer; color: var(--muted); }
+.long-keyinfo dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 4px 0 0; }
+.long-keyinfo dt { color: var(--muted); }
+.long-keyinfo dd { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.long-keyprompt textarea { margin-top: 4px; font-size: 12px; width: 100%; }
+@media (max-width: 720px) { .long-keycard { grid-template-columns: 1fr; margin-left: 0; } .long-keycard::before { display: none; } .long-keythumb { height: auto; aspect-ratio: 16 / 9; } }
+.long-foot { display: flex; align-items: flex-start; gap: 10px; min-height: 22px; flex-wrap: wrap; }
 .long-foot > details { flex: 1; min-width: 0; }
 .long-main details summary { line-height: 22px; }
 .long-key { flex: none; display: flex; align-items: center; gap: 6px; height: 22px; font-size: 12px; color: var(--muted); white-space: nowrap; }
@@ -2129,7 +2147,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 区間1: (2-4 sentences: what happens during clip 1, in time order - name the exact act, action and pose with their specific common names, who does it to whom or with what and with which body part, and how (speed, strength, rhythm, direction); then how each person's facial expression changes during the clip (continuing from the previous clip), the movement of hair, clothes and body, the background, and sounds. WORDING and NAMES apply to every 区間 line: no abstract, vague or euphemistic wording, and no names - describe people by appearance)
 (then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
     planRequests: "Requests from the user for each clip (highest priority for that clip; make the clip do exactly what is requested, and make the whole story lead into it naturally). If a request is vague or indirect, turn it into the specific, concrete act or action it means and write that, following WORDING:",
-    planMaxTokens: 4096,
+    planMaxTokens: 8192,
     planStrict: "Your previous answer could not be read. This time, output exactly {n} lines and nothing else (no headings, no markdown, no explanations), each starting with 区間 and its number and a colon, like \"区間1: ...\", from 区間1 to 区間{n}.",
     planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
     firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
@@ -2165,15 +2183,20 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       segPreview: "区間{k}の動画です（区間の動画を押しても、左の設定は変わりません）。",
       joinedPreview: "つないだ長い動画です（押しても、左の設定は変わりません）。",
       removeConfirm: "区間{k}を一覧から消しますか？（作った動画は「動画」欄に残ります）",
-      keyMaking: "つなぎの画像（区間{a}→{b}）を Stable Diffusion で作っています… {i}/{n}",
-      keyPrompting: "つなぎの画像（区間{a}→{b}）のプロンプトを文章AIが書いています… {i}/{n}",
+      keyMaking: "つなぎの画像（{label}）を Stable Diffusion で作っています… {i}/{n}",
+      keyPrompting: "つなぎの画像（{label}）のプロンプトを文章AIが書いています… {i}/{n}",
       keyFailed: "つなぎの画像（区間{a}→{b}）を作れませんでした: ",
       keyRedo: "つなぎの画像を作り直したので、区間{a}と区間{b}を作り直します。",
+      keyBusy: "生成中は、つなぎの画像を入れ替えられません。",
+      keyDropped: "{label}に、読み込んだ画像を入れました（下のプレビューに表示しています）。前後の区間の「作り直す」がオンになっているので、「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
+      keyDropFailed: "画像を読み込めませんでした: ",
+      keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
+      keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「つなぎの画像を作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
       keyUnloading: "Stable Diffusion のモデルを VRAM から外して、動画づくりに移ります…",
       sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「Stable Diffusion」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
       sdNoModel: "ComfyUI にモデル「{name}」が見つかりません。元の画像と同じモデル（checkpoint）を ComfyUI の models/checkpoints に入れてください。",
-      sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → つなぎの画像」の FL2VA で作ります。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
+      sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → 次のつなぎの画像」の FL2VA で作ります（区間1は元の画像から、最後の区間は「終わりの画像」まで。すべての区間の継ぎ目が同じ画像になるので、つなぎ目がそろいます）。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
       sdInfoOff: "オフのときは、前の区間の動画の最後のフレームから次の区間を作ります。",
       promptHint: "「動画」欄や区間の動画を押すと、その動画を作ったときのプロンプトがここに出ます。",
     },
@@ -2301,7 +2324,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 
   transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 12,
+  defaultsRevision: 13,
   legacyDefaultHashes: {
     style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
     refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
@@ -2358,7 +2381,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   defaultSeconds: 5,
   defaultFps: 24,
   defaultTemperature: 0.7,
-  defaultMaxTokens: 2048,
+  defaultMaxTokens: 4096,
   seedMax: 4294967295,
   pollIntervalMs: 2000,
   probeTimeoutMs: 2500,
@@ -3291,6 +3314,10 @@ class SettingsStore {
     // 以前の版は、ComfyUI がモデルを読み込んだあとでも「生成に使えない VRAM」を測っていて、多めに出ることがあった
     if ((data.defaultsRevision || 0) < 10 && data.machine.autoDetect !== false && data.machine.reserve > 2) data.machine.reserve = USER_SETTINGS.machine.defaults.reserve;
     data.flowVideo ??= {};
+    // 考える過程を出すモデルでは上限に達しやすいので、文章AIの最大出力トークン数を1段階（2倍に）上げる
+    if ((data.defaultsRevision || 0) < 13) {
+      for (const p of Object.values(data.llmProfiles || {})) p.maxTokens = Math.min(32768, (Number(p.maxTokens) || 2048) * 2);
+    }
     if (data.styles[refStyle]?.name === "MiniMax H3 Ref2VA（素材から動画）") data.styles[refStyle].name = USER_SETTINGS.defaultStyles[refStyle].name;
     if (data.skills[refSid]?.name === "h3-prompt-writing（Ref2VA）") data.skills[refSid].name = USER_SETTINGS.defaultSkills[refSid].name;
     const vid = USER_SETTINGS.defaultVideoId;
@@ -3896,7 +3923,9 @@ class SdWebUiClient {
     if (s.clipSkip) override.CLIP_stop_at_last_layers = s.clipSkip;
     const payload = {
       prompt: spec.prompt, negative_prompt: spec.negative, seed: spec.seed, steps: s.steps || 25, cfg_scale: s.cfg || 7,
-      width: spec.width, height: spec.height, batch_size: 1, n_iter: 1, send_images: true, save_images: true,
+      width: spec.width, height: spec.height, batch_size: 1, n_iter: 1,
+      // 作った画像は WebUI の既定の保存先（outputs/txt2img-images・img2img-images）にも保存する
+      send_images: true, save_images: true, do_not_save_samples: false, do_not_save_grid: true,
       override_settings: override, override_settings_restore_afterwards: false,
     };
     if (s.sampler) payload.sampler_name = s.sampler;
@@ -5918,7 +5947,18 @@ class MainView {
   }
 
   // IMAGE
-  async loadImage(file) {
+  // 画像の縦横比にいちばん近い型（縦横比の一覧から）を選ぶ
+  static nearestAspect(width, height) {
+    const ratio = width / height;
+    let best = null, bestDiff = Infinity;
+    for (const [value] of USER_SETTINGS.frame.aspects) {
+      const diff = Math.abs(Math.log(FrameFitter.ratioOf(value) / ratio));
+      if (diff < bestDiff) { best = value; bestDiff = diff; }
+    }
+    return best;
+  }
+
+  async loadImage(file, { autoAspect = true } = {}) {
     this.currentRun = null;
     this.setStep("image", "active", "");
     this.status(USER_SETTINGS.messages.readingImage);
@@ -5931,6 +5971,15 @@ class MainView {
       this.meta = meta;
       this.img = img;
       this.focus = { x: 0.5, y: 0.5, zoom: 1 };
+      // 縦横比は、入れた画像にいちばん近い型にそろえる（保存した状態から戻すときは、保存した縦横比のまま）
+      if (autoAspect) {
+        const aspect = MainView.nearestAspect(img.naturalWidth, img.naturalHeight);
+        if (aspect && aspect !== this.store.ui.aspect) {
+          this.saveUi({ aspect });
+          $("aspect").value = aspect;
+          this.fillMegapixelOptions?.();
+        }
+      }
       $("frame-canvas").hidden = false;
       $("drop-hint").hidden = true;
       $("frame-actions").hidden = false;
@@ -6395,7 +6444,8 @@ class MainView {
   setBusy(busy) {
     for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd"]) $(id).disabled = busy;
     document.querySelectorAll("#long-scene button").forEach((b) => { b.disabled = busy; });
-    $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-redo").forEach((el) => { el.disabled = busy; });
+    $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
+    if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn(); });
     document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.updatePromptOptions();
     else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
@@ -7498,14 +7548,15 @@ class MainView {
     const segs = this.longSegs;
     $("long-empty").hidden = segs.length > 0;
     let t = 0;
-    $("long-list").replaceChildren(...segs.map((seg, i) => {
+    // 区間の行と行の間（と最後の区間の後）に、つなぎの画像のエリアを入れる
+    $("long-list").replaceChildren(...segs.flatMap((seg, i) => {
       const row = this.longRow(seg, i, t);
       t += seg.seconds;
-      return row;
+      return [row, this.longKeyCard(i + 1)];
     }));
     $("long-sum").textContent = segs.length ? `${segs.length}区間・合計 ${Math.round(t * 10) / 10}秒` : "";
     this.updateLongStates();
-    if (this.running) $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-redo").forEach((el) => { el.disabled = true; });
+    if (this.running) $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = true; });
     $("long-list").querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
   }
 
@@ -7587,7 +7638,8 @@ class MainView {
     const text = field("内容（「最初から実行」などで文章AIが書きます。直してもかまいません）", seg.text, "この区間で起きること（日本語）",
       (v) => { seg.text = v; });
     const details = el("details");
-    const summary = el("summary", "", "プロンプト（英語。区間を作るときに文章AIが書きます。手で直すと、そのまま使います）");
+    const summary = el("summary", "", "プロンプト（英語）");
+    summary.title = "区間を作るときに文章AIが書きます。手で直すと、そのまま使います";
     const prompt = el("textarea");
     prompt.rows = 6;
     prompt.value = seg.prompt;
@@ -7602,21 +7654,6 @@ class MainView {
     const foot = el("div", "long-foot");
     foot.append(details);
     main.append(head, ask, text, foot);
-    if (this.longSdOn() && i > 0) {
-      const key = el("div", "long-key");
-      if (seg.key) {
-        const img = el("img");
-        img.src = seg.key.img.src;
-        img.alt = "";
-        key.append(img);
-      }
-      key.append(el("span", "", seg.key ? `つなぎの画像（区間${i}→${i + 1}）` : `つなぎの画像（区間${i}→${i + 1}）: まだ`));
-      const redo = el("button", "long-key-redo", seg.key ? "つなぎの画像を作り直す" : "つなぎの画像を作る");
-      redo.type = "button";
-      this.on(redo, "click", () => this.redoKey(i));
-      key.append(redo);
-      foot.append(key);
-    }
     row.append(thumb, main);
     return row;
   }
@@ -7635,6 +7672,145 @@ class MainView {
       t += seg.seconds;
     }
     $("long-sum").textContent = `${this.longSegs.length}区間・合計 ${Math.round(t * 10) / 10}秒`;
+  }
+
+  // つなぎの画像のエリア（区間 b と区間 b+1 の間。b = n は最後の区間の後の「終わりの画像」）。
+  // 画像と、その情報（プロンプト・シード・モデルなど）を見せ、Stable Diffusion での作り直しや、好きな画像のドロップができる
+  longKeyCard(b) {
+    const m = USER_SETTINGS.long.messages;
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    const n = this.longSegs.length;
+    const holder = this.keyHolder(b);
+    const key = holder.key;
+    const info = holder.keyInfo || {};
+    const sd = this.longSdOn();
+    const card = el("div", "long-keycard");
+    card.dataset.b = b;
+    card.dataset.has = String(!!key);
+    const thumb = el("button", "long-keythumb");
+    thumb.type = "button";
+    if (key) {
+      const img = el("img");
+      img.src = key.img.src;
+      img.alt = "";
+      thumb.append(img);
+      thumb.title = "押すと下のプレビューに大きく表示します";
+      this.on(thumb, "click", () => this.showKey(b));
+    } else {
+      thumb.append(el("span", "", "画像なし\nここに画像をドロップ"));
+      thumb.title = "画像をドロップするか、「画像を選ぶ」で入れられます";
+      this.on(thumb, "click", () => card.querySelector('input[type="file"]').click());
+    }
+    const main = el("div", "long-keymain");
+    const head = el("div", "long-keyhead");
+    head.append(el("strong", "", b < n ? `つなぎの画像　区間${b} → 区間${b + 1}` : `終わりの画像　区間${n}の最後`));
+    head.append(el("span", "long-keysrc", !key ? (sd ? "まだありません（区間を作るときに Stable Diffusion で作ります）" : "なし（前の区間の最後のフレームから続けます）")
+      : info.source === "drop" ? `読み込んだ画像: ${info.name}` : "Stable Diffusion で作った画像"));
+    const tools = el("div", "long-keytools");
+    const sdBtn = el("button", "long-key-btn long-key-sd long-key-redo", key && info.source !== "drop" ? "Stable Diffusion で作り直す" : "Stable Diffusion で作る");
+    sdBtn.type = "button";
+    sdBtn.disabled = !sd;
+    sdBtn.title = sd ? "この画像だけを作り直します（動画は作りません）" : "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます";
+    this.on(sdBtn, "click", () => this.redoKey(b));
+    const file = el("input");
+    file.type = "file";
+    file.accept = "image/*";
+    file.hidden = true;
+    this.on(file, "change", () => { if (file.files[0]) this.dropKey(b, file.files[0]); file.value = ""; });
+    const pick = el("button", "long-key-btn", "画像を選ぶ");
+    pick.type = "button";
+    this.on(pick, "click", () => file.click());
+    tools.append(sdBtn, pick, file);
+    if (key) {
+      const clear = el("button", "long-key-btn", "外す");
+      clear.type = "button";
+      clear.title = "この画像を使わないようにします";
+      this.on(clear, "click", () => this.clearKey(b));
+      tools.append(clear);
+    }
+    head.append(tools);
+    main.append(head);
+    // 画像の情報
+    if (key) {
+      const details = el("details", "long-keyinfo");
+      details.append(el("summary", "", "画像の情報"));
+      const dl = el("dl");
+      const add = (k, v) => { if (v === undefined || v === null || v === "") return; dl.append(el("dt", "", k), el("dd", "", String(v))); };
+      add("作り方", info.source === "drop" ? "読み込んだ画像" : `${info.backend || "Stable Diffusion"}・${info.mode || ""}`);
+      add("大きさ", `${key.meta.width}×${key.meta.height}`);
+      if (info.source === "drop") {
+        add("ファイル", info.name);
+        add("プロンプト（画像のメタデータ）", info.meta?.prompt);
+        add("モデル", info.meta?.model);
+        add("シード", info.meta?.seed);
+      } else {
+        add("モデル", info.model);
+        add("シード", info.seed);
+        add("サンプラー", [info.sampler, info.scheduler].filter(Boolean).join(" / "));
+        add("ステップ数・CFG", [info.steps, info.cfg].filter((x) => x !== undefined && x !== null).join(" ・ "));
+        add("ネガティブ", info.negative);
+        add("注意", (info.notes || []).join("\n"));
+      }
+      details.append(dl);
+      main.append(details);
+    }
+    // Stable Diffusion のプロンプト（手で直して作り直せる）
+    const pdet = el("details", "long-keyprompt");
+    pdet.append(el("summary", "", "Stable Diffusion のプロンプト"));
+    const ta = el("textarea");
+    ta.rows = 3;
+    ta.value = holder.keyPlan?.prompt || "";
+    ta.placeholder = "区間を作るとき（または「Stable Diffusion で作る」を押したとき）に文章AIが書きます。手で書くと、そのまま使います";
+    this.on(ta, "input", () => { holder.keyPlan = { prompt: ta.value, from: MainView.keySource(this.longSegs, b), manual: !!ta.value.trim() }; });
+    pdet.append(ta);
+    main.append(pdet);
+    card.append(thumb, main);
+    // 好きな画像をドロップして、つなぎの画像にする
+    this.on(card, "dragover", (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) { e.preventDefault(); card.classList.add("over"); } });
+    this.on(card, "dragleave", () => card.classList.remove("over"));
+    this.on(card, "drop", (e) => {
+      e.preventDefault();
+      card.classList.remove("over");
+      const f = [...e.dataTransfer.files].find((x) => x.type.startsWith("image/") || /\.(png|jpe?g|webp|bmp|gif)$/i.test(x.name));
+      if (f) this.dropKey(b, f);
+    });
+    return card;
+  }
+
+  // 好きな画像を、つなぎの画像にする（前後の区間の「作り直す」をオンにする）
+  async dropKey(b, file) {
+    const m = USER_SETTINGS.long.messages;
+    if (this.running) { this.status(m.keyBusy, true); return; }
+    try {
+      const meta = await PngMetadataReader.read(file).catch(() => ({ format: "none", prompt: "" }));
+      const frame = await MainView.frameFromCanvasFile(file, 0, 0);
+      const holder = this.keyHolder(b);
+      holder.key = { ...frame, isKey: true, prompt: meta.prompt || "" };
+      holder.keyInfo = { source: "drop", name: file.name, meta };
+      holder.keyPlan = { prompt: meta.prompt || "", from: MainView.keySource(this.longSegs, b), manual: true };
+      for (const i of [b - 1, b]) if (this.longSegs[i]?.job) this.longSegs[i].picked = true;
+      this.renderLong();
+      this.showKey(b);
+      this.status(m.keyDropped.replace("{label}", this.keyLabel(b)));
+    } catch (err) {
+      this.status(m.keyDropFailed + (err.message || err), true);
+    }
+  }
+
+  clearKey(b) {
+    if (this.running) return;
+    const holder = this.keyHolder(b);
+    if (holder.keyInfo?.source === "drop") holder.keyPlan = null;
+    holder.key = null;
+    holder.keyInfo = null;
+    for (const i of [b - 1, b]) if (this.longSegs[i]?.job) this.longSegs[i].picked = true;
+    if (this.stillPreview) { this.stillPreview = null; this.updateScreen(); }
+    this.renderLong();
   }
 
   // 区間の行のうち、生成の進み具合で変わる部分だけを書き換える（入力中の欄を作り直さないように）
@@ -7692,6 +7868,7 @@ class MainView {
       this.requireSource();
       this.requireVideo();
       this.keyNotes = [];
+      if (this.longFinal?.keyInfo?.source !== "drop") this.longFinal = null;
       await this.planLong(signal, false, true);
       await this.generateSegments(signal, this.longSegs.map((_, i) => i));
       await this.joinCore(signal);
@@ -7746,6 +7923,8 @@ class MainView {
     // 作り直しでは、作った動画は同じ番号の区間に残す（「最初から実行」では、長さと指示だけ残して新しい区間にする）
     this.longSegs = lengths.map((sec, i) => {
       const g = fresh ? this.newSeg({ seconds: sec, instruction: old[i]?.instruction }) : old[i] || this.newSeg();
+      // 自分で入れたつなぎの画像は、「最初から実行」でも残す（Stable Diffusion で作った画像は作り直す）
+      if (fresh && old[i]?.keyInfo?.source === "drop") Object.assign(g, { key: old[i].key, keyInfo: old[i].keyInfo, keyPlan: old[i].keyPlan });
       g.seconds = sec;
       if (plan.segments[i]) g.text = plan.segments[i];
       return g;
@@ -7791,19 +7970,22 @@ class MainView {
     const n = segs.length;
     const useSd = this.longSdOn();
     const fillFor = (i) => (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
+    // つなぎの画像（Stable Diffusion で作ったもの・読み込んだもの）。区間 b の最初＝区間 b-1 の最後
+    const keyOf = (b) => (b > 0 && b <= n ? this.keyHolder(b).key : null);
     for (const i of order) {
       const seg = segs[i];
       if (!seg.text.trim() && !seg.instruction.trim() && !seg.prompt.trim()) throw new UserError(fillFor(i)(m.needText));
-      // つなぎの画像を使わないときは、前の区間の動画（今回いっしょに作るか、もうあるか）が必要
-      if (!useSd && i > 0 && !segs[i - 1].last && !set.has(i - 1)) throw new UserError(fillFor(i)(m.needPrev));
+      // つなぎの画像がないときは、前の区間の動画（今回いっしょに作るか、もうあるか）が必要
+      if (!useSd && i > 0 && !keyOf(i) && !segs[i - 1].last && !set.has(i - 1)) throw new UserError(fillFor(i)(m.needPrev));
     }
     // つなぎの画像を新しく作る境目（区間 b の最初＝区間 b-1 の最後）
-    const keyList = useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b < n && !segs[b].key).sort((a, b) => a - b) : [];
+    // （最後の区間の終わりにも画像を作り、すべての区間を「最初の画像 → 最後の画像」の FL2VA にして、継ぎ目をそろえる）
+    const keyList = useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b <= n && !this.keyHolder(b).key).sort((a, b) => a - b) : [];
     if (keyList.length && (!this.meta || this.meta.format === "none" || !this.meta.prompt)) throw new UserError(m.sdNeedMeta);
     // 区間ごとのモード（あとで決まる画像に頼らず、ここで決めておく）
     const modeOf = (i) => {
       if (!this.isH3()) return "I2VA";
-      if (useSd) return i + 1 < n ? "FL2VA" : "I2VA";
+      if (useSd || keyOf(i + 1)) return "FL2VA";
       return segs[i + 1]?.first && !set.has(i + 1) ? "FL2VA" : "I2VA";
     };
     const ctxFor = (i) => {
@@ -7817,8 +7999,9 @@ class MainView {
     // ① 文章AI: つなぎの画像のプロンプトと、区間のプロンプトを先にすべて書く
     await this.freeComfyMemory();
     for (const [k, b] of keyList.entries()) {
-      if (segs[b].keyPlan?.from === MainView.keySource(segs, b)) continue;
-      segs[b].keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal, k + 1, keyList.length), from: MainView.keySource(segs, b) };
+      const holder = this.keyHolder(b);
+      if (holder.keyPlan?.manual || holder.keyPlan?.from === MainView.keySource(segs, b)) continue;
+      holder.keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal, k + 1, keyList.length), from: MainView.keySource(segs, b) };
     }
     for (const [k, i] of order.entries()) {
       const seg = segs[i];
@@ -7845,10 +8028,10 @@ class MainView {
     for (const i of order) {
       const seg = segs[i];
       const fill = fillFor(i);
-      const start = i === 0 ? this.baseFrame() : useSd ? seg.key : segs[i - 1].last;
+      const start = i === 0 ? this.baseFrame() : keyOf(i) || (useSd ? null : segs[i - 1].last);
       if (!start) throw new UserError(fill(m.needPrev));
       const ctx = ctxFor(i);
-      const end = ctx.mode !== "FL2VA" ? null : useSd ? segs[i + 1]?.key : segs[i + 1]?.first;
+      const end = ctx.mode !== "FL2VA" ? null : keyOf(i + 1) || (useSd ? null : segs[i + 1]?.first);
       if (ctx.mode === "FL2VA" && !end) { ctx.mode = "I2VA"; ctx.rules = ctx.rules.filter((x) => x !== cfg.endRule); }
       this.segCtx = ctx;
       seg.error = "";
@@ -7900,14 +8083,15 @@ class MainView {
     const cfg = USER_SETTINGS.long;
     const m = cfg.messages;
     const segs = this.longSegs;
-    const fill = (t) => t.replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
+    const fill = (t) => t.replace("{label}", b < segs.length ? `区間${b}→${b + 1}` : `区間${b}の最後`).replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
     const segText = (g) => [g.text, g.instruction.trim() && `（指示: ${g.instruction.trim()}）`].filter(Boolean).join(" ") || "（なし）";
     this.running.phase = "story";
     this.setStep("story", "active", `つなぎ ${i}/${n}`);
     this.status(fill(m.keyPrompting));
-    const system = fill(cfg.keySystem).replace("{scene}", this.sceneCfg().key);
+    const last = b >= segs.length;
+    const system = fill(last ? cfg.keySystem.replace(", which is also the first moment of clip {b}", " - the very last frame of the whole video") : cfg.keySystem).replace("{scene}", this.sceneCfg().key);
     const user = fill(cfg.keyUser).replace("{prompt}", this.meta.prompt).replace("{story}", $("story").value.trim() || "（なし）")
-      .replace("{prev}", segText(segs[b - 1])).replace("{next}", segText(segs[b]));
+      .replace("{prev}", segText(segs[b - 1])).replace("{next}", last ? "（なし。この画像は動画全体の最後のフレーム）" : segText(segs[b]));
     const answer = await llm.chat(system, user, null, signal);
     this.setStep("story", "done", `つなぎ ${i}/${n}`);
     return answer.split("\n").map((x) => x.trim().replace(/^(prompt|positive prompt|プロンプト)\s*[:：]\s*/i, "").replace(/^["'`]+|["'`]+$/g, "")).find(Boolean) || this.meta.prompt;
@@ -7935,8 +8119,9 @@ class MainView {
     const cfg = USER_SETTINGS.long;
     const m = cfg.messages;
     const segs = this.longSegs;
-    const fill = (t) => t.replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
-    const prompt = segs[b].keyPlan?.prompt || this.meta.prompt;
+    const fill = (t) => t.replace("{label}", b < segs.length ? `区間${b}→${b + 1}` : `区間${b}の最後`).replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
+    const holder = this.keyHolder(b);
+    const prompt = holder.keyPlan?.prompt || this.meta.prompt;
     this.running.phase = "story";
     this.setStep("story", "active", `つなぎの画像 ${i}/${n}`);
     this.status(fill(m.keyMaking));
@@ -7948,7 +8133,8 @@ class MainView {
     height = snap(height * scale);
     const scene = this.sceneCfg();
     const init = scene.denoise === null ? null : await SdClient.initImage(this.img, width, height);
-    const seed = Number.isInteger(this.meta.seed) ? this.meta.seed + b : Math.floor(Math.random() * 2 ** 31);
+    // 作り直すたびにシードを変える（同じプロンプトでも別の絵にする）
+    const seed = Number.isInteger(this.meta.seed) ? this.meta.seed + b + 1000 * (holder.keyTry || 0) : Math.floor(Math.random() * 2 ** 31);
     let out;
     try {
       out = await client.generate({ prompt, negative: this.meta.negative, model: this.meta.model, settings: st, width, height, seed, init, denoise: scene.denoise }, signal);
@@ -7958,7 +8144,11 @@ class MainView {
     }
     const blob = await (await fetch(out.dataUrl)).blob();
     const frame = await MainView.frameFromCanvasFile(new File([blob], `key${b}_${width}x${height}.png`, { type: "image/png" }), width, height);
-    segs[b].key = { ...frame, isKey: true, prompt };
+    holder.key = { ...frame, isKey: true, prompt };
+    holder.keyInfo = {
+      source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}）` : "txt2img", model: this.meta.model, seed,
+      sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [],
+    };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
     this.setStep("story", "done", `つなぎの画像 ${i}/${n}`);
     this.renderLong();
@@ -7971,20 +8161,54 @@ class MainView {
     return { img, file, meta: { format: "none", prompt: "", negative: "", seed: null, model: "", width: img.naturalWidth || width, height: img.naturalHeight || height } };
   }
 
-  // つなぎの画像だけを作り直し、前後の区間も作り直してつなぎ直す
+  // つなぎの画像だけを作り直す（動画は作らない）。気に入ったら、前後の区間の「作り直す」がオンになっているので
+  // 「選んだ区間を作る」で動画を作り直す
   redoKey(b) {
     const m = USER_SETTINGS.long.messages;
     this.guard(async (signal) => {
       this.requireSource();
-      this.requireVideo();
-      this.requireLlm();
-      this.longSegs[b].key = null;
-      this.longSegs[b].keyPlan = null;
-      this.status(m.keyRedo.replace("{a}", b).replace("{b}", b + 1));
-      // 前後の区間を作り直すと、文章AI → Stable Diffusion（この画像）→ ComfyUI の順に進む
-      await this.generateSegments(signal, [b - 1, b].filter((i) => i < this.longSegs.length));
-      if (this.longSegs.every((g) => g.job?.blob)) await this.joinCore(signal);
+      const llm = this.requireLlm();
+      const segs = this.longSegs;
+      const seg = this.keyHolder(b);
+      if (!this.meta || this.meta.format === "none" || !this.meta.prompt) throw new UserError(m.sdNeedMeta);
+      // ① 文章AI: 前後の区間の内容が変わっていれば、プロンプトを書き直す（変わっていなければ同じプロンプトで、シードだけ変える）
+      if (!seg.keyPlan?.manual && seg.keyPlan?.from !== MainView.keySource(segs, b)) {
+        await this.freeComfyMemory();
+        seg.keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal), from: MainView.keySource(segs, b) };
+      }
+      // ② Stable Diffusion: 新しいシードで作る
+      seg.keyTry = (seg.keyTry || 0) + (seg.key ? 1 : 0);
+      await this.makeKeyImages(signal, [b]);
+      // 前後の区間の動画は、この画像で作り直すまで古いまま
+      for (const i of [b - 1, b]) if (segs[i] && segs[i].job) segs[i].picked = true;
+      this.renderLong();
+      this.showKey(b);
+      this.status(b < segs.length ? m.keyRedone.replaceAll("{a}", b).replaceAll("{b}", b + 1) : m.keyRedoneLast.replaceAll("{a}", b));
     });
+  }
+
+  // つなぎの画像の置き場所。b = 1〜n-1 は区間 b+1 の最初（区間 b の最後）、b = n は最後の区間の終わり（動画の最後のフレーム）
+  keyHolder(b) {
+    const n = this.longSegs.length;
+    if (b < n) return this.longSegs[b];
+    if (this.longFinal?.n !== n) this.longFinal = { n };
+    return this.longFinal;
+  }
+
+  keyLabel(b) {
+    const n = this.longSegs.length;
+    return b < n ? `つなぎの画像（区間${b}→${b + 1}）` : `終わりの画像（区間${n}の最後）`;
+  }
+
+  // つなぎの画像を、下のプレビュー欄に大きく出す
+  showKey(b) {
+    const key = this.longSegs ? this.keyHolder(b).key : null;
+    if (!key) return;
+    this.selectJob(null);
+    this.stillPreview = { src: key.img.src, label: `▶ ${this.keyLabel(b)}` };
+    this.updateScreen();
+    $("player-label").textContent = this.stillPreview.label;
+    $("player-label").classList.add("active");
   }
 
   // 区間のプロンプトを書いてもらう。動画やつなぎの画像はまだできていないことが多いので、
@@ -7998,8 +8222,9 @@ class MainView {
       return this.toDataUrl(c, c.width || c.naturalWidth, c.height || c.naturalHeight);
     };
     const useSd = this.longSdOn();
-    const start = i === 0 ? this.baseFrame() : useSd ? seg.key : !set.has(i - 1) ? segs[i - 1].last : null;
-    const end = this.segCtx?.mode === "FL2VA" ? (useSd ? segs[i + 1]?.key : segs[i + 1]?.first) : null;
+    const keyOf = (b) => (b > 0 && b <= segs.length ? this.keyHolder(b).key : null);
+    const start = i === 0 ? this.baseFrame() : keyOf(i) || (!useSd && !set.has(i - 1) ? segs[i - 1].last : null);
+    const end = this.segCtx?.mode === "FL2VA" ? keyOf(i + 1) || (useSd ? null : segs[i + 1]?.first) : null;
     const images = [picture(start || this.baseFrame())];
     if (end) images.push(picture(end));
     const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
@@ -8305,7 +8530,7 @@ class MainView {
       this.currentRun = null;
       this.applyRestore(r);
       if (image) {
-        await this.loadImage(image);
+        await this.loadImage(image, { autoAspect: false });
         if (this.meta && state.image.focus) this.focus = { ...state.image.focus };
       } else {
         this.clearImage();
@@ -8615,6 +8840,14 @@ class MainView {
     const job = this.selectedJob;
     const still = $("screen-still");
     const empty = $("screen-empty");
+    if (job) this.stillPreview = null;
+    if (!job && this.stillPreview) {
+      $("screen").classList.add("is-still");
+      if (still.getAttribute("src") !== this.stillPreview.src) still.src = this.stillPreview.src;
+      still.hidden = false;
+      empty.hidden = true;
+      return;
+    }
     const showStill = !!job && !job.url;
     $("screen").classList.toggle("is-still", showStill);
     still.hidden = !showStill || !job?.thumb;
