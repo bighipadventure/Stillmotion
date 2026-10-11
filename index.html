@@ -1106,7 +1106,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </li>
       </ol>
       <div class="card"><h4 class="card-title">「素材から動画」のとき</h4><p class="note" style="margin:0">手順1〜2の代わりに、素材の画面で入れた画像・動画・音声を使います（画像のメタデータは使いません）。手順3〜4では、素材の一覧（タグ・使い方・メモ）と、画像と動画の1コマを文章AIに渡してストーリーを考えてもらい、公式の参照モードの形式（subject_definitions など6つの項目）でプロンプトを書いてもらいます。手順6では素材を ComfyUI の input/minimax_h3 フォルダに送り、手順7で Fantastic H3 Media Loader に素材の一覧を書き込みます。</p></div>
-      <div class="card"><h4 class="card-title">「長い動画」のとき</h4><p class="note" style="margin:0">手順3で、全体のストーリーを区間（「1区間の長さ」ごと）に分けてもらいます。そのあと区間ごとに手順4〜10をくり返し、1区間ずつ順番に作ります。2つ目からの区間は、前の区間の動画から取り出した最後のフレームを最初の画像にします（I2VA）。作り直す区間のすぐ後ろの区間がもうあり、その区間は作り直さないときは、その区間の最初のフレームで終わるように FL2VA で作るので、継ぎ目がずれません。「つないで1本にする」は、ブラウザの中（ffmpeg.wasm）で区間の動画をつなぎ、継ぎ目で重なる1コマを落として1本の MP4 にします（初回だけ約30MBを読み込みます）。</p></div><div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
+      <div class="card"><h4 class="card-title">「長い動画」のとき</h4><p class="note" style="margin:0">GPU を取り合わないように、① 文章AI（全体のストーリーと区間分け、つなぎの画像のプロンプト、全区間の動画プロンプト）→ ② Stable Diffusion（つなぎの画像。オンのときだけ）→ ③ ComfyUI（区間の動画を1本ずつ）の順に、ひとつずつ進めます。2つ目からの区間は、前の区間の動画から取り出した最後のフレームを最初の画像にします（I2VA）。作り直す区間のすぐ後ろの区間がもうあり、その区間は作り直さないときは、その区間の最初のフレームで終わるように FL2VA で作るので、継ぎ目がずれません。「つないで1本にする」は、ブラウザの中（ffmpeg.wasm）で区間の動画をつなぎ、継ぎ目で重なる1コマを落として1本の MP4 にします（初回だけ約30MBを読み込みます）。</p></div><div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
@@ -2363,7 +2363,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   pollIntervalMs: 2000,
   probeTimeoutMs: 2500,
   // 文章AIが答えなかったときに、自動でくり返す回数と待ち時間（ミリ秒）
-  llmRetry: { times: 3, waitMs: [3000, 10000, 20000] },
+  llmRetry: { times: 3, waitMs: [3000, 10000, 20000], minExpandedTokens: 8192, maxTokensCap: 32768 },
   // 文章AIの答えを待つ上限（ミリ秒）。これを過ぎたらエラーにせず、もう一度頼み直す（低スペックの PC では 10 分以上かかることもあるので長め）
   llmStallMs: 30 * 60 * 1000,
   imageMaxSide: 1024,
@@ -3116,6 +3116,7 @@ Tips for better results:
     shareOpening: "Prompt Reel を開いています…",
     jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
     llmRetry: "文章AI{reason}。ComfyUI のGPUメモリを空けて、もう一度頼んでいます（{n}/{max} 回目）…",
+    llmRetryLength: "文章AIが考えている途中で出力の上限に達して、答えが空でした。上限を {tokens} トークンに広げて頼み直しています…",
     llmRetryReasons: { stall: "から30分たっても応答がありませんでした", network: "につながりませんでした", server: "がエラーを返しました", empty: "の答えが空でした" },
     stateSaving: "いまの状態をファイルにまとめています…",
     stateSaved: "いまの状態を {name} に保存しました。このファイルを画面にドロップすると、この状態に戻せます。",
@@ -3626,41 +3627,61 @@ class LlmClient {
     return found;
   }
 
-  // 30分たっても答えがない・接続の失敗・サーバーの一時的なエラー（5xx・429）・空の答えのときは、止めずに自動でもう一度頼む。
+  // 文章AIに頼む。うまくいかなかったときは、原因ごとに直せることをしてから頼み直す:
+  // - 考えている途中で出力の上限（max_tokens）に達して答えが空 → 上限を広げて頼み直す（同じ条件のままくり返しても空になるだけなので）
+  // - 30分たっても答えがない・接続の失敗・サーバーの一時的なエラー（5xx・429） → 少し待って頼み直す
+  // - 上限に達していないのに答えが空 → 1回だけ頼み直し、それでも空なら空のまま返す（呼び出し側で扱う）
   // 中止ボタンで止めたときと、4xx（設定の誤りなど）はくり返さない
   async post(messages, temperature, signal, maxTokens = null) {
     const cfg = USER_SETTINGS.llmRetry;
-    for (let attempt = 0; ; attempt++) {
+    let tokens = Number(maxTokens || this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens);
+    let retries = 0, emptyRetried = false;
+    for (;;) {
+      let reason;
       try {
-        const text = await this.postOnce(messages, temperature, signal, maxTokens);
-        if (!text.trim() && attempt < cfg.times) throw Object.assign(new Error("empty"), { retryReason: "empty" });
-        return text;
+        const out = await this.postOnce(messages, temperature, signal, tokens);
+        if (out.text.trim()) return out.text;
+        if (out.finish === "length" || out.thinkingCut) {
+          if (tokens >= cfg.maxTokensCap) return out.text;
+          tokens = Math.min(cfg.maxTokensCap, Math.max(tokens * 2, cfg.minExpandedTokens));
+          await LlmClient.onRetry?.(0, 0, "length", tokens);
+          continue;
+        }
+        if (emptyRetried) return out.text;
+        emptyRetried = true;
+        reason = "empty";
       } catch (err) {
-        if (signal?.aborted || attempt >= cfg.times) throw err;
-        const reason = err.retryReason || (err.name === "TimeoutError" ? "stall" : err instanceof TypeError ? "network" : err.status >= 500 || err.status === 429 ? "server" : null);
-        if (!reason) throw err;
-        await LlmClient.onRetry?.(attempt + 1, cfg.times, reason);
-        await new Promise((resolve, reject) => {
-          const timer = setTimeout(resolve, cfg.waitMs[Math.min(attempt, cfg.waitMs.length - 1)]);
-          signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("aborted", "AbortError")); }, { once: true });
-        });
+        if (signal?.aborted) throw err;
+        reason = err.name === "TimeoutError" ? "stall" : err instanceof TypeError ? "network" : err.status >= 500 || err.status === 429 ? "server" : null;
+        if (!reason || retries >= cfg.times) throw err;
       }
+      retries++;
+      await LlmClient.onRetry?.(retries, cfg.times, reason);
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, cfg.waitMs[Math.min(retries - 1, cfg.waitMs.length - 1)]);
+        signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("aborted", "AbortError")); }, { once: true });
+      });
     }
   }
 
+  // 1回ぶん頼む。答えの文と、終わり方（finish_reason）、考えている途中で切れたかを返す
   async postOnce(messages, temperature, signal, maxTokens) {
     // 低スペックの PC では答えるまで 10 分以上かかることもあるので、30 分までは待つ（過ぎたら post() が頼み直す）
     const stall = AbortSignal.timeout(USER_SETTINGS.llmStallMs);
     const res = await fetch(`${this.base}/chat/completions`, {
       method: "POST",
       headers: this.headers(),
-      body: JSON.stringify({ model: this.profile.model, messages, temperature: Number(temperature),
-        max_tokens: Number(maxTokens || this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens) }),
+      body: JSON.stringify({ model: this.profile.model, messages, temperature: Number(temperature), max_tokens: Number(maxTokens) }),
       signal: signal ? AbortSignal.any([signal, stall]) : stall,
     });
     if (!res.ok) throw Object.assign(new Error(`サーバーがエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 400)}`), { status: res.status });
     const json = await res.json();
-    return LlmClient.cleanOutput(json.choices?.[0]?.message?.content || "");
+    const choice = json.choices?.[0] || {};
+    const raw = choice.message?.content || "";
+    const text = LlmClient.cleanOutput(raw);
+    // <think> が閉じないまま終わった（考えている途中で切れた）
+    const thinkingCut = !text && /<think>/.test(raw) && !/<\/think>/.test(raw);
+    return { text, finish: choice.finish_reason || "", thinkingCut };
   }
 
   chat(system, userText, images, signal, maxTokens = null) {
@@ -5401,8 +5422,9 @@ class MainView {
     this.store = store;
     $("video").volume = USER_SETTINGS.initialVolume;
     // 文章AIをくり返すとき: 画面に出し、ComfyUI のGPUメモリを空ける（同じGPUで動画のモデルが居座っていると、文章AIがとても遅くなるため）
-    LlmClient.onRetry = async (n, max, reason) => {
+    LlmClient.onRetry = async (n, max, reason, tokens) => {
       const m = USER_SETTINGS.messages;
+      if (reason === "length") { this.status(m.llmRetryLength.replace("{tokens}", tokens), true); return; }
       this.status(m.llmRetry.replace("{reason}", m.llmRetryReasons[reason] || "").replace("{n}", n).replace("{max}", max), true);
       const url = this.store.video?.comfyUrl;
       if (url && !this.jobs?.some((j) => j.state === "running")) {
@@ -7690,6 +7712,7 @@ class MainView {
     this.currentRun = null;
     this.setStep("story", "active", "区間分け");
     this.status(cfg.messages.planning);
+    await this.freeComfyMemory();
     this.planBusy(["story"]);
     const ctx = await this.llmContext();
     const optionsText = this.storyOptionsText().replace(/^長さ: .*$/m, `長さ: 全体 ${sum}秒（${lengths.length}区間）`);
@@ -7753,6 +7776,8 @@ class MainView {
   }
 
   // 区間を番号の小さい順に1つずつ作る（前の区間の最後のフレームから続ける）
+  // 区間を作る。GPU を取り合わないように、① 文章AI（プロンプトを全部書く）→ ② Stable Diffusion（つなぎの画像を全部作る）
+  // → ③ ComfyUI（動画を番号の小さい順に作る）の順に、ひとつずつ進める
   async generateSegments(signal, indices) {
     const cfg = USER_SETTINGS.long;
     const m = cfg.messages;
@@ -7762,39 +7787,73 @@ class MainView {
     this.requireVideo();
     const llm = this.requireLlm();
     const set = new Set(indices);
+    const order = [...set].sort((a, b) => a - b);
+    const n = segs.length;
     const useSd = this.longSdOn();
-    // Stable Diffusion でつなぎの画像を作るときは、先に必要な画像をまとめて作る（区間どうしが前後の動画に頼らなくなる）
-    if (useSd) {
-      const need = new Set();
-      for (const i of set) { if (i > 0) need.add(i); if (i + 1 < segs.length) need.add(i + 1); }
-      await this.ensureKeys(signal, [...need].sort((a, b) => a - b).filter((b) => !segs[b].key), llm);
-    }
-    for (const i of [...set].sort((a, b) => a - b)) {
+    const fillFor = (i) => (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
+    for (const i of order) {
       const seg = segs[i];
-      const n = segs.length;
-      const fill = (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
-      if (!seg.text.trim() && !seg.instruction.trim() && !seg.prompt.trim()) throw new UserError(fill(m.needText));
+      if (!seg.text.trim() && !seg.instruction.trim() && !seg.prompt.trim()) throw new UserError(fillFor(i)(m.needText));
+      // つなぎの画像を使わないときは、前の区間の動画（今回いっしょに作るか、もうあるか）が必要
+      if (!useSd && i > 0 && !segs[i - 1].last && !set.has(i - 1)) throw new UserError(fillFor(i)(m.needPrev));
+    }
+    // つなぎの画像を新しく作る境目（区間 b の最初＝区間 b-1 の最後）
+    const keyList = useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b < n && !segs[b].key).sort((a, b) => a - b) : [];
+    if (keyList.length && (!this.meta || this.meta.format === "none" || !this.meta.prompt)) throw new UserError(m.sdNeedMeta);
+    // 区間ごとのモード（あとで決まる画像に頼らず、ここで決めておく）
+    const modeOf = (i) => {
+      if (!this.isH3()) return "I2VA";
+      if (useSd) return i + 1 < n ? "FL2VA" : "I2VA";
+      return segs[i + 1]?.first && !set.has(i + 1) ? "FL2VA" : "I2VA";
+    };
+    const ctxFor = (i) => {
+      const fill = fillFor(i);
+      const mode = modeOf(i);
+      const rules = [i === 0 ? fill(cfg.firstRule) : fill(cfg.continueRule), this.sceneCfg().clip];
+      if (mode === "FL2VA") rules.push(cfg.endRule);
+      return { mode, seconds: segs[i].seconds, rules };
+    };
+
+    // ① 文章AI: つなぎの画像のプロンプトと、区間のプロンプトを先にすべて書く
+    await this.freeComfyMemory();
+    for (const [k, b] of keyList.entries()) {
+      if (segs[b].keyPlan?.from === MainView.keySource(segs, b)) continue;
+      segs[b].keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal, k + 1, keyList.length), from: MainView.keySource(segs, b) };
+    }
+    for (const [k, i] of order.entries()) {
+      const seg = segs[i];
+      const ctx = ctxFor(i);
+      if (seg.prompt.trim() && seg.promptFor === MainView.segSource(seg) && (seg.promptManual || seg.promptMode === ctx.mode)) continue;
+      this.segCtx = ctx;
+      try {
+        this.running.phase = "prompt";
+        this.setStep("prompt", "active", `区間${i + 1}`);
+        this.status(`${fillFor(i)(m.prompting)}（${k + 1}/${order.length}）`);
+        seg.prompt = await this.makeSegmentPrompt(llm, i, signal, set);
+        Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: ctx.mode, promptManual: false });
+        this.renderLong();
+      } finally {
+        this.segCtx = null;
+      }
+    }
+    this.setStep("prompt", "done", `${order.length}区間`);
+
+    // ② Stable Diffusion: つなぎの画像をまとめて作り、最後にモデルを VRAM から外す
+    if (keyList.length) await this.makeKeyImages(signal, keyList);
+
+    // ③ ComfyUI: 動画を番号の小さい順に作る
+    for (const i of order) {
+      const seg = segs[i];
+      const fill = fillFor(i);
       const start = i === 0 ? this.baseFrame() : useSd ? seg.key : segs[i - 1].last;
       if (!start) throw new UserError(fill(m.needPrev));
-      // 次の区間がもうあって、今回は作り直さないなら、その最初のフレームで終わる FL2VA にする
-      // （Stable Diffusion のときは、次の区間のつなぎの画像で終わる FL2VA）
-      const next = segs[i + 1];
-      const end = !this.isH3() ? null : useSd ? next?.key || null : next?.first && !set.has(i + 1) ? next.first : null;
-      const mode = end ? "FL2VA" : "I2VA";
-      const rules = [i === 0 ? fill(cfg.firstRule) : fill(cfg.continueRule), this.sceneCfg().clip];
-      if (end) rules.push(cfg.endRule);
-      this.segCtx = { mode, seconds: seg.seconds, rules };
+      const ctx = ctxFor(i);
+      const end = ctx.mode !== "FL2VA" ? null : useSd ? segs[i + 1]?.key : segs[i + 1]?.first;
+      if (ctx.mode === "FL2VA" && !end) { ctx.mode = "I2VA"; ctx.rules = ctx.rules.filter((x) => x !== cfg.endRule); }
+      this.segCtx = ctx;
       seg.error = "";
       try {
-        if (!seg.prompt.trim() || seg.promptFor !== MainView.segSource(seg) || (!seg.promptManual && seg.promptMode !== mode)) {
-          this.running.phase = "prompt";
-          this.setStep("prompt", "active", `区間${i + 1}`);
-          this.status(fill(m.prompting));
-          seg.prompt = await this.makeSegmentPrompt(llm, i, start, end, signal);
-          Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: mode, promptManual: false });
-        }
         seg.prompt = this.applyAudioRules(this.withInstruction(seg.prompt));
-        this.setStep("prompt", "done", `区間${i + 1}`);
         this.renderLong();
         this.running.phase = "video";
         this.status(fill(m.generating));
@@ -7823,28 +7882,21 @@ class MainView {
     this.status(m.done);
   }
 
-  // つなぎの画像（区間 b の最初＝区間 b-1 の最後）をまとめて作り、最後に SD のモデルを VRAM から外す
-  async ensureKeys(signal, list, llm) {
-    if (!list.length) return;
-    const m = USER_SETTINGS.long.messages;
-    if (!this.meta || this.meta.format === "none" || !this.meta.prompt) throw new UserError(m.sdNeedMeta);
-    const d = this.sdConfig();
-    const client = SdClient.create(d);
-    if (await Net.probe(client.probeUrl) !== "ok") throw new UserError(m.sdDown.replace("{name}", client.label).replace("{url}", client.base));
-    const abort = () => client.interrupt();
-    signal.addEventListener("abort", abort);
-    try {
-      for (const [k, b] of list.entries()) await this.makeKeyframe(b, llm, client, signal, k + 1, list.length);
-    } finally {
-      signal.removeEventListener("abort", abort);
-      this.status(m.keyUnloading);
-      await client.unload();
-      // モデルや LoRA が見つからなかったなどの注意は、スイッチの説明の下に残しておく
-      if (this.keyNotes?.length) $("long-sd-info").textContent = `${m.sdInfoOn}\n${this.keyNotes.join("\n")}`;
-    }
+  // 文章AIに頼む前に、ComfyUI が持っている動画のモデルを VRAM から外す（同じ GPU だと文章AIがとても遅くなる）
+  async freeComfyMemory() {
+    const url = this.store.video?.comfyUrl;
+    if (!url || this.jobs?.some((j) => this.isPending(j) && j.state === "running")) return;
+    await fetch(`${url.replace(/\/+$/, "")}/free`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unload_models: true, free_memory: true }) }).catch(() => {});
   }
 
-  async makeKeyframe(b, llm, client, signal, i = 1, n = 1) {
+  // つなぎの画像のプロンプトを書き直すかどうかを決めるもとの文（前後の区間の内容・指示と、場面転換）
+  static keySource(segs, b) {
+    return JSON.stringify([segs[b - 1]?.text, segs[b - 1]?.instruction, segs[b]?.text, segs[b]?.instruction, $("story").value]);
+  }
+
+  // つなぎの画像のプロンプトを文章AIに書いてもらう（区間 b の最初＝区間 b-1 の最後の場面）
+  async writeKeyPrompt(b, llm, signal, i = 1, n = 1) {
     const cfg = USER_SETTINGS.long;
     const m = cfg.messages;
     const segs = this.longSegs;
@@ -7857,7 +7909,36 @@ class MainView {
     const user = fill(cfg.keyUser).replace("{prompt}", this.meta.prompt).replace("{story}", $("story").value.trim() || "（なし）")
       .replace("{prev}", segText(segs[b - 1])).replace("{next}", segText(segs[b]));
     const answer = await llm.chat(system, user, null, signal);
-    const prompt = answer.split("\n").map((x) => x.trim().replace(/^(prompt|positive prompt|プロンプト)\s*[:：]\s*/i, "").replace(/^["'`]+|["'`]+$/g, "")).find(Boolean) || this.meta.prompt;
+    this.setStep("story", "done", `つなぎ ${i}/${n}`);
+    return answer.split("\n").map((x) => x.trim().replace(/^(prompt|positive prompt|プロンプト)\s*[:：]\s*/i, "").replace(/^["'`]+|["'`]+$/g, "")).find(Boolean) || this.meta.prompt;
+  }
+
+  // 書いてもらったプロンプトで、つなぎの画像をまとめて Stable Diffusion に作ってもらい、最後にモデルを VRAM から外す
+  async makeKeyImages(signal, list) {
+    const m = USER_SETTINGS.long.messages;
+    const client = SdClient.create(this.sdConfig());
+    if (await Net.probe(client.probeUrl) !== "ok") throw new UserError(m.sdDown.replace("{name}", client.label).replace("{url}", client.base));
+    const abort = () => client.interrupt();
+    signal.addEventListener("abort", abort);
+    try {
+      for (const [k, b] of list.entries()) await this.makeKeyImage(b, client, signal, k + 1, list.length);
+    } finally {
+      signal.removeEventListener("abort", abort);
+      this.status(m.keyUnloading);
+      await client.unload();
+      // モデルや LoRA が見つからなかったなどの注意は、スイッチの説明の下に残しておく
+      if (this.keyNotes?.length) $("long-sd-info").textContent = `${m.sdInfoOn}\n${this.keyNotes.join("\n")}`;
+    }
+  }
+
+  async makeKeyImage(b, client, signal, i = 1, n = 1) {
+    const cfg = USER_SETTINGS.long;
+    const m = cfg.messages;
+    const segs = this.longSegs;
+    const fill = (t) => t.replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
+    const prompt = segs[b].keyPlan?.prompt || this.meta.prompt;
+    this.running.phase = "story";
+    this.setStep("story", "active", `つなぎの画像 ${i}/${n}`);
     this.status(fill(m.keyMaking));
     const st = this.meta.settings || {};
     const snap = (x) => Math.max(64, Math.round(x / 8) * 8);
@@ -7879,7 +7960,7 @@ class MainView {
     const frame = await MainView.frameFromCanvasFile(new File([blob], `key${b}_${width}x${height}.png`, { type: "image/png" }), width, height);
     segs[b].key = { ...frame, isKey: true, prompt };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
-    this.setStep("story", "done", `つなぎ ${i}/${n}`);
+    this.setStep("story", "done", `つなぎの画像 ${i}/${n}`);
     this.renderLong();
   }
 
@@ -7896,16 +7977,19 @@ class MainView {
     this.guard(async (signal) => {
       this.requireSource();
       this.requireVideo();
-      const llm = this.requireLlm();
+      this.requireLlm();
       this.longSegs[b].key = null;
-      await this.ensureKeys(signal, [b], llm);
+      this.longSegs[b].keyPlan = null;
       this.status(m.keyRedo.replace("{a}", b).replace("{b}", b + 1));
+      // 前後の区間を作り直すと、文章AI → Stable Diffusion（この画像）→ ComfyUI の順に進む
       await this.generateSegments(signal, [b - 1, b].filter((i) => i < this.longSegs.length));
       if (this.longSegs.every((g) => g.job?.blob)) await this.joinCore(signal);
     });
   }
 
-  async makeSegmentPrompt(llm, i, start, end, signal) {
+  // 区間のプロンプトを書いてもらう。動画やつなぎの画像はまだできていないことが多いので、
+  // いま手元にある画像（元の画像・もうある区間の最後のフレーム・もうあるつなぎの画像）だけを見せ、足りない分は文章で伝える
+  async makeSegmentPrompt(llm, i, signal, set = new Set()) {
     const segs = this.longSegs;
     const seg = segs[i];
     const size = this.frameSize();
@@ -7913,7 +7997,10 @@ class MainView {
       const c = size ? FrameFitter.render(f.img, size, f.isBase || f.isKey ? this.store.ui.fit : "crop", f.isBase ? this.focus : { x: 0.5, y: 0.5, zoom: 1 }) : f.img;
       return this.toDataUrl(c, c.width || c.naturalWidth, c.height || c.naturalHeight);
     };
-    const images = [picture(start)];
+    const useSd = this.longSdOn();
+    const start = i === 0 ? this.baseFrame() : useSd ? seg.key : !set.has(i - 1) ? segs[i - 1].last : null;
+    const end = this.segCtx?.mode === "FL2VA" ? (useSd ? segs[i + 1]?.key : segs[i + 1]?.first) : null;
+    const images = [picture(start || this.baseFrame())];
     if (end) images.push(picture(end));
     const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
     const parts = [`全体の物語:\n${$("story").value.trim()}`];
@@ -7921,6 +8008,7 @@ class MainView {
     parts.push(`この区間（区間${i + 1} / 全${segs.length}区間、${seg.seconds}秒）: ${seg.text || seg.instruction}`);
     if (seg.instruction.trim()) parts.push(`この区間への指示（いちばん優先）: ${seg.instruction.trim()}`);
     if (segs[i + 1]) parts.push(`次の区間（区間${i + 2}）: ${segs[i + 1].text}`);
+    if (!start) parts.push(`（区間${i + 1}の最初のフレームは、区間${i}の最後の場面です。添付の画像は元の画像なので、人物の見た目の参考にしてください）`);
     return llm.generatePrompt({
       style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
       meta, images, settingsText: this.settingsText(), lastMeta: null, seconds: seg.seconds,
