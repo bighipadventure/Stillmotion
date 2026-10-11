@@ -498,9 +498,12 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-list { display: flex; flex-direction: column; gap: 8px; }
 #prompt-panel.long-view .head-tools, #prompt-panel.long-view .revise-row { display: none; }
 #prompt-panel.long-view textarea { background: var(--surface); }
-.long-key { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-.long-key img { width: 72px; height: 44px; object-fit: contain; background: var(--film); border-radius: 3px; }
-.long-key button { min-height: 22px; padding: 0 7px; font-size: 11px; }
+.long-foot { display: flex; align-items: flex-start; gap: 10px; min-height: 22px; }
+.long-foot > details { flex: 1; min-width: 0; }
+.long-main details summary { line-height: 22px; }
+.long-key { flex: none; display: flex; align-items: center; gap: 6px; height: 22px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.long-key img { width: 36px; height: 22px; object-fit: contain; background: var(--film); border-radius: 3px; }
+.long-key button { min-height: 22px; height: 22px; padding: 0 7px; font-size: 11px; }
 .long-row { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); padding: 8px; display: grid; grid-template-columns: 180px 1fr; gap: 10px; align-items: stretch; }
 .long-row[data-picked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
 .long-row[data-current="true"] { box-shadow: 0 0 0 2px var(--lamp); }
@@ -692,6 +695,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   <div class="pills">
     <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
     <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
+    <button class="pill" id="pill-sd" data-state="idle" hidden>Stable Diffusion: 確認中</button>
   </div>
   <button class="quiet" id="save-state" title="画像・素材・設定・ストーリー・プロンプトを1つの JSON ファイルに保存します。そのファイルを画面にドロップすると、この状態に戻せます">状態を保存</button>
   <button class="quiet" id="open-flow">動画ができるまで</button>
@@ -4765,6 +4769,24 @@ class StatusBar {
     this.store = store;
     this.llmPill = $("pill-llm");
     this.comfyPill = $("pill-comfy");
+    this.sdPill = $("pill-sd");
+  }
+
+  // 長い動画で「つなぎの画像を Stable Diffusion で作る」がオンのときだけ、Stable Diffusion の接続状態も出す
+  async refreshSd() {
+    const s = this.store;
+    const show = s.ui.flow === "long" && !!s.ui.longSd;
+    this.sdPill.hidden = !show;
+    if (!show) return;
+    const cfg = USER_SETTINGS.sd;
+    const d = s.data.sd || {};
+    const backend = cfg.backends[d.backend] ? d.backend : cfg.defaultBackend;
+    const client = SdClient.create({ backend, urls: { ...Object.fromEntries(Object.entries(cfg.backends).map(([k, b]) => [k, b.url])), ...(d.urls || {}) } });
+    this.set(this.sdPill, "idle", "Stable Diffusion: 確認中");
+    const state = await Net.probe(client.probeUrl);
+    this.set(this.sdPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
+      `Stable Diffusion: ${state === "ok" ? client.label : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
+    this.sdPill.title = `${client.label}（${client.base}）: ${Net.probeMessage(state)}`;
   }
 
   async refresh() {
@@ -4789,6 +4811,7 @@ class StatusBar {
         `ComfyUI: ${state === "ok" ? video.name : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
       this.comfyPill.title = Net.probeMessage(state);
     }
+    this.refreshSd();
     const needsSetup = !llm || !llm.model || !video;
     $("setup-banner").hidden = !needsSetup;
     $("setup-banner-text").textContent = USER_SETTINGS.messages.bannerSetup;
@@ -6443,6 +6466,8 @@ class MainView {
     this.applyLongPromptView(long);
     $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
     $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
+    this.storyPlaceholder ??= $("story").placeholder;
+    $("story").placeholder = long ? "「最初から実行」を押すと、文章AIが画像を読み取って全体のストーリーを考え、区間ごとの内容に分けます。書き直して「このストーリーで区間を分け直す」を押すと、それに合わせて区間の内容を書き直します。" : this.storyPlaceholder;
     $("seconds-caption").textContent = long ? "1区間の長さ" : "長さ";
     if (long) $("long-len-slot").append($("seconds-field"));
     else if ($("seconds-field").parentElement.id === "long-len-slot") $("open-advanced").before($("seconds-field"));
@@ -7340,7 +7365,7 @@ class MainView {
       this.renderLong();
     });
     this.on($("long-gen"), "click", () => this.makeLongSegments());
-    this.on($("long-sd"), "change", () => { this.saveUi({ longSd: $("long-sd").checked }); this.fillLongOptions(); this.renderLong(); });
+    this.on($("long-sd"), "change", () => { this.saveUi({ longSd: $("long-sd").checked }); this.fillLongOptions(); this.renderLong(); this.statusBar.refreshSd(); });
     this.fillLongOptions();
     this.on($("long-play"), "click", () => this.playThrough());
     this.on($("long-join"), "click", () => this.joinSegments());
@@ -7513,7 +7538,10 @@ class MainView {
       seg.promptFor = MainView.segSource(seg);
     });
     details.append(summary, prompt);
-    main.append(head, ask, text, details);
+    // つなぎの画像は「プロンプト」の行の右端に置き、行の高さを変えない（スイッチを切り替えても区間の行が伸び縮みしないように）
+    const foot = el("div", "long-foot");
+    foot.append(details);
+    main.append(head, ask, text, foot);
     if (this.longSdOn() && i > 0) {
       const key = el("div", "long-key");
       if (seg.key) {
@@ -7522,12 +7550,12 @@ class MainView {
         img.alt = "";
         key.append(img);
       }
-      key.append(el("span", "", seg.key ? `つなぎの画像（区間${i}→${i + 1}）` : `つなぎの画像（区間${i}→${i + 1}）: まだありません`));
+      key.append(el("span", "", seg.key ? `つなぎの画像（区間${i}→${i + 1}）` : `つなぎの画像（区間${i}→${i + 1}）: まだ`));
       const redo = el("button", "long-key-redo", seg.key ? "つなぎの画像を作り直す" : "つなぎの画像を作る");
       redo.type = "button";
       this.on(redo, "click", () => this.redoKey(i));
       key.append(redo);
-      main.append(key);
+      foot.append(key);
     }
     row.append(thumb, main);
     return row;
@@ -8990,7 +9018,7 @@ class SettingsView {
     for (const id of ["spec-vram", "spec-ram", "spec-reserve", "spec-gen", "spec-gpu"]) this.on($(id), "input", () => { this.renderMachineSummary(); this.autosave("machine"); });
     this.on($("spec-gen"), "change", () => this.autosave("machine"));
     this.on($("spec-auto"), "change", () => this.autosave("machine", 0));
-    this.on($("sd-url"), "change", () => { const d = this.sdConfig(); d.urls[d.backend] = $("sd-url").value.trim() || USER_SETTINGS.sd.backends[d.backend].url; this.store.save(); });
+    this.on($("sd-url"), "change", () => { const d = this.sdConfig(); d.urls[d.backend] = $("sd-url").value.trim() || USER_SETTINGS.sd.backends[d.backend].url; this.store.save(); this.onChange?.(); });
     this.on($("sd-test"), "click", () => this.testSd());
     this.on($("spec-maker"), "change", () => { this.fillGpuModels($("spec-maker").value, ""); this.onGpuPicked(); this.autosave("machine"); });
     this.on($("spec-model"), "change", () => { this.onGpuPicked(); this.autosave("machine"); });
@@ -9036,7 +9064,7 @@ class SettingsView {
       btn.type = "button";
       btn.textContent = b.label;
       btn.setAttribute("aria-pressed", String(key === d.backend));
-      this.on(btn, "click", () => { d.backend = key; this.store.save(); this.fillSd(); setMsg($("sd-msg"), ""); });
+      this.on(btn, "click", () => { d.backend = key; this.store.save(); this.fillSd(); setMsg($("sd-msg"), ""); this.onChange?.(); });
       return btn;
     }));
     $("sd-url").value = d.urls[d.backend];
@@ -9713,6 +9741,7 @@ class App {
     this.statusBar.onComfyOk = (url) => this.autoReadMachine(url);
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
+    $("pill-sd").addEventListener("click", () => this.settings.open("sd"), { signal });
     this.statusBar.refresh();
     // 設定画面を自動で開くのは、このブラウザに設定がまだないとき（初めて開いたとき）だけ
     if (this.store.fresh) {
