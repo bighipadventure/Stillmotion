@@ -755,6 +755,19 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </div>
       </section>
 
+      <section class="psec" aria-labelledby="frame-title">
+        <h2 class="psec-title" id="frame-title">動画のサイズ</h2>
+        <div class="psec-body">
+          <div class="prop"><span class="prop-label">縦横比</span><select id="aspect" aria-label="縦横比"></select></div>
+          <div class="prop"><span class="prop-label">大きさ</span><select id="megapixels" aria-label="大きさ（メガピクセル）"></select></div>
+          <div class="prop" id="fit-field"><span class="prop-label" id="fit-label">合わせ方</span><div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div></div>
+          <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き（%）<output id="crop-zoom-out" class="sr-only">100</output></span>
+            <input type="range" id="crop-zoom" min="25" max="100" step="1" value="100" aria-label="切り抜きの大きさ（%）">
+          </label>
+          <p class="frame-info" id="frame-info" aria-live="polite"></p>
+        </div>
+      </section>
+
       <section class="psec" id="sec-long" aria-labelledby="long-title" hidden>
         <h2 class="psec-title" id="long-title">長い動画</h2>
         <div class="psec-body">
@@ -766,19 +779,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" id="long-scene-info"></p>
           <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を Stable Diffusion で作る</label>
           <p class="note" id="long-sd-info"></p>
-        </div>
-      </section>
-
-      <section class="psec" aria-labelledby="frame-title">
-        <h2 class="psec-title" id="frame-title">動画のサイズ</h2>
-        <div class="psec-body">
-          <div class="prop"><span class="prop-label">縦横比</span><select id="aspect" aria-label="縦横比"></select></div>
-          <div class="prop"><span class="prop-label">大きさ</span><select id="megapixels" aria-label="大きさ（メガピクセル）"></select></div>
-          <div class="prop" id="fit-field"><span class="prop-label" id="fit-label">合わせ方</span><div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div></div>
-          <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き（%）<output id="crop-zoom-out" class="sr-only">100</output></span>
-            <input type="range" id="crop-zoom" min="25" max="100" step="1" value="100" aria-label="切り抜きの大きさ（%）">
-          </label>
-          <p class="frame-info" id="frame-info" aria-live="polite"></p>
         </div>
       </section>
 
@@ -2362,7 +2362,10 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   seedMax: 4294967295,
   pollIntervalMs: 2000,
   probeTimeoutMs: 2500,
-  llmTimeoutMs: 600000,
+  // 文章AIが答えなかったときに、自動でくり返す回数と待ち時間（ミリ秒）
+  llmRetry: { times: 3, waitMs: [3000, 10000, 20000] },
+  // 文章AIの答えを待つ上限（ミリ秒）。これを過ぎたらエラーにせず、もう一度頼み直す（低スペックの PC では 10 分以上かかることもあるので長め）
+  llmStallMs: 30 * 60 * 1000,
   imageMaxSide: 1024,
   imageJpegQuality: 0.9,
   previewChars: 40,
@@ -3112,6 +3115,8 @@ Tips for better results:
     shareFailed: "Prompt Reel に渡せませんでした: ",
     shareOpening: "Prompt Reel を開いています…",
     jobRestored: "動画 #{n} を作ったときのプロンプトと設定に戻しました。",
+    llmRetry: "文章AI{reason}。ComfyUI のGPUメモリを空けて、もう一度頼んでいます（{n}/{max} 回目）…",
+    llmRetryReasons: { stall: "から30分たっても応答がありませんでした", network: "につながりませんでした", server: "がエラーを返しました", empty: "の答えが空でした" },
     stateSaving: "いまの状態をファイルにまとめています…",
     stateSaved: "いまの状態を {name} に保存しました。このファイルを画面にドロップすると、この状態に戻せます。",
     stateLoading: "保存した状態を読み込んでいます…",
@@ -3197,7 +3202,7 @@ function fillSelect(select, entries, value) {
 function describeError(err, who) {
   if (err instanceof UserError) return err.message;
   if (err.name === "AbortError") return USER_SETTINGS.messages.cancelled;
-  if (err.name === "TimeoutError") return `${who}からの応答がありません（時間切れ）。`;
+  if (err.name === "TimeoutError") return `${who}からの応答がありません（時間切れ。何度か頼み直しても答えがありませんでした）。`;
   if (err instanceof TypeError) return `${who}: ${USER_SETTINGS.messages.probeDown}`;
   return `${who}: ${err.message}`;
 }
@@ -3621,16 +3626,39 @@ class LlmClient {
     return found;
   }
 
+  // 30分たっても答えがない・接続の失敗・サーバーの一時的なエラー（5xx・429）・空の答えのときは、止めずに自動でもう一度頼む。
+  // 中止ボタンで止めたときと、4xx（設定の誤りなど）はくり返さない
   async post(messages, temperature, signal, maxTokens = null) {
-    const timeout = AbortSignal.timeout(USER_SETTINGS.llmTimeoutMs);
+    const cfg = USER_SETTINGS.llmRetry;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const text = await this.postOnce(messages, temperature, signal, maxTokens);
+        if (!text.trim() && attempt < cfg.times) throw Object.assign(new Error("empty"), { retryReason: "empty" });
+        return text;
+      } catch (err) {
+        if (signal?.aborted || attempt >= cfg.times) throw err;
+        const reason = err.retryReason || (err.name === "TimeoutError" ? "stall" : err instanceof TypeError ? "network" : err.status >= 500 || err.status === 429 ? "server" : null);
+        if (!reason) throw err;
+        await LlmClient.onRetry?.(attempt + 1, cfg.times, reason);
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(resolve, cfg.waitMs[Math.min(attempt, cfg.waitMs.length - 1)]);
+          signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("aborted", "AbortError")); }, { once: true });
+        });
+      }
+    }
+  }
+
+  async postOnce(messages, temperature, signal, maxTokens) {
+    // 低スペックの PC では答えるまで 10 分以上かかることもあるので、30 分までは待つ（過ぎたら post() が頼み直す）
+    const stall = AbortSignal.timeout(USER_SETTINGS.llmStallMs);
     const res = await fetch(`${this.base}/chat/completions`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify({ model: this.profile.model, messages, temperature: Number(temperature),
         max_tokens: Number(maxTokens || this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens) }),
-      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      signal: signal ? AbortSignal.any([signal, stall]) : stall,
     });
-    if (!res.ok) throw new Error(`サーバーがエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 400)}`);
+    if (!res.ok) throw Object.assign(new Error(`サーバーがエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 400)}`), { status: res.status });
     const json = await res.json();
     return LlmClient.cleanOutput(json.choices?.[0]?.message?.content || "");
   }
@@ -5372,6 +5400,16 @@ class MainView {
   constructor(store, statusBar, openSettings) {
     this.store = store;
     $("video").volume = USER_SETTINGS.initialVolume;
+    // 文章AIをくり返すとき: 画面に出し、ComfyUI のGPUメモリを空ける（同じGPUで動画のモデルが居座っていると、文章AIがとても遅くなるため）
+    LlmClient.onRetry = async (n, max, reason) => {
+      const m = USER_SETTINGS.messages;
+      this.status(m.llmRetry.replace("{reason}", m.llmRetryReasons[reason] || "").replace("{n}", n).replace("{max}", max), true);
+      const url = this.store.video?.comfyUrl;
+      if (url && !this.jobs?.some((j) => j.state === "running")) {
+        await fetch(`${url.replace(/\/+$/, "")}/free`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ unload_models: true, free_memory: true }) }).catch(() => {});
+      }
+    };
     this.statusBar = statusBar;
     this.openSettings = openSettings;
     this.listeners = new AbortController();
