@@ -144,12 +144,44 @@ input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:dis
 input:focus, select:focus, textarea:focus { border-color: var(--accent-text); outline: none; box-shadow: 0 0 0 1px var(--accent-text); }
 input:disabled, select:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
 textarea { resize: vertical; line-height: 1.55; padding: 6px 8px; }
-input[type="range"], input[type="checkbox"] { accent-color: var(--accent); }
+input[type="range"] { accent-color: var(--accent); }
+
+/* ===== トグルスイッチ（チェックボックスはすべてこの見た目。Stillmange と同じ） ===== */
+input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 0;
+  border-radius: 999px; background: var(--line-strong); cursor: pointer; transition: background .15s;
+}
+input[type="checkbox"]::before {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, .35); transition: transform .15s;
+}
+input[type="checkbox"]:checked { background: var(--accent); }
+input[type="checkbox"]:checked::before { transform: translateX(14px); }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+input[type="checkbox"]:disabled { opacity: .45; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
+
+/* ===== 数値（スライダー＋ステッパー。数値を押すと手入力。Stillmange と同じ） ===== */
+.numctl { display: grid; grid-template-columns: 24px minmax(40px, 1fr) 24px minmax(52px, auto); align-items: center; gap: 4px; width: 100%; min-width: 0; }
+.numctl.no-slider { grid-template-columns: 24px minmax(52px, 1fr) 24px; }
+.numctl.no-slider .dec { order: 1; }
+.numctl.no-slider .numctl-val, .numctl.no-slider .numctl-edit { order: 2; }
+.numctl.no-slider .inc { order: 3; }
+.numctl > input.numctl-src { display: none; }
+.numctl-step { width: 24px; height: 24px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 700; line-height: 1; }
+.numctl-range { min-width: 0; margin: 0; }
+.numctl-val, .numctl-edit { height: 26px; min-height: 0; padding: 0 6px; border-radius: var(--radius-s); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
+.numctl-val { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: text; white-space: nowrap; }
+.numctl-val:hover:not(:disabled) { border-color: var(--accent-text); background: var(--surface-2); }
+.numctl-val.empty { color: var(--muted); }
+.numctl-edit { width: 100%; }
+.numctl.disabled { opacity: .5; pointer-events: none; }
+label.field > .numctl { margin-top: 3px; }
 input[type="range"] { width: 100%; }
 label.field { display: block; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
 label.field > input, label.field > select, label.field > textarea { margin-top: 3px; color: var(--ink); }
-label.check { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; margin-bottom: 6px; }
-label.check input { margin-top: 3px; }
+label.check { display: flex; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 6px; }
+label.check input { margin: 0; }
 .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .row > .grow { flex: 1 1 200px; }
 .note { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
@@ -460,8 +492,9 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .job[data-state="queued"] .job-thumb .spinner, .job[data-state="preparing"] .job-thumb .spinner { border-top-color: rgba(255, 255, 255, .85); animation-duration: 1.6s; }
 @keyframes spin { to { transform: rotate(360deg); } }
 /* 長い動画: 区間の一覧 */
-.long-total { display: inline-flex; align-items: center; gap: 4px; }
-.long-total input { width: 84px; }
+#long-len-slot > .prop { margin: 0; }
+#sec-long .prop { grid-template-columns: 100px minmax(0, 1fr); }
+#sec-long .psec-body { display: flex; flex-direction: column; gap: 6px; }
 .long-list { display: flex; flex-direction: column; gap: 8px; }
 .long-row { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); padding: 8px; display: grid; grid-template-columns: 148px 1fr; gap: 10px; }
 .long-row[data-picked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
@@ -474,8 +507,10 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
 .long-head .long-name { font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
 .long-head .long-time { color: var(--muted); font-variant-numeric: tabular-nums; }
-.long-sec { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); }
-.long-sec input { width: 64px; min-height: 24px; padding: 0 4px; }
+.long-sec { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); width: 250px; }
+.long-sec .numctl { flex: 1; }
+.long-pick { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-weight: 400; }
+.long-field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
 .long-state { color: var(--muted); }
 .long-state.err { color: var(--danger); }
 .long-head .long-del { margin-left: auto; min-height: 22px; padding: 0 7px; font-size: 11px; }
@@ -705,7 +740,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <section class="psec" id="sec-long" aria-labelledby="long-title" hidden>
         <h2 class="psec-title" id="long-title">長い動画</h2>
         <div class="psec-body">
-          <label class="prop"><span class="prop-label">全体の長さ</span><span class="long-total"><input type="number" id="long-total" min="1" max="600" step="0.5" aria-label="全体の長さ（秒）"> 秒</span></label>
+          <label class="prop"><span class="prop-label">全体の長さ（秒）</span><input type="number" id="long-total" min="1" max="600" step="0.5" data-slider-min="1" data-slider-max="120" aria-label="全体の長さ（秒）"></label>
+          <label class="prop"><span class="prop-label">区間の数</span><input type="number" id="long-count" min="1" max="120" step="1" data-slider-min="1" data-slider-max="24" aria-label="区間の数"></label>
+          <div id="long-len-slot"></div>
           <p class="note" id="long-info"></p>
         </div>
       </section>
@@ -716,7 +753,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="prop"><span class="prop-label">縦横比</span><select id="aspect" aria-label="縦横比"></select></div>
           <div class="prop"><span class="prop-label">大きさ</span><select id="megapixels" aria-label="大きさ（メガピクセル）"></select></div>
           <div class="prop" id="fit-field"><span class="prop-label" id="fit-label">合わせ方</span><div class="seg" id="fit-mode" role="group" aria-labelledby="fit-label"></div></div>
-          <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き <output id="crop-zoom-out">100</output>%</span>
+          <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き（%）<output id="crop-zoom-out" class="sr-only">100</output></span>
             <input type="range" id="crop-zoom" min="25" max="100" step="1" value="100" aria-label="切り抜きの大きさ（%）">
           </label>
           <p class="frame-info" id="frame-info" aria-live="polite"></p>
@@ -750,7 +787,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
           <p class="note" id="skill-default-note"></p>
           <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
-          <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span> <output id="seconds-out">5</output>秒</span>
+          <label class="prop" id="seconds-field"><span class="prop-label"><span id="seconds-caption">長さ</span>（秒）<output id="seconds-out" class="sr-only">5</output></span>
             <input type="range" id="seconds" min="0.5" max="15" step="0.5" value="5">
           </label>
           <button class="adv-open" id="open-advanced" aria-haspopup="dialog">
@@ -827,7 +864,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
     <section class="panel" id="long-panel" aria-labelledby="long-panel-title" hidden>
       <div class="panel-head">
-        <h2 id="long-panel-title">区間 <span class="head-count" id="long-count"></span></h2>
+        <h2 id="long-panel-title">区間 <span class="head-count" id="long-sum"></span></h2>
         <div class="head-tools">
           <button id="long-add">区間を追加</button>
           <button id="long-play">通して再生</button>
@@ -1072,7 +1109,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
       <div class="card">
         <h4 class="card-title"><span class="num">3</span>細かい調整 <span class="badge">変更しなくても動きます</span></h4>
-        <label class="field">発想の自由度（温度）: <output id="llm-temp-out"></output><input type="range" id="llm-temp" min="0" max="1.5" step="0.05"></label>
+        <label class="field">発想の自由度（温度）<output id="llm-temp-out" class="sr-only"></output><input type="range" id="llm-temp" min="0" max="1.5" step="0.05"></label>
         <div class="map-grid">
           <label class="field" style="margin:0">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
           <label class="field" style="margin:0">APIキー（ローカルなら空欄）<input type="password" id="llm-key" autocomplete="off"></label>
@@ -1141,9 +1178,9 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <label class="field" id="spec-model-field">GPU<select id="spec-model"></select></label>
           <label class="field" id="spec-gpu-field" hidden>GPU の名前（メモ）<input type="text" id="spec-gpu" placeholder="例: NVIDIA GeForce RTX 4070 SUPER"></label>
           <label class="field" id="spec-gen-field" hidden>GPU の種類<select id="spec-gen"></select></label>
-          <label class="field">VRAM（専用 GPU メモリ・GB）<input type="number" id="spec-vram" min="2" max="192" step="1"></label>
-          <label class="field">メインメモリ（RAM・GB）<input type="number" id="spec-ram" min="4" max="1024" step="1"></label>
-          <label class="field">生成に使えない VRAM（画面表示など・GB）<input type="number" id="spec-reserve" min="0" max="64" step="0.5"></label>
+          <label class="field">VRAM（専用 GPU メモリ・GB）<input type="number" id="spec-vram" min="2" max="192" step="1" data-slider-max="48"></label>
+          <label class="field">メインメモリ（RAM・GB）<input type="number" id="spec-ram" min="4" max="1024" step="1" data-slider-max="256"></label>
+          <label class="field">生成に使えない VRAM（画面表示など・GB）<input type="number" id="spec-reserve" min="0" max="64" step="0.5" data-slider-max="8"></label>
         </div>
         <p class="note">GPU を一覧から選ぶと VRAM が自動で入ります。一覧にない GPU は「一覧にない（手で入力）」を選ぶか、VRAM の数字だけ直接入れても大丈夫です。VRAM とメインメモリは、Windows のタスクマネージャー →「パフォーマンス」の「GPU」（専用 GPU メモリ）と「メモリ」でも確かめられます。</p>
         <p class="note" style="margin-bottom:0"><strong>生成に使えない VRAM とは:</strong> ComfyUI から自動で測ります。 パソコンは動画を作っていないときも、画面の表示やブラウザなどで VRAM を少し使っています。その分は動画の生成に使えないので、VRAM から差し引いて「使える VRAM」として計算します。タスクマネージャーの「専用 GPU メモリ」の、何も生成していないときの使用量が目安です（例: 1.1/12.0 GB なら 1）。自動で測ったときに文章AI（LM Studio など）がモデルを読み込んでいれば、その分も含まれます。動画を作るときはモデルを取り外す使い方なら、その分を引いた値（多くは 1）に直してください。</p>
@@ -2004,6 +2041,9 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     reviseHeader: "Story to depict (keep the existing prompt's structure, but make it match this story. Keep every act and action named concretely with the Stable Diffusion tag words - no vague or euphemistic wording):",
   },
 
+  // 数値の入力（スライダー＋ステッパー）: 押し続けたときのくり返し（ミリ秒）
+  numberControl: { repeatDelayMs: 400, repeatMs: 70 },
+
   // ===== 長い動画 =====
   // 区間ごとに動画を作り、前の区間の最後のフレームを次の区間の最初のフレームにしてつなぐ。
   // 作り直す区間の次の区間がすでにあれば、その最初のフレームを最後のフレームにした FL2VA で作る。
@@ -2021,13 +2061,16 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 物語: (the whole story in time order, 3-8 sentences)
 区間1: (2-4 sentences: what happens during clip 1, in time order and concretely - actions, movement of hair, clothes and body, the background, and sounds)
 (then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
+    planRequests: "Requests from the user for each clip (highest priority for that clip; make the clip do exactly what is requested, and make the whole story lead into it naturally):",
     planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
     firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
     continueRule: "This clip is part {k} of {n} of one continuous longer video. <Picture 1> is the exact last frame of the previous clip: start from that frame with the action already in motion and continue it smoothly from the very first frame - no pause, no reset and no new pose at the start.",
     endRule: "Picture 2 is the exact first frame of the next clip: arrive at that frame exactly at the end of this clip, matching its pose, position and framing.",
     promptHeader: "Story of the whole video and of this clip (planned in Japanese). Write the prompt only for THIS clip, continuing from the previous clip and leading into the next one. Name every act, action, pose and body part with the same concrete, specific English words as the Stable Diffusion tags:",
     messages: {
-      info: "区間の長さは「生成」の「1区間の長さ」で決まります（区間ごとの長さは右の一覧で変えられます）。",
+      info: "「全体の長さ ＝ 区間の数 × 1区間の長さ」になるように、ほかの値を自動でそろえます。区間ごとの長さや指示は、右の「区間」の一覧で変えられます（そのときは区間の長さの合計が全体の長さになります）。",
+      uneven: "全体の長さを区間の数で割り切れないため、区間ごとに {a}〜{b} 秒にしました。",
+      shrinkConfirm: "区間{from}〜{to}の指示・内容・動画を一覧から外します。よろしいですか？（作った動画は「動画」欄に残ります）",
       planning: "文章AIが画像を読み取って、全体のストーリーを区間に分けています…",
       planned: "ストーリーを {n} 区間に分けました。",
       planFailed: "文章AIの答えから区間を読み取れませんでした。もう一度試すか、区間の内容を手で書いてください。",
@@ -3517,7 +3560,7 @@ class LlmClient {
   }
 
   // 長い動画: 全体のストーリーを区間に分けてもらう
-  generatePlan({ total, lengths, contextText, optionsText, direction, story, images, signal }) {
+  generatePlan({ total, lengths, contextText, optionsText, direction, story, requests = [], images, signal }) {
     const scfg = USER_SETTINGS.story;
     const lcfg = USER_SETTINGS.long;
     const head = scfg.system.split("Write the result in natural Japanese only")[0].replaceAll("{seconds}", String(total));
@@ -3525,6 +3568,8 @@ class LlmClient {
     const system = `${head}${lcfg.planRules.replaceAll("{n}", String(lengths.length)).replace("{list}", list)}`;
     let user = `${scfg.userHeader}\n${contextText}\n\n${scfg.optionsHeader}\n${optionsText}`;
     if (direction) user += `\n\n${scfg.directionHeader} ${direction}`;
+    const asked = requests.map((t, i) => (t.trim() ? `区間${i + 1}: ${t.trim()}` : "")).filter(Boolean);
+    if (asked.length) user += `\n\n${lcfg.planRequests}\n${asked.join("\n")}`;
     if (story) user += `\n\n${lcfg.planKeepStory}\n${story}`;
     return this.chat(system, user, this.profile.vision ? images : null, signal);
   }
@@ -6046,6 +6091,8 @@ class MainView {
     $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
     $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
     $("seconds-caption").textContent = long ? "1区間の長さ" : "長さ";
+    if (long) $("long-len-slot").append($("seconds-field"));
+    else if ($("seconds-field").parentElement.id === "long-len-slot") $("open-advanced").before($("seconds-field"));
     $("run-count").closest(".count-field").hidden = long;
     if (long) this.renderLong();
     $("sec-image").hidden = ref;
@@ -6793,10 +6840,23 @@ class MainView {
   // 作り直す区間の次の区間がすでにあり、その区間を一緒に作り直さないときは、次の区間の最初のフレームで終わる FL2VA にする。
   newSeg(g = {}) {
     return {
-      id: uid(), seconds: Number(g.seconds) || Number($("seconds").value) || 5, text: g.text || "",
-      prompt: g.prompt || "", promptFor: g.prompt ? g.text || "" : "", promptMode: "", promptManual: !!g.prompt,
+      id: uid(), seconds: Number(g.seconds) || Number($("seconds").value) || 5, instruction: g.instruction || "", text: g.text || "",
+      prompt: g.prompt || "", promptFor: g.prompt ? MainView.segSource(g) : "", promptMode: "", promptManual: !!g.prompt,
       picked: false, job: null, pendingJob: null, first: null, last: null, error: "",
     };
+  }
+
+  // プロンプトを書き直すかどうかを決めるもとの文（内容と指示）
+  static segSource(g) {
+    return `${g.text || ""}\n${g.instruction || ""}`;
+  }
+
+  secondsRange() {
+    return { min: Number($("seconds").min) || 0.5, max: Number($("seconds").max) || 15 };
+  }
+
+  longLen() {
+    return Number($("seconds").value) || 5;
   }
 
   longTotal() {
@@ -6804,35 +6864,56 @@ class MainView {
     return Math.min(cfg.maxTotal, Math.max(cfg.minTotal, Number(this.store.ui.longTotal) || cfg.defaultTotal));
   }
 
-  // 全体の長さを、1区間の長さに近い区間に分ける（0.5秒きざみ。区間の長さはワークフローの範囲に収める）
-  static layoutLong(total, len, min, max) {
-    let n = Math.max(1, Math.round(total / len));
-    if (total / n > max) n = Math.ceil(total / max);
-    if (total / n < min) n = Math.max(1, Math.floor(total / min));
+  longCount() {
+    const n = Math.round(Number(this.store.ui.longCount));
+    return n >= 1 ? n : Math.max(1, Math.round(this.longTotal() / this.longLen()));
+  }
+
+  // 全体の長さを n 区間に分ける（0.5秒きざみ。割り切れない分は前の区間から 0.5 秒ずつ足す）
+  static splitEven(total, n) {
     const halves = Math.round(total * 2);
     const each = Math.floor(halves / n);
     let rest = halves - each * n;
     return Array.from({ length: n }, () => (each + (rest-- > 0 ? 1 : 0)) / 2);
   }
 
-  secondsRange() {
-    return { min: Number($("seconds").min) || 0.5, max: Number($("seconds").max) || 15 };
+  // 全体の長さから、区間の数を決める（いまの数で1区間の長さが範囲に収まるならそのまま）
+  static fitCount(total, count, len, min, max) {
+    const lo = Math.max(1, Math.ceil(total / max - 1e-9));
+    const hi = Math.max(lo, Math.floor(total / min + 1e-9));
+    if (count >= lo && count <= hi) return count;
+    return Math.min(hi, Math.max(lo, Math.round(total / len)));
   }
 
   bindLong() {
     const cfg = USER_SETTINGS.long;
     this.longSegs ??= [];
-    $("long-total").value = this.longTotal();
     $("long-info").textContent = cfg.messages.info;
+    this.fillLongControls();
+    // 全体の長さ: 区間の数はできるだけそのままにして、1区間の長さを合わせる
     this.on($("long-total"), "change", () => {
-      const v = Math.min(cfg.maxTotal, Math.max(cfg.minTotal, Math.round((Number($("long-total").value) || cfg.defaultTotal) * 2) / 2));
-      $("long-total").value = v;
-      this.saveUi({ longTotal: v });
-      this.relayoutLong(v);
+      const { min, max } = this.secondsRange();
+      const total = Math.min(cfg.maxTotal, Math.max(cfg.minTotal, Math.round((Number($("long-total").value) || cfg.defaultTotal) * 2) / 2));
+      const count = MainView.fitCount(total, this.longCount(), this.longLen(), min, max);
+      this.applyLongLayout(MainView.splitEven(total, count));
+    });
+    // 区間の数: 1区間の長さはそのままにして、全体の長さを合わせる
+    this.on($("long-count"), "change", () => {
+      const count = Math.max(1, Math.round(Number($("long-count").value) || 1));
+      const len = this.longLen();
+      const total = Math.min(cfg.maxTotal, len * count);
+      this.applyLongLayout(MainView.splitEven(total, Math.min(count, Math.floor(total / this.secondsRange().min) || 1)));
+    });
+    // 1区間の長さ: 区間の数はそのままにして、全体の長さを合わせる
+    this.on($("seconds"), "change", () => {
+      if (!this.isLong() || this.applyingLong) return;
+      const count = this.longCount();
+      const len = this.longLen();
+      this.applyLongLayout(Array(Math.max(1, Math.min(count, Math.floor(cfg.maxTotal / len)))).fill(len));
     });
     this.on($("long-add"), "click", () => {
       this.longSegs.push(this.newSeg());
-      this.syncLongTotal();
+      this.syncLongControls();
       this.renderLong();
     });
     this.on($("long-gen"), "click", () => this.makeLongSegments());
@@ -6841,29 +6922,70 @@ class MainView {
     this.on($("video"), "ended", () => this.onVideoEnded());
   }
 
-  // 区間の長さの合計を「全体の長さ」に反映する
-  syncLongTotal() {
-    const sum = this.longSegs.reduce((t, g) => t + g.seconds, 0);
-    if (!sum) return;
-    $("long-total").value = sum;
-    this.saveUi({ longTotal: sum });
+  // 左パネルの「全体の長さ」「区間の数」を、区間の一覧に合わせて表示する
+  fillLongControls() {
+    const segs = this.longSegs || [];
+    const total = segs.length ? segs.reduce((t, g) => t + g.seconds, 0) : this.longTotal();
+    const count = segs.length || this.longCount();
+    this.applyingLong = true;
+    $("long-total").value = total;
+    $("long-count").value = count;
+    this.applyingLong = false;
   }
 
-  // 全体の長さを変えたとき、区間の数と長さを分け直す（書いてある内容と作った動画は、同じ番号の区間に残す）
-  relayoutLong(total) {
-    if (!this.longSegs.length) return;
-    const { min, max } = this.secondsRange();
-    const lengths = MainView.layoutLong(total, Number($("seconds").value) || 5, min, max);
+  // 区間の一覧が変わったら、全体の長さ・区間の数を保存して表示も合わせる
+  syncLongControls() {
+    const segs = this.longSegs;
+    if (!segs.length) return;
+    const total = segs.reduce((t, g) => t + g.seconds, 0);
+    this.saveUi({ longTotal: total, longCount: segs.length });
+    this.fillLongControls();
+    const lens = segs.map((g) => g.seconds);
+    const a = Math.min(...lens), b = Math.max(...lens);
+    $("long-info").textContent = a !== b && lens.every((x) => x === a || x === b) && this.longEven
+      ? USER_SETTINGS.long.messages.uneven.replace("{a}", a).replace("{b}", b) : USER_SETTINGS.long.messages.info;
+  }
+
+  // 区間の長さの並びを当てはめる（書いてある指示・内容と作った動画は、同じ番号の区間に残す）
+  applyLongLayout(lengths) {
+    const m = USER_SETTINGS.long.messages;
+    const segs = this.longSegs;
+    const dropped = segs.slice(lengths.length);
+    if (dropped.some((g) => g.instruction.trim() || g.text.trim() || g.job)
+      && !confirm(m.shrinkConfirm.replace("{from}", lengths.length + 1).replace("{to}", segs.length))) {
+      this.fillLongControls();
+      return;
+    }
     this.longSegs = lengths.map((sec, i) => {
-      const g = this.longSegs[i] || this.newSeg();
+      const g = segs[i] || this.newSeg();
       g.seconds = sec;
       return g;
     });
+    // 1区間の長さの表示は、いちばん多い長さにそろえる
+    const len = lengths[lengths.length - 1];
+    if (len && Number($("seconds").value) !== len && len >= this.secondsRange().min) {
+      this.applyingLong = true;
+      $("seconds").value = len;
+      $("seconds-out").textContent = len;
+      this.saveUi({ seconds: len });
+      this.applyingLong = false;
+      this.updateSpecCheck();
+    }
+    this.longEven = true;
+    this.syncLongControls();
+    this.longEven = false;
     this.renderLong();
   }
 
   renderLong() {
-    const segs = (this.longSegs ??= []);
+    this.longSegs ??= [];
+    if (!this.longSegs.length) {
+      const { min, max } = this.secondsRange();
+      const total = this.longTotal();
+      this.longSegs = MainView.splitEven(total, MainView.fitCount(total, this.longCount(), this.longLen(), min, max)).map((sec) => this.newSeg({ seconds: sec }));
+      this.syncLongControls();
+    }
+    const segs = this.longSegs;
     $("long-empty").hidden = segs.length > 0;
     let t = 0;
     $("long-list").replaceChildren(...segs.map((seg, i) => {
@@ -6871,7 +6993,7 @@ class MainView {
       t += seg.seconds;
       return row;
     }));
-    $("long-count").textContent = segs.length ? `${segs.length}区間・合計 ${Math.round(t * 10) / 10}秒` : "";
+    $("long-sum").textContent = segs.length ? `${segs.length}区間・合計 ${Math.round(t * 10) / 10}秒` : "";
     this.updateLongStates();
     if (this.running) $("long-list").querySelectorAll("input, textarea, .long-del").forEach((el) => { el.disabled = true; });
     $("long-list").querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
@@ -6885,7 +7007,6 @@ class MainView {
       if (text !== undefined) e.textContent = text;
       return e;
     };
-    const clock = (x) => `${Math.floor(x / 60)}:${(x % 60).toFixed(1).padStart(4, "0")}`;
     const row = el("div", "long-row");
     row.dataset.id = seg.id;
     row.dataset.picked = String(seg.picked);
@@ -6900,18 +7021,19 @@ class MainView {
     });
     const main = el("div", "long-main");
     const head = el("div", "long-head");
-    const name = el("label", "long-name");
+    const name = el("span", "long-name", `区間${i + 1}`);
+    const pickLabel = el("label", "long-pick");
     const pick = el("input");
     pick.type = "checkbox";
     pick.checked = seg.picked;
-    pick.setAttribute("aria-label", `区間${i + 1}を作り直す区間に選ぶ`);
+    pick.setAttribute("aria-label", `区間${i + 1}を作り直す`);
     this.on(pick, "change", () => {
       seg.picked = pick.checked;
       row.dataset.picked = String(seg.picked);
       this.updateLongButtons();
     });
-    name.append(pick, `区間${i + 1}`);
-    const time = el("span", "long-time", `${clock(start)}〜${clock(start + seg.seconds)}`);
+    pickLabel.append(pick, "作り直す");
+    const time = el("span", "long-time", MainView.segClock(start, seg.seconds));
     const secLabel = el("label", "long-sec");
     const sec = el("input");
     sec.type = "number";
@@ -6923,26 +7045,37 @@ class MainView {
     sec.setAttribute("aria-label", `区間${i + 1}の長さ（秒）`);
     this.on(sec, "change", () => {
       seg.seconds = Math.min(range.max, Math.max(range.min, Math.round((Number(sec.value) || seg.seconds) * 2) / 2));
-      this.syncLongTotal();
-      this.renderLong();
+      this.syncLongControls();
+      // 行を作り直すと、押し続け中のステッパーやドラッグ中のスライダーが外れるので、時刻と合計だけ書き換える
+      this.updateLongTimes();
     });
-    secLabel.append(sec, "秒");
+    secLabel.append("長さ", sec, "秒");
     const state = el("span", "long-state");
     const del = el("button", "long-del", "消す");
     del.type = "button";
     this.on(del, "click", () => {
       if (!confirm(m.removeConfirm.replace("{k}", i + 1))) return;
+      if (this.longSegs.length <= 1) return;
       this.longSegs.splice(i, 1);
-      this.syncLongTotal();
+      this.syncLongControls();
       this.renderLong();
     });
-    head.append(name, time, secLabel, state, del);
-    const text = el("textarea", "autogrow");
-    text.rows = 2;
-    text.value = seg.text;
-    text.placeholder = "この区間で起きること（日本語）";
-    text.setAttribute("aria-label", `区間${i + 1}の内容`);
-    this.on(text, "input", () => { seg.text = text.value; this.autoGrow(text); });
+    del.disabled = this.longSegs.length <= 1;
+    head.append(name, time, secLabel, pickLabel, state, del);
+    const field = (labelText, value, placeholder, onInput) => {
+      const wrap = el("label", "long-field");
+      const ta = el("textarea", "autogrow");
+      ta.rows = 1;
+      ta.value = value;
+      ta.placeholder = placeholder;
+      this.on(ta, "input", () => { onInput(ta.value); this.autoGrow(ta); });
+      wrap.append(labelText, ta);
+      return wrap;
+    };
+    const ask = field("この区間で作りたい内容の指示（任意）", seg.instruction, "例: ここで振り返って手を振る／カメラがゆっくり寄る",
+      (v) => { seg.instruction = v; });
+    const text = field("内容（「最初から実行」などで文章AIが書きます。直してもかまいません）", seg.text, "この区間で起きること（日本語）",
+      (v) => { seg.text = v; });
     const details = el("details");
     const summary = el("summary", "", "プロンプト（英語。区間を作るときに文章AIが書きます。手で直すと、そのまま使います）");
     const prompt = el("textarea");
@@ -6952,12 +7085,28 @@ class MainView {
     this.on(prompt, "input", () => {
       seg.prompt = prompt.value;
       seg.promptManual = true;
-      seg.promptFor = seg.text;
+      seg.promptFor = MainView.segSource(seg);
     });
     details.append(summary, prompt);
-    main.append(head, text, details);
+    main.append(head, ask, text, details);
     row.append(thumb, main);
     return row;
+  }
+
+  static segClock(start, seconds) {
+    const clock = (x) => `${Math.floor(x / 60)}:${(x % 60).toFixed(1).padStart(4, "0")}`;
+    return `${clock(start)}〜${clock(start + seconds)}`;
+  }
+
+  // 区間の長さを変えたとき: 各区間の開始・終了時刻と、合計の表示だけを書き換える
+  updateLongTimes() {
+    let t = 0;
+    for (const seg of this.longSegs) {
+      const row = $("long-list").querySelector(`.long-row[data-id="${seg.id}"]`);
+      if (row) row.querySelector(".long-time").textContent = MainView.segClock(t, seg.seconds);
+      t += seg.seconds;
+    }
+    $("long-sum").textContent = `${this.longSegs.length}区間・合計 ${Math.round(t * 10) / 10}秒`;
   }
 
   // 区間の行のうち、生成の進み具合で変わる部分だけを書き換える（入力中の欄を作り直さないように）
@@ -7027,7 +7176,7 @@ class MainView {
     const { min, max } = this.secondsRange();
     const total = this.longTotal();
     const old = this.longSegs || [];
-    const lengths = fresh || !old.length ? MainView.layoutLong(total, Number($("seconds").value) || 5, min, max) : old.map((g) => g.seconds);
+    const lengths = old.length ? old.map((g) => g.seconds) : MainView.splitEven(total, MainView.fitCount(total, this.longCount(), this.longLen(), min, max));
     const sum = lengths.reduce((t, x) => t + x, 0);
     this.running.phase = "story";
     this.currentRun = null;
@@ -7038,7 +7187,7 @@ class MainView {
     const optionsText = this.storyOptionsText().replace(/^長さ: .*$/m, `長さ: 全体 ${sum}秒（${lengths.length}区間）`);
     const text = await llm.generatePlan({
       total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
-      story: keepStory ? $("story").value.trim() : "", images: ctx.images, signal,
+      story: keepStory ? $("story").value.trim() : "", requests: lengths.map((_, i) => old[i]?.instruction || ""), images: ctx.images, signal,
     });
     const plan = LlmClient.parsePlan(text, lengths.length);
     if (!plan.segments.some((x) => x.trim())) throw new UserError(cfg.messages.planFailed);
@@ -7046,16 +7195,16 @@ class MainView {
       $("story").value = plan.story || text.trim();
       this.growToFit($("story"));
     }
-    // 作り直しでは、作った動画は同じ番号の区間に残す（「最初から実行」では新しい区間にする）
+    // 作り直しでは、作った動画は同じ番号の区間に残す（「最初から実行」では、長さと指示だけ残して新しい区間にする）
     this.longSegs = lengths.map((sec, i) => {
-      const g = (!fresh && old[i]) || this.newSeg();
+      const g = fresh ? this.newSeg({ seconds: sec, instruction: old[i]?.instruction }) : old[i] || this.newSeg();
       g.seconds = sec;
       if (plan.segments[i]) g.text = plan.segments[i];
       return g;
     });
     this.doneBusy("story");
     this.setStep("story", "done", `${lengths.length}区間`);
-    this.syncLongTotal();
+    this.syncLongControls();
     this.renderLong();
     this.status(cfg.messages.planned.replace("{n}", lengths.length));
   }
@@ -7088,7 +7237,7 @@ class MainView {
       const seg = segs[i];
       const n = segs.length;
       const fill = (t) => t.replace("{k}", i + 1).replace("{p}", i).replace("{n}", n);
-      if (!seg.text.trim() && !seg.prompt.trim()) throw new UserError(fill(m.needText));
+      if (!seg.text.trim() && !seg.instruction.trim() && !seg.prompt.trim()) throw new UserError(fill(m.needText));
       const start = i === 0 ? this.baseFrame() : segs[i - 1].last;
       if (!start) throw new UserError(fill(m.needPrev));
       // 次の区間がもうあって、今回は作り直さないなら、その最初のフレームで終わる FL2VA にする
@@ -7100,12 +7249,12 @@ class MainView {
       this.segCtx = { mode, seconds: seg.seconds, rules };
       seg.error = "";
       try {
-        if (!seg.prompt.trim() || seg.promptFor !== seg.text || (!seg.promptManual && seg.promptMode !== mode)) {
+        if (!seg.prompt.trim() || seg.promptFor !== MainView.segSource(seg) || (!seg.promptManual && seg.promptMode !== mode)) {
           this.running.phase = "prompt";
           this.setStep("prompt", "active", `区間${i + 1}`);
           this.status(fill(m.prompting));
           seg.prompt = await this.makeSegmentPrompt(llm, i, start, end, signal);
-          Object.assign(seg, { promptFor: seg.text, promptMode: mode, promptManual: false });
+          Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: mode, promptManual: false });
         }
         seg.prompt = this.applyAudioRules(this.withInstruction(seg.prompt));
         this.setStep("prompt", "done", `区間${i + 1}`);
@@ -7149,7 +7298,8 @@ class MainView {
     const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
     const parts = [`全体の物語:\n${$("story").value.trim()}`];
     if (i > 0) parts.push(`前の区間（区間${i}）: ${segs[i - 1].text}`);
-    parts.push(`この区間（区間${i + 1} / 全${segs.length}区間、${seg.seconds}秒）: ${seg.text}`);
+    parts.push(`この区間（区間${i + 1} / 全${segs.length}区間、${seg.seconds}秒）: ${seg.text || seg.instruction}`);
+    if (seg.instruction.trim()) parts.push(`この区間への指示（いちばん優先）: ${seg.instruction.trim()}`);
     if (segs[i + 1]) parts.push(`次の区間（区間${i + 2}）: ${segs[i + 1].text}`);
     return llm.generatePrompt({
       style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
@@ -7380,7 +7530,7 @@ class MainView {
         last: this.last ? await entry(this.last.file, "last.png") : null,
         materials: await Promise.all(this.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) }))),
         // 長い動画の区間（内容・長さ・プロンプトだけ。区間の動画は入れない）
-        long: { segments: (this.longSegs || []).map((g) => ({ seconds: g.seconds, text: g.text, prompt: g.prompt })) },
+        long: { segments: (this.longSegs || []).map((g) => ({ seconds: g.seconds, instruction: g.instruction, text: g.text, prompt: g.prompt })) },
       };
       const name = this.stateFileName();
       downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
@@ -7461,6 +7611,7 @@ class MainView {
         else if (id === "story") this.growToFit($(id));
       }
       this.longSegs = (state.long?.segments || []).map((g) => this.newSeg(g));
+      if (this.longSegs.length) this.syncLongControls();
       this.renderLong();
       this.setStep("story", t.story ? "done" : "idle", "");
       this.setStep("prompt", t.promptEn ? "done" : "idle", "");
@@ -8002,6 +8153,144 @@ class MainView {
   downloadPrompt(job) {
     const data = this.jobRecord(job);
     downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}.json`);
+  }
+}
+
+// ===== 数値の入力（スライダー＋ステッパー＋数値を押すと手入力。Stillmange と同じ） =====
+// ページ内の input[type=range] と input[type=number] をすべて置き換える（あとから追加された欄も）。
+// 元の input は隠して残し、値の読み書きとイベント（input / change）はそのまま使えるようにする。
+class NumberControl {
+  static watch(root) {
+    const sel = 'input[type="range"], input[type="number"]';
+    root.querySelectorAll(sel).forEach((el) => this.enhance(el));
+    new MutationObserver((list) => {
+      for (const rec of list) for (const node of rec.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.matches?.(sel)) this.enhance(node);
+        node.querySelectorAll?.(sel).forEach((el) => this.enhance(el));
+      }
+    }).observe(root, { childList: true, subtree: true });
+  }
+
+  static num(v) {
+    const n = Number(v);
+    return v === "" || v === null || v === undefined || !Number.isFinite(n) ? null : n;
+  }
+
+  static decimals(step) {
+    const t = String(step || 1);
+    return t.includes(".") ? t.split(".")[1].length : 0;
+  }
+
+  static make(tag, cls, attrs = {}) {
+    const el = document.createElement(tag);
+    el.className = cls;
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    return el;
+  }
+
+  static enhance(src) {
+    if (src.dataset.numctl || src.closest(".numctl")) return;
+    src.dataset.numctl = "1";
+    const cfg = USER_SETTINGS.numberControl;
+    const box = this.make("div", "numctl");
+    src.replaceWith(box);
+    src.classList.add("numctl-src");
+    const label = src.getAttribute("aria-label") || "";
+    const minus = this.make("button", "numctl-step dec", { type: "button", "aria-label": `${label}を減らす` });
+    minus.textContent = "−";
+    const plus = this.make("button", "numctl-step inc", { type: "button", "aria-label": `${label}を増やす` });
+    plus.textContent = "+";
+    const range = this.make("input", "numctl-range", { type: "range", tabindex: "-1", "aria-hidden": "true" });
+    range.dataset.numctl = "1";
+    const val = this.make("button", "numctl-val", { type: "button", title: "クリックして数値を入力" });
+    if (label) val.setAttribute("aria-label", `${label}（押すと入力できます）`);
+    box.append(src, minus, range, plus, val);
+
+    const proto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    const read = () => proto.get.call(src);
+    const bounds = () => ({
+      min: this.num(src.getAttribute("min")), max: this.num(src.getAttribute("max")),
+      smin: this.num(src.dataset.sliderMin) ?? this.num(src.getAttribute("min")),
+      smax: this.num(src.dataset.sliderMax) ?? this.num(src.getAttribute("max")),
+      step: this.num(src.getAttribute("step")) || 1,
+    });
+    const sync = () => {
+      const b = bounds();
+      const v = this.num(read());
+      const slider = b.smin !== null && b.smax !== null;
+      box.classList.toggle("no-slider", !slider);
+      range.hidden = !slider;
+      if (slider) { Object.assign(range, { min: b.smin, max: b.smax, step: b.step }); range.value = v ?? b.smin; }
+      val.textContent = v === null ? (src.placeholder || "—") : v.toFixed(Math.min(this.decimals(b.step), 4)).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+      val.classList.toggle("empty", v === null);
+      box.classList.toggle("disabled", src.disabled);
+      [minus, plus, range, val].forEach((el) => { el.disabled = src.disabled; });
+    };
+    const commit = (v) => {
+      const b = bounds();
+      let out = "";
+      if (v !== null) {
+        let n = v;
+        if (b.min !== null) n = Math.max(b.min, n);
+        if (b.max !== null) n = Math.min(b.max, n);
+        out = String(Number(n.toFixed(Math.min(this.decimals(b.step) + 2, 6))));
+      }
+      if (out === read()) { sync(); return; }
+      proto.set.call(src, out);
+      sync();
+      src.dispatchEvent(new Event("input", { bubbles: true }));
+      src.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    Object.defineProperty(src, "value", { configurable: true, get: read, set: (v) => { proto.set.call(src, v); sync(); } });
+    new MutationObserver(sync).observe(src, { attributes: true, attributeFilter: ["min", "max", "step", "disabled", "placeholder", "data-slider-min", "data-slider-max"] });
+
+    const bump = (dir) => {
+      const b = bounds();
+      const cur = this.num(read()) ?? this.num(String(src.placeholder || "").match(/-?\d+(\.\d+)?/)?.[0]) ?? b.smin ?? b.min ?? 0;
+      commit(Math.round((cur + dir * b.step) / b.step) * b.step);
+    };
+    for (const [btn, dir] of [[minus, -1], [plus, 1]]) {
+      let timer = null;
+      const stop = () => { clearTimeout(timer); clearInterval(timer); timer = null; };
+      btn.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        bump(dir);
+        timer = setTimeout(() => { timer = setInterval(() => bump(dir), cfg.repeatMs); }, cfg.repeatDelayMs);
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => btn.addEventListener(ev, stop));
+      btn.addEventListener("click", (e) => e.preventDefault());
+      btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bump(dir); } });
+    }
+    range.addEventListener("input", () => commit(Number(range.value)));
+    val.addEventListener("click", (e) => {
+      e.preventDefault();
+      const edit = this.make("input", "numctl-edit", { type: "text", inputmode: "decimal", "aria-label": `${label || "数値"}を入力` });
+      edit.value = read();
+      let done = false;
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        edit.replaceWith(val);
+        if (ok) {
+          const t = edit.value.trim().replace(/[０-９．－]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace("ー", "-");
+          if (t === "") commit(null);
+          else if (Number.isFinite(Number(t))) commit(Number(t));
+        }
+        sync();
+      };
+      edit.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
+        else if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); finish(false); }
+        else if (ev.key === "ArrowUp" || ev.key === "ArrowDown") { ev.preventDefault(); finish(true); bump(ev.key === "ArrowUp" ? 1 : -1); }
+      });
+      edit.addEventListener("blur", () => finish(true));
+      val.replaceWith(edit);
+      edit.focus();
+      edit.select();
+    });
+    sync();
   }
 }
 
@@ -8871,6 +9160,7 @@ class App {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  NumberControl.watch(document.body);
   window.stillmotion = new App();
 });
 </script>
