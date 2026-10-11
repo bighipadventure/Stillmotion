@@ -2062,6 +2062,8 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 区間1: (2-4 sentences: what happens during clip 1, in time order - name the exact act, action and pose with their specific common names, who does it to whom or with what and with which body part, and how (speed, strength, rhythm, direction); then the movement of hair, clothes and body, the background, and sounds. WORDING and NAMES apply to every 区間 line: no abstract, vague or euphemistic wording, and no names - describe people by appearance)
 (then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
     planRequests: "Requests from the user for each clip (highest priority for that clip; make the clip do exactly what is requested, and make the whole story lead into it naturally). If a request is vague or indirect, turn it into the specific, concrete act or action it means and write that, following WORDING:",
+    planMaxTokens: 4096,
+    planStrict: "Your previous answer could not be read. This time, output exactly {n} lines and nothing else (no headings, no markdown, no explanations), each starting with 区間 and its number and a colon, like \"区間1: ...\", from 区間1 to 区間{n}.",
     planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
     firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
     continueRule: "This clip is part {k} of {n} of one continuous longer video. <Picture 1> is the exact last frame of the previous clip: start from that frame with the action already in motion and continue it smoothly from the very first frame - no pause, no reset and no new pose at the start.",
@@ -2073,7 +2075,9 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       shrinkConfirm: "区間{from}〜{to}の指示・内容・動画を一覧から外します。よろしいですか？（作った動画は「動画」欄に残ります）",
       planning: "文章AIが画像を読み取って、全体のストーリーを区間に分けています…",
       planned: "ストーリーを {n} 区間に分けました。",
-      planFailed: "文章AIの答えから区間を読み取れませんでした。もう一度試すか、区間の内容を手で書いてください。",
+      planFailed: "文章AIから答えが返ってきませんでした（出力の上限に達したか、モデルが答えなかった可能性があります）。もう一度試すか、区間の内容を手で書いてください。",
+      planRetry: "文章AIの答えから区間を読み取れなかったので、書き方を指定してもう一度頼んでいます…",
+      planSplit: "文章AIの答えから区間を読み取れなかったため、全体のストーリーを区間に分けて入れました。区間の内容を確かめて、必要なら直してください。",
       prompting: "区間{k}のプロンプトを書いています…",
       generating: "区間{k}の動画を作っています…",
       frames: "区間{k}の最初と最後のフレームを取り出しています…",
@@ -3520,13 +3524,13 @@ class LlmClient {
     return found;
   }
 
-  async post(messages, temperature, signal) {
+  async post(messages, temperature, signal, maxTokens = null) {
     const timeout = AbortSignal.timeout(USER_SETTINGS.llmTimeoutMs);
     const res = await fetch(`${this.base}/chat/completions`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify({ model: this.profile.model, messages, temperature: Number(temperature),
-        max_tokens: Number(this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens) }),
+        max_tokens: Number(maxTokens || this.profile.maxTokens || USER_SETTINGS.defaultMaxTokens) }),
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     });
     if (!res.ok) throw new Error(`サーバーがエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 400)}`);
@@ -3534,11 +3538,11 @@ class LlmClient {
     return LlmClient.cleanOutput(json.choices?.[0]?.message?.content || "");
   }
 
-  chat(system, userText, images, signal) {
+  chat(system, userText, images, signal, maxTokens = null) {
     const content = images?.length
       ? [{ type: "text", text: userText }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))]
       : userText;
-    return this.post([{ role: "system", content: system }, { role: "user", content }], this.profile.temperature, signal);
+    return this.post([{ role: "system", content: system }, { role: "user", content }], this.profile.temperature, signal, maxTokens);
   }
 
   // 画像の情報（SD のメタデータ）を文章AI向けの文にする
@@ -3560,7 +3564,7 @@ class LlmClient {
   }
 
   // 長い動画: 全体のストーリーを区間に分けてもらう
-  generatePlan({ total, lengths, contextText, optionsText, direction, story, requests = [], images, signal }) {
+  generatePlan({ total, lengths, contextText, optionsText, direction, story, requests = [], images, signal, strict = false }) {
     const scfg = USER_SETTINGS.story;
     const lcfg = USER_SETTINGS.long;
     const head = scfg.system.split("Write the result in natural Japanese only")[0].replaceAll("{seconds}", String(total));
@@ -3571,30 +3575,65 @@ class LlmClient {
     const asked = requests.map((t, i) => (t.trim() ? `区間${i + 1}: ${t.trim()}` : "")).filter(Boolean);
     if (asked.length) user += `\n\n${lcfg.planRequests}\n${asked.join("\n")}`;
     if (story) user += `\n\n${lcfg.planKeepStory}\n${story}`;
-    return this.chat(system, user, this.profile.vision ? images : null, signal);
+    if (strict) user += `\n\n${lcfg.planStrict.replaceAll("{n}", String(lengths.length))}`;
+    // 区間が多いと答えが長くなるので、出力の上限を少し広げる
+    return this.chat(system, user, this.profile.vision ? images : null, signal, Math.max(Number(this.profile.maxTokens) || 0, lcfg.planMaxTokens));
   }
 
-  // 文章AIの答えを「全体のストーリー」と「区間ごとの内容」に分ける
+  // 文章AIの答えを「全体のストーリー」と「区間ごとの内容」に分ける。
+  // 「区間1:」のほか「**区間1**」「### 区間1」「【区間1】」「第1区間」「Clip 1:」「区間一」「1.」などの書き方も読む
   static parsePlan(text, n) {
-    const segments = Array(n).fill("");
-    const head = [];
-    let cur = -1;
+    const lines = String(text).replace(/\r/g, "").split("\n");
     const toHalf = (x) => x.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
-    for (const raw of String(text).replace(/\r/g, "").split("\n")) {
-      const line = toHalf(raw).replace(/\*\*/g, "");
-      const m = line.match(/^\s*[-・]?\s*区間\s*(\d+)\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*(.*)$/);
-      if (m) {
-        cur = Number(m[1]) - 1;
-        if (cur >= 0 && cur < n) segments[cur] = m[2].trim();
-        continue;
+    const kanji = "〇一二三四五六七八九";
+    const toNum = (x) => {
+      if (/^\d+$/.test(x)) return Number(x);
+      if (x === "十") return 10;
+      const [a, b] = x.split("十");
+      return x.includes("十") ? (a ? kanji.indexOf(a) : 1) * 10 + (b ? kanji.indexOf(b) : 0) : kanji.indexOf(x);
+    };
+    const label = /^\s*(?:#{1,6}\s*)?(?:[-*・●■◆▶>]\s*)?(?:\*\*|__)?\s*[【\[［(（]?\s*(?:(?:区間|クリップ|カット|パート|シーン|clip|part|scene|segment|shot)\s*([0-9]+|[〇一二三四五六七八九十]+)\s*(?:番目)?|第\s*([0-9]+|[〇一二三四五六七八九十]+)\s*(?:区間|クリップ|カット|パート|シーン))\s*[】\]］)）]?\s*(?:[（(][^）)]*[）)])?\s*(?:\*\*|__)?\s*(?:[:：\-—–]\s*)?(.*)$/i;
+    const numbered = /^\s*(?:[-*]\s*)?(?:([0-9]+)\s*[.)．、:：]|([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳]))\s*(.+)$/;
+    const read = (pattern, pick) => {
+      const segments = Array(n).fill("");
+      const head = [];
+      let cur = -1;
+      let hits = 0;
+      for (const raw of lines) {
+        const line = toHalf(raw);
+        const m = line.match(pattern);
+        if (m) {
+          const [num, body] = pick(m);
+          if (num >= 1 && num <= n) {
+            cur = num - 1;
+            hits++;
+            segments[cur] = body.replace(/(\*\*|__)\s*$/, "").trim();
+            continue;
+          }
+        }
+        if (cur >= 0) {
+          if (line.trim() && !/^\s*(?:#{1,6}|---)/.test(line)) segments[cur] += (segments[cur] ? "\n" : "") + line.replace(/\*\*/g, "").trim();
+        } else {
+          head.push(raw);
+        }
       }
-      if (cur >= 0 && cur < n) {
-        if (line.trim()) segments[cur] += (segments[cur] ? "\n" : "") + line.trim();
-      } else if (cur < 0) {
-        head.push(raw);
-      }
-    }
-    return { story: head.join("\n").trim(), segments };
+      return { story: head.map((x) => x.replace(/\*\*|__/g, "").replace(/^\s*#{1,6}\s*/, "")).join("\n").trim(), segments, hits };
+    };
+    let out = read(label, (m) => [toNum(m[1] || m[2]), m[3]]);
+    if (!out.hits) out = read(numbered, (m) => [m[1] ? Number(m[1]) : "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳".indexOf(m[2]) + 1, m[3]]);
+    return { story: out.story, segments: out.segments.map((x) => x.trim()) };
+  }
+
+  // 区間を読み取れなかったときの最後の手段: 全体の物語を文ごとに分けて、区間に順番に割り当てる
+  static splitStory(story, n) {
+    const body = (String(story).match(/物語\s*[:：]\s*([\s\S]+)/)?.[1] || String(story).replace(/^.*画像の状況\s*[:：].*$/m, "")).trim();
+    const sentences = body.split(/(?<=[。！？!?])\s*|\n+/).map((x) => x.trim()).filter(Boolean);
+    if (!sentences.length) return Array(n).fill("");
+    return Array.from({ length: n }, (_, i) => {
+      const from = Math.floor((i * sentences.length) / n);
+      const to = Math.max(from + 1, Math.floor(((i + 1) * sentences.length) / n));
+      return sentences.slice(Math.min(from, sentences.length - 1), to).join("");
+    });
   }
 
   generatePrompt({ style, skills, meta, images, settingsText, lastMeta, seconds, current, instruction, signal, refText = null, story = "", segment = false }) {
@@ -3637,6 +3676,8 @@ class LlmClient {
   static cleanOutput(text) {
     let t = text.replace(/<think>[\s\S]*?<\/think>/g, "");
     if (t.includes("</think>")) t = t.split("</think>").slice(1).join("</think>");
+    else if (/^\s*<think>/.test(t)) t = ""; // 考えている途中で出力の上限に達した
+
     t = t.trim().replace(/^```\w*\n?|\n?```$/g, "").trim();
     if (t.length >= 2 && t[0] === t[t.length - 1] && `"'`.includes(t[0])) t = t.slice(1, -1).trim();
     return t;
@@ -7189,8 +7230,24 @@ class MainView {
       total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
       story: keepStory ? $("story").value.trim() : "", requests: lengths.map((_, i) => old[i]?.instruction || ""), images: ctx.images, signal,
     });
-    const plan = LlmClient.parsePlan(text, lengths.length);
-    if (!plan.segments.some((x) => x.trim())) throw new UserError(cfg.messages.planFailed);
+    let plan = LlmClient.parsePlan(text, lengths.length);
+    let note = "";
+    if (!plan.segments.some((x) => x)) {
+      this.status(cfg.messages.planRetry);
+      const story = keepStory ? $("story").value.trim() : plan.story || text.trim();
+      const again = await llm.generatePlan({
+        total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
+        story, requests: lengths.map((_, i) => old[i]?.instruction || ""), images: ctx.images, signal, strict: true,
+      });
+      const second = LlmClient.parsePlan(again, lengths.length);
+      if (second.segments.some((x) => x)) {
+        plan = { story: plan.story || text.trim(), segments: second.segments };
+      } else {
+        if (!text.trim() && !again.trim() && !keepStory) throw new UserError(cfg.messages.planFailed);
+        plan = { story: plan.story || text.trim(), segments: LlmClient.splitStory(story || again, lengths.length) };
+        note = cfg.messages.planSplit;
+      }
+    }
     if (!keepStory) {
       $("story").value = plan.story || text.trim();
       this.growToFit($("story"));
@@ -7206,7 +7263,7 @@ class MainView {
     this.setStep("story", "done", `${lengths.length}区間`);
     this.syncLongControls();
     this.renderLong();
-    this.status(cfg.messages.planned.replace("{n}", lengths.length));
+    this.status(note || cfg.messages.planned.replace("{n}", lengths.length), !!note);
   }
 
   makeLongSegments() {
