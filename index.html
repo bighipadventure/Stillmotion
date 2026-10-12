@@ -582,7 +582,7 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-head .long-reseed { margin-left: auto; min-height: 22px; padding: 0 8px; font-size: 11px; }
 .long-head .long-reseed + .long-pick { margin-left: 4px; }
 .long-head .long-del { min-height: 22px; padding: 0 7px; font-size: 11px; }
-.long-main textarea, .long-keymain textarea { width: 100%; color: var(--ink); }
+.long-main textarea, .long-keymain textarea { width: 100%; max-width: 100%; box-sizing: border-box; color: var(--ink); }
 .long-main textarea::placeholder, .long-keymain textarea::placeholder { color: var(--muted); opacity: .75; }
 .long-row { position: relative; }
 /* 区間・つなぎの画像で、いまやっている作業を段階の色の枠で示す（待機中は点線） */
@@ -2273,7 +2273,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     // 区間・つなぎの画像の作業中の札と、サムネイルに重ねる文字
     work: {
       wait: "待機中", planning: "ストーリーを考え中...", reviewing: "ストーリーを見直し中...", prompt: "プロンプトを作成中...",
-      keyPrompt: "画像のプロンプトを作成中...", image: "画像を生成中...", imageRedo: "画像を再生成中...", video: "動画を生成中...", videoRedo: "動画を再生成中...",
+      keyPrompt: "画像のプロンプトを作成中...", translating: "日本語訳を作成中...", image: "画像を生成中...", imageRedo: "画像を再生成中...", video: "動画を生成中...", videoRedo: "動画を再生成中...",
       join: "1本につなぎ中...", making: "生成中...", redoing: "再生成中...", queued: "順番待ち...",
     },
     // 長い動画の全体の進み具合の配分（画像の読み込み・ストーリー・プロンプト・つなぎの画像・区間の動画・1本につなぐ）
@@ -2302,6 +2302,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       planRetry: "文章AIの答えから区間を読み取れなかったので、書き方を指定してもう一度頼んでいます…",
       planSplit: "文章AIの答えから区間を読み取れなかったため、全体のストーリーを区間に分けて入れました。区間の内容を確かめて、必要なら直してください。",
       prompting: "区間{k}のプロンプトを書いています…",
+      translating: "区間{k}のプロンプトの日本語訳を作っています…",
+      jaHint: "区間の動画を押すと、その動画のプロンプトの日本語訳がここに出ます（日本語訳は、区間のプロンプトを書いたときに作ります）。",
       generating: "区間{k}の動画を作っています…",
       frames: "区間{k}の最初と最後のフレームを取り出しています…",
       framesFailed: "区間{k}の動画からフレームを取り出せませんでした（このブラウザで再生できない形式の可能性があります）。",
@@ -2337,7 +2339,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       keyDropFailed: "画像を読み込めませんでした: ",
       keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
       keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「別シードで再生成」（同じプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトを作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
-      keyRewritten: "前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「Stable Diffusion のプロンプト」で確かめられます）。",
+      keyRewritten: "前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「画像のプロンプト」で確かめられます）。",
       keyUnloading: "Stable Diffusion のモデルを VRAM から外して、動画づくりに移ります…",
       sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「画像AI」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
@@ -5902,6 +5904,7 @@ class MainView {
   updateTranslateUi() {
     const on = !!this.store.data.translate;
     document.querySelectorAll("#ja-toggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.ja === "on") === on)));
+    if (this.longPromptView) { this.showLongPrompt(this.selectedJob); return; }
     $("prompt-ja-field").hidden = !on;
     $("to-ja").hidden = !on;
     $("to-en").hidden = !on;
@@ -7528,14 +7531,23 @@ class MainView {
     }
   }
 
+  // 日本語訳が今のプロンプトのものかを見分けるもと（音の指定と指示の行を除いた本文）
+  jaKey(prompt) {
+    return this.stripAudioRules(prompt || "").replace(USER_SETTINGS.promptOptions.instructionPattern, "").trim();
+  }
+
   showLongPrompt(job) {
     if (!this.longPromptView) return;
     let text = job?.prompt || "";
     const keys = [job?.keyPrompts?.start && `最初の画像: ${job.keyPrompts.start}`, job?.keyPrompts?.end && `最後の画像: ${job.keyPrompts.end}`].filter(Boolean);
-    if (keys.length) text += `\n\n----- つなぎの画像（Stable Diffusion）のプロンプト -----\n${keys.join("\n")}`;
+    if (keys.length) text += `\n\n----- つなぎの画像のプロンプト -----\n${keys.join("\n")}`;
     $("prompt-en").value = text;
     $("prompt-ja").value = job?.promptJa || "";
-    $("prompt-ja-field").hidden = !job?.promptJa;
+    // 日本語訳を作る設定なら、まだ訳がなくても右側に日本語訳の欄を出す
+    const showJa = !!job?.promptJa || !!this.store.data.translate;
+    $("prompt-ja-field").hidden = !showJa;
+    $("prompt-ja-field").closest(".pair").classList.toggle("single", !showJa);
+    $("prompt-ja").placeholder = showJa && !job?.promptJa ? USER_SETTINGS.long.messages.jaHint : "";
   }
 
   // ===== 長い動画（区間をつないだ動画） =====
@@ -8081,7 +8093,7 @@ class MainView {
     }
     // Stable Diffusion のプロンプト（手で直して作り直せる）
     const pdet = el("details", "long-keyprompt");
-    pdet.append(el("summary", "", "Stable Diffusion のプロンプト"));
+    pdet.append(el("summary", "", "画像のプロンプト"));
     pdet.open = !!this.keyOpen?.has(b);
     this.on(pdet, "toggle", () => { const set = (this.keyOpen ||= new Set()); if (pdet.open) set.add(b); else set.delete(b); });
     const ta = el("textarea");
@@ -8578,6 +8590,19 @@ class MainView {
         this.segCtx = null;
       }
     }
+    // 日本語訳を作る設定なら、プロンプトが変わった区間の日本語訳も作る（別シードで再生成のときは文章AIを使わないので作らない）
+    if (this.store.data.translate && !reseed) {
+      for (const i of order) {
+        const seg = segs[i];
+        const key = this.jaKey(seg.prompt);
+        if (!key || seg.promptJaFor === key) continue;
+        this.status(fillFor(i)(m.translating));
+        this.setWork(`seg:${i}`, "prompt", cfg.work.translating);
+        seg.promptJa = await this.translateToJa(llm, key, signal);
+        seg.promptJaFor = key;
+        this.setWork(`seg:${i}`, "wait");
+      }
+    }
     this.setStep("prompt", "done", `${order.length}区間`);
 
     // ② Stable Diffusion: つなぎの画像をまとめて作り、最後にモデルを VRAM から外す
@@ -8966,7 +8991,7 @@ class MainView {
     const seedBase = $("seed").value.trim();
     const shared = {
       profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()),
-      prompt: seg.prompt.trim(), promptJa: "", seconds: seg.seconds, negative: $("negative").value.trim(),
+      prompt: seg.prompt.trim(), promptJa: seg.promptJa && seg.promptJaFor === this.jaKey(seg.prompt) ? this.applyAudioRules(seg.promptJa, "ja") : "", seconds: seg.seconds, negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels),
       fit: start.isBase || start.isKey ? ui.fit : "crop", focus: start.isBase ? { ...this.focus } : { x: 0.5, y: 0.5, zoom: 1 },
       img: start.img, meta: start.meta, file: start.file,
@@ -9077,7 +9102,8 @@ class MainView {
         controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4", blob: null, url: null, joining: true,
         filename: `${String(base.filename || "stillmotion").replace(/\.\w+$/, "")}_long.mp4`,
         seconds: Math.round(total * 10) / 10, duration: total,
-        prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"), promptJa: "", story: $("story").value,
+        prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"),
+        promptJa: jobs.every((j) => j.promptJa) ? jobs.map((j, i) => `[区間${i + 1}]\n${j.promptJa}`).join("\n\n") : "", story: $("story").value,
         segment: null, last: null, lastImage: null, batchIndex: 1, batchTotal: 1, keyPrompts: null,
         joined: { segments: jobs.map((j, i) => ({ index: i + 1, seconds: j.seconds, mode: j.options.mode, story: segs[i].text, seed: j.values?.seed ?? null, comfy_filename: j.filename || null })) },
         queuedAt: started, startedAt: started, finishedAt: null,
