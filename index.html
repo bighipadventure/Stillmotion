@@ -2340,6 +2340,10 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
       keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「別シードで再生成」（同じプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトを作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
       keyRewritten: "前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「画像のプロンプト」で確かめられます）。",
+      sdPreparingStep: "画像AIの準備",
+      sdPreparing: "画像AI（{name}）を立ち上げています（モデルを読み込んで、試しに小さな画像を1枚作って確かめます）…",
+      sdReloading: "画像AI（{name}）のモデルがうまく読み込めていなかったので、モデルを読み込み直しています…",
+      sdNotReady: "画像AI（SD WebUI・{url}）のモデルを読み込めませんでした。WebUI を再起動してから、もう一度試してください。",
       keyUnloading: "Stable Diffusion のモデルを VRAM から外して、動画づくりに移ります…",
       sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「画像AI」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
@@ -3292,6 +3296,9 @@ Tips for better results:
     stateSaving: "いまの状態をファイルにまとめています…",
     stateSaved: "いまの状態を {name} に保存しました。このファイルを画面にドロップすると、この状態に戻せます。",
     stateLoading: "保存した状態を読み込んでいます…",
+    stateVideos: "作った動画を ComfyUI の保存先から読み直しています… {i}/{n}",
+    stateVideosDone: "保存した状態に戻しました。作った動画を {n} 本読み直しました。",
+    stateVideosMissing: "（{n} 本は ComfyUI の保存先に見つからなかったため、飛ばしました）",
     stateLoaded: "保存した状態（{date}）に戻しました。",
     stateInvalid: "Stillmotion の「状態を保存」で保存したファイルではないため、読み込めません。",
     stateBusy: "ストーリーやプロンプトを作っている間は、状態を読み込めません。",
@@ -4060,14 +4067,51 @@ class SdWebUiClient {
     return res.json();
   }
 
+  async post(path, body, signal) {
+    const res = await fetch(this.base + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}), signal });
+    return res;
+  }
+
+  // 元の画像のモデル名を、WebUI のモデル一覧の名前（title）にする
+  async resolveModel(name) {
+    if (!name) return null;
+    const models = await this.get("/sdapi/v1/sd-models").catch(() => []);
+    const hit = SdClient.findByName(models.map((m) => m.title), name) || SdClient.findByName(models.map((m) => m.model_name), name);
+    return hit ? (models.find((m) => m.title === hit || m.model_name === hit)?.title || hit) : null;
+  }
+
+  // 画像を作る前に、画像AIを使える状態にする（順番に確かめる）:
+  // ① モデルを VRAM に戻す（reload-checkpoint）→ ② 小さな画像を1枚だけ試しに作る →
+  // ③ 失敗したら、モデルを別のモデルに切り替えてから元に戻し、読み込み直させる → ④ もう一度試す
+  async ensureReady(model, signal, onStep = () => {}) {
+    const target = await this.resolveModel(model) || (await this.get("/sdapi/v1/options").catch(() => ({}))).sd_model_checkpoint;
+    const test = async () => {
+      const res = await this.post("/sdapi/v1/txt2img", {
+        prompt: "test", seed: 1, steps: 1, width: 64, height: 64, batch_size: 1, n_iter: 1, send_images: true, save_images: false,
+        do_not_save_samples: true, do_not_save_grid: true, override_settings: target ? { sd_model_checkpoint: target } : {},
+        override_settings_restore_afterwards: false,
+      }, signal);
+      return res.ok;
+    };
+    onStep("reload");
+    await this.prepare();
+    if (await test()) return;
+    onStep("switch");
+    const models = await this.get("/sdapi/v1/sd-models").catch(() => []);
+    const other = models.find((m) => m.title !== target);
+    if (other) await this.post("/sdapi/v1/options", { sd_model_checkpoint: other.title }, signal);
+    if (target) await this.post("/sdapi/v1/options", { sd_model_checkpoint: target }, signal);
+    await this.prepare();
+    if (await test()) return;
+    throw new UserError(USER_SETTINGS.long.messages.sdNotReady.replace("{url}", this.base));
+  }
+
   async generate(spec, signal) {
     const s = spec.settings;
     const override = {};
     const notes = [];
     if (spec.model) {
-      const models = await this.get("/sdapi/v1/sd-models").catch(() => []);
-      const hit = SdClient.findByName(models.map((m) => m.title), spec.model) || SdClient.findByName(models.map((m) => m.model_name), spec.model);
-      const title = hit ? (models.find((m) => m.title === hit || m.model_name === hit)?.title || hit) : null;
+      const title = await this.resolveModel(spec.model);
       if (title) override.sd_model_checkpoint = title;
       else notes.push(`モデル「${spec.model}」が見つからないため、いま WebUI で選んでいるモデルで作りました。`);
     }
@@ -4095,7 +4139,7 @@ class SdWebUiClient {
     if (res.status === 500) {
       const text = await res.text();
       if (!/NoneType/.test(text)) throw new Error(`SD WebUI がエラーを返しました（${res.status}）: ${text.slice(0, 300)}`);
-      await this.prepare();
+      await this.ensureReady(spec.model, signal);
       res = await send();
     }
     if (!res.ok) throw new Error(`SD WebUI がエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 300)}`);
@@ -8829,7 +8873,11 @@ class MainView {
     const abort = () => client.interrupt();
     signal.addEventListener("abort", abort);
     try {
-      await client.prepare?.();
+      // 画像AIを順番に立ち上げてから作る（モデルの読み込み → 試しに1枚 → だめなら読み込み直し）
+      this.running.phase = "image";
+      this.setStep("image", "active", m.sdPreparingStep);
+      this.status(m.sdPreparing.replace("{name}", client.label));
+      if (client.ensureReady) await client.ensureReady(this.meta.model, signal, (step) => { if (step === "switch") this.status(m.sdReloading.replace("{name}", client.label)); });
       for (const [k, b] of list.entries()) await this.makeKeyImage(b, client, signal, k + 1, list.length);
     } finally {
       signal.removeEventListener("abort", abort);
@@ -9114,7 +9162,7 @@ class MainView {
       // つなぐ処理に入ったらすぐ「動画」欄にカードを出し、つないでいる最中だとわかるようにする（進み具合もカードに出す）
       const joined = {
         ...base, id: ++this.jobSeq, stamp: timestamp(), state: "running", note: m.joinCardLoading, progress: 0, warning: "", warningLong: "", memoryNote: "",
-        controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4", blob: null, url: null, joining: true,
+        controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4", blob: null, url: null, joining: true, comfyFile: null,
         filename: `${String(base.filename || "stillmotion").replace(/\.\w+$/, "")}_long.mp4`,
         seconds: Math.round(total * 10) / 10, duration: total,
         prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"),
@@ -9267,7 +9315,11 @@ class MainView {
         long: {
           segments: await Promise.all((this.longSegs || []).map(async (g) => ({ seconds: g.seconds, instruction: g.instruction, text: g.text, prompt: g.prompt, key: await keyEntry(g) }))),
           final: this.longFinal?.n === this.longSegs?.length ? await keyEntry(this.longFinal) : null,
+          joined: this.jobs.some((j) => j.joined && j.state === "done"),
         },
+        // 作った動画は中身を入れず、ComfyUI の保存先（ファイル名）だけを入れる。読み込むときに ComfyUI から読み直す
+        jobs: this.jobs.filter((j) => j.state === "done" && j.comfyFile && !j.joined && (j.segment || (j.flow !== "ref" && j.file === this.file)))
+          .map((j) => MainView.jobState(j, this.longSegs?.[j.segment?.index]?.job === j)),
       };
       const name = this.stateFileName();
       downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
@@ -9275,6 +9327,56 @@ class MainView {
     } catch (err) {
       this.status(m.stateFailed + err.message, true);
     }
+  }
+
+  // 状態の JSON に入れる動画の情報（画像・動画の中身や、ブラウザの中だけのものは入れない）
+  static jobState(job, current) {
+    const keys = ["stamp", "prompt", "promptJa", "seconds", "negative", "aspect", "megapixels", "fit", "focus", "options", "flow", "direction", "story",
+      "skills", "style", "llm", "llmModel", "restore", "overrides", "profile", "values", "size", "duration", "warning", "warningLong",
+      "queuedAt", "startedAt", "finishedAt", "batchIndex", "batchTotal", "segment", "keyPrompts", "ext", "filename", "comfyFile", "seedInput"];
+    const out = {};
+    for (const k of keys) if (job[k] !== undefined) out[k] = clone(job[k]);
+    out.current = !!current;
+    return out;
+  }
+
+  // 保存した状態の動画を、ComfyUI の保存先から読み直して「動画」欄と区間に戻す（消してしまった動画は飛ばす）
+  async restoreJobs(list, joined) {
+    const m = USER_SETTINGS.messages;
+    if (!list?.length) return;
+    const base = String(this.store.video?.comfyUrl || "").replace(/\/+$/, "");
+    let done = 0, missing = 0;
+    for (const [n, rec] of list.entries()) {
+      this.status(m.stateVideos.replace("{i}", n + 1).replace("{n}", list.length));
+      const url = `${(rec.profile?.comfyUrl || base).replace(/\/+$/, "")}/view?${new URLSearchParams({ filename: rec.comfyFile.filename, subfolder: rec.comfyFile.subfolder || "", type: rec.comfyFile.type || "output" })}`;
+      let raw = null;
+      try {
+        const res = await fetch(url);
+        if (res.ok) raw = await res.blob();
+        if (raw && !raw.type.startsWith("video") && raw.size < 1024) raw = null;
+      } catch { raw = null; }
+      if (!raw) { missing++; continue; }
+      const job = {
+        ...clone(rec), id: ++this.jobSeq, state: "done", note: "", progress: 1, memoryNote: "", memoryChecked: true,
+        controller: new AbortController(), comfy: null, promptId: null, last: null, lastImage: null, refs: null,
+        img: this.img, meta: this.meta, file: this.file, restoredFromState: true,
+      };
+      delete job.current;
+      let frames = null;
+      if (job.segment) frames = await MainView.extractFrames(raw, `segment${job.segment.index + 1}`).catch(() => null);
+      job.thumb = this.jobThumb(frames ? { ...job, img: frames.first.img, fit: "crop", focus: { x: 0.5, y: 0.5, zoom: 1 } } : job);
+      job.blob = await this.embedMetadata(job, raw).catch(() => raw);
+      job.url = URL.createObjectURL(job.blob);
+      this.jobs.push(job);
+      const seg = job.segment ? this.longSegs?.[job.segment.index] : null;
+      if (seg && rec.current && frames) Object.assign(seg, { job, first: frames.first, last: frames.last, picked: false });
+      done++;
+      this.renderJobs();
+    }
+    if (this.longSegs?.length) this.renderLong();
+    this.status(m.stateVideosDone.replace("{n}", done) + (missing ? m.stateVideosMissing.replace("{n}", missing) : ""));
+    // 長い動画をつないでいたときは、区間の動画がそろっていれば、もう一度1本につなぐ
+    if (joined && this.isLong() && this.longSegs?.length && this.longSegs.every((g) => g.job?.blob)) this.guard((signal) => this.joinCore(signal));
   }
 
   // 状態のファイル名は、ComfyUI が作った動画のファイル名（拡張子だけ .json）にする。
@@ -9367,6 +9469,11 @@ class MainView {
       this.setStep("video", "idle", "");
       const date = new Date(state.savedAt);
       this.status([m.stateLoaded.replace("{date}", isNaN(date) ? "日時不明" : date.toLocaleString("ja-JP")), ...notes].join(" "), notes.length > 0);
+      // 作った動画も、ComfyUI の保存先に残っていれば読み直す
+      if (state.jobs?.length) {
+        await this.restoreJobs(state.jobs, !!state.long?.joined);
+        if (notes.length) this.status(`${$("run-status").textContent} ${notes.join(" ")}`, true);
+      }
     } catch (err) {
       this.status(m.stateFailed + err.message, true);
     }
@@ -9460,6 +9567,8 @@ class MainView {
       this.setJob(job, { note: m.downloading });
       const raw = await comfy.fetchVideo(info);
       job.filename = info.filename;
+      // ComfyUI の保存先（状態を保存した JSON から、あとで動画を読み直すため）
+      job.comfyFile = { filename: info.filename, subfolder: info.subfolder || "", type: info.type || "output" };
       job.ext = (info.filename.match(/\.\w+$/) || [".mp4"])[0];
       const rawUrl = URL.createObjectURL(raw);
       const actual = await this.videoSize(rawUrl);
