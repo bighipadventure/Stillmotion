@@ -4015,6 +4015,8 @@ class SdWebUiClient {
       else notes.push(`モデル「${spec.model}」が見つからないため、いま WebUI で選んでいるモデルで作りました。`);
     }
     if (s.clipSkip) override.CLIP_stop_at_last_layers = s.clipSkip;
+    // WebUI の設定「生成した画像をすべて保存する」がオフでも、つなぎの画像は保存する
+    override.samples_save = true;
     const payload = {
       prompt: spec.prompt, negative_prompt: spec.negative, seed: spec.seed, steps: s.steps || 25, cfg_scale: s.cfg || 7,
       width: spec.width, height: spec.height, batch_size: 1, n_iter: 1,
@@ -4034,7 +4036,7 @@ class SdWebUiClient {
     if (!res.ok) throw new Error(`SD WebUI がエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 300)}`);
     const json = await res.json();
     if (!json.images?.length) throw new Error("SD WebUI から画像が返ってきませんでした。");
-    return { dataUrl: `data:image/png;base64,${json.images[0]}`, notes };
+    return { dataUrl: `data:image/png;base64,${json.images[0]}`, notes, savedAs: `SD WebUI の outputs/${spec.init ? "img2img-images" : "txt2img-images"}（日付のフォルダ）` };
   }
 
   // 動画を作る前に、SD のモデルを VRAM から外す（同じ GPU で動画を作るため）
@@ -4151,7 +4153,7 @@ class SdComfyClient {
             const info = images[images.length - 1];
             const q = new URLSearchParams({ filename: info.filename, subfolder: info.subfolder || "", type: info.type || "output" });
             const blob = await (await fetch(`${this.base}/view?${q}`, { signal })).blob();
-            return { dataUrl: await SdClient.blobToDataUrl(blob), notes };
+            return { dataUrl: await SdClient.blobToDataUrl(blob), notes, savedAs: `ComfyUI の output/${info.subfolder ? `${info.subfolder}/` : ""}${info.filename}` };
           }
           if (entry.status?.completed) throw new Error("ComfyUI から画像が返ってきませんでした。");
         }
@@ -7949,6 +7951,12 @@ class MainView {
     tools.append(redoLabel);
     card.dataset.picked = String(!!holder.keyPicked && !redo.disabled);
     if (key) {
+      // 画像をこのパソコンに保存する（Stable Diffusion の保存先とは別に、手元に取っておきたいとき）
+      const save = el("button", "long-key-btn", "画像を保存");
+      save.type = "button";
+      save.title = "この画像を PNG で保存します";
+      this.on(save, "click", () => downloadBlob(key.file, this.keyFileName(b)));
+      tools.insertBefore(save, redoLabel);
       const clear = el("button", "long-key-btn", "外す");
       clear.type = "button";
       clear.title = "この画像を使わないようにします";
@@ -7976,6 +7984,7 @@ class MainView {
         add("サンプラー", [info.sampler, info.scheduler].filter(Boolean).join(" / "));
         add("ステップ数・CFG", [info.steps, info.cfg].filter((x) => x !== undefined && x !== null).join(" ・ "));
         add("ネガティブ", info.negative);
+        add("保存先", info.savedAs);
         add("注意", (info.notes || []).join("\n"));
       }
       details.append(dl);
@@ -8625,7 +8634,7 @@ class MainView {
     holder.key = { ...frame, isKey: true, prompt };
     holder.keyInfo = {
       source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}・${from === this.img ? "元の画像" : this.keyLabel(k)}から）` : "txt2img", model: this.meta.model, seed,
-      sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [],
+      sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [], savedAs: out.savedAs || "",
     };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
     this.setStep("story", "done", `つなぎの画像 ${i}/${n}`);
@@ -8680,6 +8689,15 @@ class MainView {
     if (b < n) return this.longSegs[b];
     if (this.longFinal?.n !== n) this.longFinal = { n };
     return this.longFinal;
+  }
+
+  // つなぎの画像を保存するときのファイル名（例: stillmotion_key_2-3_seed12345.png、終わりの画像は key_3-end）
+  keyFileName(b) {
+    const n = this.longSegs.length;
+    const h = this.keyHolder(b);
+    const where = b < n ? `${b}-${b + 1}` : `${b}-end`;
+    if (h.keyInfo?.source === "drop") return `${USER_SETTINGS.fileNamePrefix}key_${where}_${h.keyInfo.name.replace(/\.\w+$/, "")}.png`;
+    return `${USER_SETTINGS.fileNamePrefix}key_${where}${h.keyInfo?.seed != null ? `_seed${h.keyInfo.seed}` : ""}.png`;
   }
 
   keyLabel(b) {
