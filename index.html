@@ -61,8 +61,6 @@
   --st-prompt: #1a6fd8;
   --st-video: #d9780b;
   --st-join: #2a9548;
-  /* 白い文字を載せる塗り（作業中の段階・札）は、段階の色を黒に寄せて暗くする（数値が小さいほど暗い） */
-  --st-fill: 80%;
   --font: "Source Han Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   color-scheme: light;
   box-sizing: border-box;
@@ -97,7 +95,6 @@
     --st-prompt: #5aa9fa;
     --st-video: #f0a63a;
     --st-join: #5fd38a;
-    --st-fill: 52%;
     --tag-browser: #1d3554;
     --on-tag-browser: #cfe3fb;
     --tag-llm: #2e2444;
@@ -459,7 +456,7 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .filmstrip li[data-step="join"] { --st: var(--st-join); }
 .filmstrip li[hidden] { display: none; }
 /* 作業中は段階の色で塗り、終わったら段階の色の枠と文字にする */
-.filmstrip li[data-state="active"] { background: color-mix(in srgb, var(--st) var(--st-fill), #000); color: #fff; border-color: var(--st); box-shadow: 0 0 0 2px color-mix(in srgb, var(--st) 30%, transparent); }
+.filmstrip li[data-state="active"] { background: var(--st); color: #fff; border-color: var(--st); box-shadow: 0 0 0 2px color-mix(in srgb, var(--st) 30%, transparent); }
 .filmstrip li[data-state="done"] { background: color-mix(in srgb, var(--st) 14%, var(--surface)); color: var(--st); border-color: var(--st); }
 .filmstrip li[data-state="error"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
 .overall { display: flex; align-items: center; gap: 8px; flex: 1 1 160px; min-width: 120px; }
@@ -591,7 +588,7 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 [data-work="video"] { --wk: var(--st-video); }
 [data-work="join"] { --wk: var(--st-join); }
 .long-row[data-work="wait"], .long-keycard[data-work="wait"] { --wk: var(--line-strong); border-style: dashed; box-shadow: none; }
-.work-tag { position: absolute; top: -9px; right: 10px; z-index: 3; padding: 0 8px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 18px; color: #fff; background: color-mix(in srgb, var(--wk) var(--st-fill), #000); border: 1px solid var(--wk); display: inline-flex; align-items: center; gap: 5px; pointer-events: none; }
+.work-tag { position: absolute; top: -9px; right: 10px; z-index: 3; padding: 0 8px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 18px; color: #fff; background: var(--wk); display: inline-flex; align-items: center; gap: 5px; pointer-events: none; }
 [data-work="wait"] > .work-tag { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--line-strong); }
 .work-tag .busy-spin { width: 10px; height: 10px; border-width: 2px; border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
 /* 画像・動画を作っている（作り直している）サムネイルは暗くして、回転するマークと文字を重ねる */
