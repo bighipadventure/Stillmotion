@@ -55,6 +55,12 @@
   --h-control: 28px;
   --run-height: 36px;
   --topbar-h: 40px;
+  /* 進み具合の段階ごとの色（画像・ストーリー・プロンプト・動画・1本につなぐ） */
+  --st-image: #0f8f80;
+  --st-story: #7b4fd6;
+  --st-prompt: #1a6fd8;
+  --st-video: #d9780b;
+  --st-join: #2a9548;
   --font: "Source Han Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   color-scheme: light;
   box-sizing: border-box;
@@ -84,6 +90,11 @@
     --ok: #6fd6a8;
     --warn-soft: #3a2c10;
     --on-warn-soft: #ffe0a8;
+    --st-image: #3fc9b5;
+    --st-story: #a98bff;
+    --st-prompt: #5aa9fa;
+    --st-video: #f0a63a;
+    --st-join: #5fd38a;
     --tag-browser: #1d3554;
     --on-tag-browser: #cfe3fb;
     --tag-llm: #2e2444;
@@ -438,13 +449,27 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .filmstrip li + li::before { content: "›"; position: absolute; left: -11px; top: 50%; transform: translateY(-55%); color: var(--muted); font-weight: 400; }
 .filmstrip li small { font-weight: 400; font-size: 11px; }
 .filmstrip li small:empty { display: none; }
-.filmstrip li[data-state="active"] { background: var(--warn-soft); color: var(--on-warn-soft); border-color: var(--lamp); }
-.filmstrip li[data-state="done"] { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent-text); }
+.filmstrip li[data-step="image"] { --st: var(--st-image); }
+.filmstrip li[data-step="story"] { --st: var(--st-story); }
+.filmstrip li[data-step="prompt"] { --st: var(--st-prompt); }
+.filmstrip li[data-step="video"] { --st: var(--st-video); }
+.filmstrip li[data-step="join"] { --st: var(--st-join); }
+.filmstrip li[hidden] { display: none; }
+/* 作業中は段階の色で塗り、終わったら段階の色の枠と文字にする */
+.filmstrip li[data-state="active"] { background: var(--st); color: #fff; border-color: var(--st); box-shadow: 0 0 0 2px color-mix(in srgb, var(--st) 30%, transparent); }
+.filmstrip li[data-state="done"] { background: color-mix(in srgb, var(--st) 14%, var(--surface)); color: var(--st); border-color: var(--st); }
 .filmstrip li[data-state="error"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
 .overall { display: flex; align-items: center; gap: 8px; flex: 1 1 160px; min-width: 120px; }
 .progress { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
 .overall .progress { flex: 1; }
-.progress > div { height: 100%; width: 0; background-color: var(--lamp); transition: width .4s; }
+.progress > div { height: 100%; width: 0; background-color: var(--lamp); transition: width .4s, background-color .4s; }
+.overall .progress { height: 6px; border-radius: 3px; }
+#progress[data-phase="image"] > div { background-color: var(--st-image); }
+#progress[data-phase="story"] > div { background-color: var(--st-story); }
+#progress[data-phase="prompt"] > div { background-color: var(--st-prompt); }
+#progress[data-phase="video"] > div { background-color: var(--st-video); }
+#progress[data-phase="join"] > div { background-color: var(--st-join); }
+#progress[data-phase] + .overall-pct { color: var(--ink); }
 .overall-pct { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
 .progress.busy > div {
   background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
@@ -555,6 +580,21 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-main textarea, .long-keymain textarea { width: 100%; color: var(--ink); }
 .long-main textarea::placeholder, .long-keymain textarea::placeholder { color: var(--muted); opacity: .75; }
 .long-row { position: relative; }
+/* 区間・つなぎの画像で、いまやっている作業を段階の色の枠で示す（待機中は点線） */
+.long-row[data-work], .long-keycard[data-work] { border-color: var(--wk); box-shadow: 0 0 0 2px var(--wk); }
+[data-work="story"] { --wk: var(--st-story); }
+[data-work="prompt"] { --wk: var(--st-prompt); }
+[data-work="image"] { --wk: var(--st-image); }
+[data-work="video"] { --wk: var(--st-video); }
+[data-work="join"] { --wk: var(--st-join); }
+.long-row[data-work="wait"], .long-keycard[data-work="wait"] { --wk: var(--line-strong); border-style: dashed; box-shadow: none; }
+.work-tag { position: absolute; top: -9px; right: 10px; z-index: 3; padding: 0 8px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 18px; color: #fff; background: var(--wk); display: inline-flex; align-items: center; gap: 5px; pointer-events: none; }
+[data-work="wait"] > .work-tag { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--line-strong); }
+.work-tag .busy-spin { width: 10px; height: 10px; border-width: 2px; border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
+/* 画像・動画を作っている（作り直している）サムネイルは暗くして、回転するマークと文字を重ねる */
+.work-veil { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(0, 0, 0, .62); color: #fff; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #000; pointer-events: none; }
+.long-thumb:not(:has(img)) .work-veil, .long-keythumb:not(:has(img)) .work-veil { background: var(--film); }
+.work-veil .busy-spin { width: 26px; height: 26px; border-width: 3px; border-color: rgba(255, 255, 255, .25); border-top-color: var(--wk, #fff); }
 /* 区間の動画は、サムネイルの中でそのまま再生する */
 .long-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
 .long-thumb .long-playmark { position: absolute; right: 6px; bottom: 6px; padding: 1px 6px; border-radius: 3px; background: rgba(0, 0, 0, .6); color: #fff; font-size: 10.5px; pointer-events: none; }
@@ -887,6 +927,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <li data-step="story" data-state="idle">ストーリー<small></small></li>
           <li data-step="prompt" data-state="idle">プロンプト<small></small></li>
           <li data-step="video" data-state="idle">動画<small></small></li>
+          <li data-step="join" data-state="idle" hidden>1本につなぐ<small></small></li>
         </ol>
         <div class="overall">
           <div class="progress" id="progress" role="progressbar" aria-label="全体の進み具合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
@@ -2223,6 +2264,14 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     reviewClip: "区間{k}（{s}秒）[{mark}]: {text}{ask}",
     reviewKeyRemake: " (this picture will be remade too)",
     reviewMaxTokens: 4096,
+    // 区間・つなぎの画像の作業中の札と、サムネイルに重ねる文字
+    work: {
+      wait: "待機中", planning: "ストーリーを考え中...", reviewing: "ストーリーを見直し中...", prompt: "プロンプトを作成中...",
+      keyPrompt: "画像のプロンプトを作成中...", image: "画像を生成中...", imageRedo: "画像を再生成中...", video: "動画を生成中...", videoRedo: "動画を再生成中...",
+      join: "1本につなぎ中...", making: "生成中...", redoing: "再生成中...", queued: "順番待ち...",
+    },
+    // 長い動画の全体の進み具合の配分（画像の読み込み・ストーリー・プロンプト・つなぎの画像・区間の動画・1本につなぐ）
+    progressWeights: { image: 0.05, story: 0.1, prompt: 0.15, keys: 0.1, video: 0.5, join: 0.1 },
     planFixed: "These clips are already made and must stay as they are. Copy their 区間 lines exactly as given, and write the 物語 and the other 区間 lines so that the whole story connects naturally with them:",
     planStrict: "Your previous answer could not be read. This time, output exactly {n} lines and nothing else (no headings, no markdown, no explanations), each starting with 区間 and its number and a colon, like \"区間1: ...\", from 区間1 to 区間{n}.",
     planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
@@ -6521,6 +6570,7 @@ class MainView {
 
   setStep(step, state, note) {
     const li = document.querySelector(`#filmstrip li[data-step="${step}"]`);
+    if (state === "active") this.activeStep = step;
     li.dataset.state = state;
     li.querySelector("small").textContent = note;
     this.updateProgress();
@@ -6534,8 +6584,24 @@ class MainView {
     const run = this.currentRun ? this.jobs.filter((j) => this.currentRun.has(j.id) && j.state !== "canceled") : [];
     const jobPart = (j) => (j.state === "running" ? j.progress : this.isPending(j) ? 0 : 1);
     const video = run.length ? run.reduce((n, j) => n + jobPart(j), 0) / run.length : 0;
-    const ratio = Math.min(1, w.image * part(stateOf("image")) + w.story * part(stateOf("story")) + w.prompt * part(stateOf("prompt")) + w.video * video);
+    let ratio = Math.min(1, w.image * part(stateOf("image")) + w.story * part(stateOf("story")) + w.prompt * part(stateOf("prompt")) + w.video * video);
+    // 長い動画: ストーリー → プロンプト → つなぎの画像（Stable Diffusion）→ 区間の動画 → 1本につなぐ
+    const lr = this.isLong?.() ? this.longRun : null;
+    if (lr) {
+      const lw = USER_SETTINGS.long.progressWeights;
+      const seg = lr.segs ? (lr.segsDone + (lr.current ? lr.current.progress || 0 : 0)) / lr.segs : stateOf("video") === "done" ? 1 : 0;
+      const keys = lr.keys ? lr.keysDone / lr.keys : lr.segs ? 1 : 0;
+      const joining = this.jobs.find((j) => j.joining);
+      const join = stateOf("join") === "done" ? 1 : joining ? joining.progress || 0 : 0;
+      ratio = Math.min(1, lw.image + lw.story * part(stateOf("story")) + lw.prompt * part(stateOf("prompt")) + lw.keys * keys + lw.video * seg + lw.join * join);
+    }
     const busy = stateOf("story") === "active" || stateOf("prompt") === "active" || run.some((j) => this.isPending(j) && !(j.state === "running" && j.progress));
+    // ゲージの色は、いま作業中の段階（なければ最後に終わった段階）の色
+    const order = ["image", "story", "prompt", "video", "join"];
+    const active = order.filter((s) => stateOf(s) === "active");
+    const phase = active.includes(this.activeStep) ? this.activeStep : active[active.length - 1]
+      || (this.activeStep && stateOf(this.activeStep) === "done" ? this.activeStep : order.filter((s) => stateOf(s) === "done").pop()) || "";
+    if (phase) $("progress").dataset.phase = phase; else delete $("progress").dataset.phase;
     const pct = Math.round(ratio * 100);
     $("progress-bar").style.width = `${pct}%`;
     $("progress").classList.toggle("busy", busy);
@@ -6565,16 +6631,22 @@ class MainView {
     if (this.running) return;
     const controller = new AbortController();
     this.running = { controller, comfy: null, promptId: null };
+    // 長い動画: 進み具合を数え直す（つなぎの画像・区間の動画の数は、作るときに入れる）
+    if (this.isLong()) {
+      this.longRun = { keys: 0, keysDone: 0, segs: 0, segsDone: 0, current: null };
+      for (const step of ["story", "prompt", "video", "join"]) this.setStep(step, "idle", "");
+    }
     this.setBusy(true);
     try {
       await task(controller.signal);
     } catch (err) {
-      const who = this.running.phase === "video" ? "ComfyUI" : "文章AI";
+      const who = { video: "ComfyUI", image: "Stable Diffusion", join: "動画をつなぐ処理" }[this.running.phase] || "文章AI";
       this.status(describeError(err, who), err.name !== "AbortError");
       if (this.running.phase) this.setStep(this.running.phase, err.name === "AbortError" ? "idle" : "error", "");
     } finally {
       this.running = null;
       this.reviewNote = "";
+      if (this.work?.size) this.clearWork();
       this.planBusy([]);
       this.setBusy(false);
     }
@@ -6678,6 +6750,7 @@ class MainView {
     $("sec-long").hidden = !long;
     $("long-panel").hidden = !long;
     $("long-video-tools").hidden = !long;
+    document.querySelector('#filmstrip li[data-step="join"]').hidden = !long;
     this.applyLongPromptView(long);
     $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
     $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
@@ -8072,13 +8145,70 @@ class MainView {
       } else if (!src && !img && !thumb.textContent) {
         thumb.textContent = "まだありません";
       }
-      const spinner = thumb.querySelector(".spinner");
-      if (pending && !spinner) { const sp = document.createElement("span"); sp.className = "spinner"; thumb.append(sp); }
-      if (!pending && spinner) spinner.remove();
+      thumb.querySelector(".spinner")?.remove();
       thumb.disabled = !seg.job?.url;
       row.dataset.current = String(!!seg.job && (seg.job === this.selectedJob || seg.pendingJob === this.selectedJob));
     }
     this.updateLongButtons();
+    this.applyWork();
+  }
+
+  // 区間・つなぎの画像の作業中の表示。target は "seg:i"（区間 i、0 から）か "key:b"（つなぎの画像 b）、
+  // kind は wait（待機中）・story・prompt・image・video・join、label は枠に付ける札の文字。null で消す
+  setWork(target, kind, label = "", redo = false) {
+    this.work ??= new Map();
+    if (kind) this.work.set(target, { kind, label, redo }); else this.work.delete(target);
+    this.applyWork();
+  }
+
+  clearWork() {
+    this.work = new Map();
+    this.applyWork();
+  }
+
+  applyWork() {
+    const list = $("long-list");
+    if (!list || !this.longSegs) return;
+    const wm = USER_SETTINGS.long.work;
+    const items = [
+      ...this.longSegs.map((seg, i) => ({ el: list.querySelector(`.long-row[data-id="${seg.id}"]`), id: `seg:${i}`, thumb: ".long-thumb", seg })),
+      ...[...list.querySelectorAll(".long-keycard")].map((el) => ({ el, id: `key:${el.dataset.b}`, thumb: ".long-keythumb" })),
+    ];
+    for (const { el, id, thumb, seg } of items) {
+      if (!el) continue;
+      const w = this.work?.get(id);
+      if (w) el.dataset.work = w.kind; else delete el.dataset.work;
+      // 枠の札
+      let tag = el.querySelector(":scope > .work-tag");
+      if (w && (w.label || w.kind === "wait")) {
+        if (!tag) { tag = document.createElement("span"); tag.className = "work-tag"; el.append(tag); }
+        const text = w.label || wm.wait;
+        if (tag.dataset.text !== text + w.kind) {
+          tag.dataset.text = text + w.kind;
+          const spin = document.createElement("span");
+          spin.className = "busy-spin";
+          tag.replaceChildren(...(w.kind === "wait" ? [] : [spin]), text);
+        }
+      } else if (tag) tag.remove();
+      // サムネイルを暗くして、回転するマークと「生成中...」「再生成中...」を重ねる（画像・動画を作っているときだけ）
+      const th = el.querySelector(thumb);
+      let veil = th?.querySelector(".work-veil");
+      let text = "";
+      if (w?.kind === "image" || w?.kind === "video") {
+        const job = seg?.pendingJob;
+        const pct = job?.state === "running" && job.progress ? ` ${Math.round(job.progress * 100)}%` : "";
+        text = job && job.state !== "running" && this.isPending(job) ? wm.queued : `${w.redo ? wm.redoing : wm.making}${pct}`;
+      }
+      if (th && text) {
+        if (!veil) {
+          veil = document.createElement("span");
+          veil.className = "work-veil";
+          veil.append(Object.assign(document.createElement("span"), { className: "busy-spin" }), document.createElement("span"));
+          th.append(veil);
+        }
+        veil.lastChild.textContent = text;
+      } else if (veil) veil.remove();
+    }
   }
 
   // 作り直す対象: 「作り直す」をオンにした区間と、「作り直す」をオンにしたつなぎの画像の前後の区間
@@ -8163,6 +8293,7 @@ class MainView {
     this.currentRun = null;
     this.setStep("story", "active", "区間分け");
     this.status(cfg.messages.planning);
+    for (let i = 0; i < lengths.length; i++) if (!only || only.has(i)) this.setWork(`seg:${i}`, "story", cfg.work.planning);
     await this.freeComfyMemory();
     this.planBusy(["story"]);
     const ctx = await this.llmContext();
@@ -8213,6 +8344,7 @@ class MainView {
       return g;
     });
     this.doneBusy("story");
+    for (let i = 0; i < lengths.length; i++) this.setWork(`seg:${i}`, null);
     this.setStep("story", "done", `${lengths.length}区間`);
     this.syncLongControls();
     this.renderLong();
@@ -8249,11 +8381,13 @@ class MainView {
     const direction = (this.store.ui.direction || "").trim();
     if (direction) user += `\n\n${USER_SETTINGS.story.directionHeader} ${direction}`;
     this.planBusy(["story"]);
+    for (const i of remake) this.setWork(`seg:${i}`, "story", cfg.work.reviewing);
     let answer = "";
     try {
       answer = await llm.chat(system, user, llm.profile?.vision ? [...ctx.images, ...pics.images] : null, signal, Math.max(Number(llm.profile?.maxTokens) || 0, cfg.reviewMaxTokens));
     } finally {
       this.doneBusy("story");
+      for (const i of remake) this.setWork(`seg:${i}`, null);
     }
     const lines = String(answer).replace(/<think>[\s\S]*?<\/think>/g, "").split("\n").map((l) => l.trim().replace(/^[*#>\-\s]+/, ""));
     const note = (lines.find((l) => /^検証\s*[:：]/.test(l)) || "").replace(/^検証\s*[:：]\s*/, "");
@@ -8367,6 +8501,9 @@ class MainView {
       return { mode, seconds: segs[i].seconds, rules };
     };
 
+    // これから作る区間・つなぎの画像に「待機中」の枠を付ける
+    for (const i of order) this.setWork(`seg:${i}`, "wait");
+    for (const b of keyList) this.setWork(`key:${b}`, "wait");
     // ① 文章AI: つなぎの画像のプロンプトと、区間のプロンプトを先にすべて書く
     await this.freeComfyMemory();
     for (const [k, b] of keyList.entries()) {
@@ -8383,7 +8520,9 @@ class MainView {
         this.running.phase = "prompt";
         this.setStep("prompt", "active", `区間${i + 1}`);
         this.status(`${fillFor(i)(m.prompting)}（${k + 1}/${order.length}）`);
+        this.setWork(`seg:${i}`, "prompt", cfg.work.prompt);
         seg.prompt = await this.makeSegmentPrompt(llm, i, signal, set);
+        this.setWork(`seg:${i}`, "wait");
         Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: ctx.mode, promptManual: false });
         this.renderLong();
       } finally {
@@ -8393,6 +8532,7 @@ class MainView {
     this.setStep("prompt", "done", `${order.length}区間`);
 
     // ② Stable Diffusion: つなぎの画像をまとめて作り、最後にモデルを VRAM から外す
+    if (this.longRun) Object.assign(this.longRun, { keys: keyList.length, keysDone: 0, segs: order.length, segsDone: 0, current: null });
     if (keyList.length) {
       for (const b of keyList) {
         const holder = this.keyHolder(b);
@@ -8422,9 +8562,13 @@ class MainView {
         const job = this.segmentJob(seg, i, start, end);
         job.keyPrompts = { start: start.isKey ? start.prompt : "", end: end?.isKey ? end.prompt : "" };
         seg.pendingJob = job;
+        if (this.longRun) this.longRun.current = job;
+        this.setWork(`seg:${i}`, "video", seg.job ? cfg.work.videoRedo : cfg.work.video, !!seg.job);
         this.updateLongStates();
         await this.runJob(job);
         seg.pendingJob = null;
+        if (this.longRun) Object.assign(this.longRun, { current: null, segsDone: this.longRun.segsDone + 1 });
+        this.setWork(`seg:${i}`, null);
         if (signal.aborted || job.state === "canceled") throw new DOMException("aborted", "AbortError");
         if (job.state !== "done") {
           seg.error = fill(m.jobFailed);
@@ -8468,8 +8612,9 @@ class MainView {
     const segs = this.longSegs;
     const fill = (t) => t.replace("{label}", b < segs.length ? `区間${b}→${b + 1}` : `区間${b}の最後`).replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
     const segText = (g) => [g.text, g.instruction.trim() && `（指示: ${g.instruction.trim()}）`].filter(Boolean).join(" ") || "（なし）";
-    this.running.phase = "story";
-    this.setStep("story", "active", `つなぎ ${i}/${n}`);
+    this.running.phase = "prompt";
+    this.setStep("prompt", "active", `つなぎの画像 ${i}/${n}`);
+    this.setWork(`key:${b}`, "prompt", cfg.work.keyPrompt);
     this.status(fill(m.keyPrompting));
     const last = b >= segs.length;
     const system = fill(last ? cfg.keySystem.replace(", which is also the first moment of clip {b}", " - the very last frame of the whole video") : cfg.keySystem).replace("{scene}", this.sceneCfg().key);
@@ -8515,7 +8660,8 @@ class MainView {
       if (score > bestScore) { best = fixed; bestScore = score; }
       if (score >= keep) break;
     }
-    this.setStep("story", "done", `つなぎ ${i}/${n}`);
+    this.setStep("prompt", "done", `つなぎの画像 ${i}/${n}`);
+    this.setWork(`key:${b}`, "wait");
     return best || anchor;
   }
 
@@ -8605,8 +8751,9 @@ class MainView {
     const fill = (t) => t.replace("{label}", b < segs.length ? `区間${b}→${b + 1}` : `区間${b}の最後`).replaceAll("{a}", b).replaceAll("{b}", b + 1).replace("{i}", i).replace("{n}", n);
     const holder = this.keyHolder(b);
     const prompt = holder.keyPlan?.prompt || this.meta.prompt;
-    this.running.phase = "story";
-    this.setStep("story", "active", `つなぎの画像 ${i}/${n}`);
+    this.running.phase = "image";
+    this.setStep("image", "active", `つなぎの画像 ${i}/${n}`);
+    this.setWork(`key:${b}`, "image", holder.key ? cfg.work.imageRedo : cfg.work.image, !!holder.key);
     this.status(fill(m.keyMaking));
     const st = this.meta.settings || {};
     const snap = (x) => Math.max(64, Math.round(x / 8) * 8);
@@ -8637,7 +8784,9 @@ class MainView {
       sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [], savedAs: out.savedAs || "",
     };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
-    this.setStep("story", "done", `つなぎの画像 ${i}/${n}`);
+    this.setStep("image", "done", `つなぎの画像 ${i}/${n}`);
+    if (this.longRun) this.longRun.keysDone++;
+    this.setWork(`key:${b}`, null);
     this.renderLong();
   }
 
@@ -8672,6 +8821,7 @@ class MainView {
       }
       // ② Stable Diffusion: 新しいシードで作る
       seg.keyTry = (seg.keyTry || 0) + (seg.key ? 1 : 0);
+      if (this.longRun) this.longRun.keys = 1;
       await this.makeKeyImages(signal, [b]);
       // 前後の区間の動画は、この画像で作り直すまで古いまま
       for (const i of [b - 1, b]) if (segs[i] && segs[i].job) segs[i].picked = true;
@@ -8859,7 +9009,7 @@ class MainView {
       if (!segs.length) throw new UserError(m.needSegments);
       const missing = segs.findIndex((g) => !g.job?.blob);
       if (missing >= 0) throw new UserError(m.needAll.replace("{k}", missing + 1));
-      this.running.phase = null;
+      this.running.phase = "join";
       const started = Date.now();
       const jobs = segs.map((g) => g.job);
       const total = jobs.reduce((t, j) => t + (j.duration || j.seconds), 0);
@@ -8880,14 +9030,16 @@ class MainView {
       joined.controller.signal.addEventListener("abort", () => this.running?.controller.abort());
       this.jobs.push(joined);
       this.selectJob(joined);
-      this.setStep("video", "active", m.joinStep);
+      this.setStep("video", "done", "");
+      this.setStep("join", "active", "");
+      segs.forEach((_, i) => this.setWork(`seg:${i}`, "join", i === 0 ? cfg.work.join : ""));
       const gallery = $("gallery");
       gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
       const progress = (p, note) => {
         if (joined.state !== "running") return;
         if (joined.progress === p && joined.note === note) return;
         this.setJob(joined, { progress: p, note });
-        this.setStep("video", "active", `${m.joinStep} ${Math.round(p * 100)}%`);
+        this.setStep("join", "active", `${Math.round(p * 100)}%`);
       };
       this.status(m.loadingFfmpeg);
       let ff;
@@ -8929,6 +9081,7 @@ class MainView {
         joined.url = URL.createObjectURL(joined.blob);
         delete joined.joining;
         this.setJob(joined, { state: "done", note: "", progress: 1 });
+        this.setStep("join", "done", "");
         this.selectJob(joined);
         this.status(m.joined.replace("{n}", jobs.length).replace("{s}", joined.seconds) + (this.reviewNote ? `\n${this.reviewNote}` : ""));
         this.reviewNote = "";
@@ -8939,8 +9092,10 @@ class MainView {
           throw new DOMException("aborted", "AbortError");
         }
         this.setJob(joined, { state: "error", note: m.joinCardFailed });
+        this.setStep("join", "error", "");
         throw err instanceof UserError ? err : new UserError(m.joinFailed + (err?.message || err));
       } finally {
+        segs.forEach((_, i) => this.setWork(`seg:${i}`, null));
         signal.removeEventListener("abort", abort);
         if (this.ffmpeg) {
           ff.off("log", onLog);
@@ -9429,8 +9584,11 @@ class MainView {
     $("gallery-empty").hidden = this.jobs.length > 0;
     $("gallery-count").textContent = this.jobs.length
       ? `${this.jobs.length}件${pending.length ? `（うち生成待ち・生成中 ${pending.length}件）` : ""}` : "";
-    if (pending.length) {
-      this.setStep("video", "active", running?.joining ? `つないで1本に ${Math.round(running.progress * 100)}%` : running ? `#${running.id} 生成中・残り${pending.length}件` : `${pending.length}件 順番待ち`);
+    if (running?.joining && pending.length === 1) {
+      this.setStep("video", "done", "");
+      this.setStep("join", "active", `${Math.round(running.progress * 100)}%`);
+    } else if (pending.length) {
+      this.setStep("video", "active", running ? `#${running.id} 生成中・残り${pending.length}件` : `${pending.length}件 順番待ち`);
     } else {
       this.setStep("video", this.jobs.some((j) => j.state === "done") ? "done" : "idle", this.jobs.length ? `${this.jobs.length}件` : "");
     }
