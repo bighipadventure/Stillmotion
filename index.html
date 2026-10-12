@@ -4089,7 +4089,15 @@ class SdWebUiClient {
       payload.init_images = [await SdClient.blobToDataUrl(spec.init)];
       payload.denoising_strength = spec.denoise;
     }
-    const res = await fetch(this.base + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal });
+    const send = () => fetch(this.base + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal });
+    let res = await send();
+    // モデルが外れたままのとき（NoneType のエラー）は、読み込み直してもう一度だけ頼む
+    if (res.status === 500) {
+      const text = await res.text();
+      if (!/NoneType/.test(text)) throw new Error(`SD WebUI がエラーを返しました（${res.status}）: ${text.slice(0, 300)}`);
+      await this.prepare();
+      res = await send();
+    }
     if (!res.ok) throw new Error(`SD WebUI がエラーを返しました（${res.status}）: ${(await res.text()).slice(0, 300)}`);
     const json = await res.json();
     if (!json.images?.length) throw new Error("SD WebUI から画像が返ってきませんでした。");
@@ -4099,6 +4107,12 @@ class SdWebUiClient {
   // 動画を作る前に、SD のモデルを VRAM から外す（同じ GPU で動画を作るため）
   unload() {
     return fetch(`${this.base}/sdapi/v1/unload-checkpoint`, { method: "POST" }).catch(() => {});
+  }
+
+  // 画像を作る前に、モデルを VRAM に戻す。前に unload-checkpoint で外したままだと、選んでいるモデルと同じ名前を
+  // 指定しても WebUI は読み込み直さず、「'NoneType' object is not callable」（500）になるため
+  prepare() {
+    return fetch(`${this.base}/sdapi/v1/reload-checkpoint`, { method: "POST" }).catch(() => {});
   }
 
   interrupt() {
@@ -8815,6 +8829,7 @@ class MainView {
     const abort = () => client.interrupt();
     signal.addEventListener("abort", abort);
     try {
+      await client.prepare?.();
       for (const [k, b] of list.entries()) await this.makeKeyImage(b, client, signal, k + 1, list.length);
     } finally {
       signal.removeEventListener("abort", abort);
@@ -9238,6 +9253,9 @@ class MainView {
     try {
       const settings = this.restoreSnapshot();
       settings.ui.runCount = this.store.ui.runCount;
+      // 作り方（長い動画も）と、長い動画の左パネルの設定も入れる
+      settings.ui.flow = this.store.uiFlow;
+      for (const k of ["longTotal", "longCount", "longSd", "longScene", "longEnd"]) if (this.store.ui[k] !== undefined) settings.ui[k] = this.store.ui[k];
       const state = {
         format: USER_SETTINGS.state.format, version: USER_SETTINGS.state.version, savedAt: new Date().toISOString(),
         settings, videoName: this.store.video?.name || "", llmName: this.store.llm?.name || "",
