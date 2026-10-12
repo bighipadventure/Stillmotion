@@ -533,6 +533,7 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-thumb { position: relative; padding: 0; border: none; border-radius: var(--radius-s); background: var(--film); min-height: 100px; height: 100%; overflow: hidden; display: grid; place-items: center; color: var(--film-ink); font-size: 11px; }
 .long-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
 .long-thumb:disabled { cursor: default; opacity: 1; }
+.long-keythumb[data-has="true"] { cursor: zoom-in; }
 .long-thumb .spinner { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--lamp); animation: spin .9s linear infinite; }
 .long-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .long-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
@@ -544,8 +545,21 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); }
 .long-state { color: var(--muted); }
 .long-state.err { color: var(--danger); }
-.long-head .long-del { margin-left: auto; min-height: 22px; padding: 0 7px; font-size: 11px; }
-.long-main textarea { width: 100%; }
+.long-head .long-pick { margin-left: auto; }
+.long-head .long-del { min-height: 22px; padding: 0 7px; font-size: 11px; }
+.long-main textarea, .long-keymain textarea { width: 100%; color: var(--ink); }
+.long-main textarea::placeholder, .long-keymain textarea::placeholder { color: var(--muted); opacity: .75; }
+.long-row { position: relative; }
+/* 区間の動画は、サムネイルの中でそのまま再生する */
+.long-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.long-thumb .long-playmark { position: absolute; right: 6px; bottom: 6px; padding: 1px 6px; border-radius: 3px; background: rgba(0, 0, 0, .6); color: #fff; font-size: 10.5px; pointer-events: none; }
+/* つなぎの画像の拡大表示 */
+dialog.zoom { padding: 0; border: none; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }
+dialog.zoom::backdrop { background: rgba(0, 0, 0, .82); }
+dialog.zoom figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+dialog.zoom img { max-width: 94vw; max-height: 86vh; object-fit: contain; border-radius: 4px; background: var(--film); cursor: zoom-out; }
+dialog.zoom figcaption { color: #fff; font-size: 13px; text-align: center; }
+dialog.zoom .zoom-close { position: fixed; top: 12px; right: 14px; min-height: 30px; }
 .long-main details summary { cursor: pointer; font-size: 12px; color: var(--muted); }
 .long-main details textarea { margin-top: 4px; font-size: 12px; }
 @media (max-width: 720px) { .long-row { grid-template-columns: 1fr; } .long-thumb { height: auto; aspect-ratio: 16 / 9; } }
@@ -602,6 +616,8 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job-act.danger:hover:not(:disabled) { background: #a81e25; }
 .preview-label { font-size: 12px; color: var(--muted); }
 .preview-actions { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.long-video-tools { display: flex; gap: 6px; }
+.long-video-tools[hidden] { display: none; }
 .preview-label.active { color: var(--accent-text); font-weight: 700; }
 /* プレビューの高さは、ブラウザの表示エリアの高さの半分を基準にする（小さい画面でもつぶれないよう最低 280px） */
 .screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-s); display: grid; place-items: center; overflow: hidden; }
@@ -908,14 +924,14 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
     </section>
 
+    <dialog class="zoom" id="zoom-dialog" aria-label="画像の拡大表示"><button type="button" class="zoom-close" id="zoom-close">閉じる</button><figure><img id="zoom-img" alt=""><figcaption id="zoom-cap"></figcaption></figure></dialog>
     <section class="panel" id="long-panel" aria-labelledby="long-panel-title" hidden>
       <div class="panel-head">
         <h2 id="long-panel-title">区間 <span class="head-count" id="long-sum"></span></h2>
         <div class="head-tools">
           <button id="long-add">区間を追加</button>
-          <button id="long-play">通して再生</button>
-          <button id="long-join">つないで1本にする</button>
           <button class="primary" id="long-gen">まだの区間を作る</button>
+          <button id="long-rethink">全区間をストーリーから考え直す</button>
         </div>
       </div>
       <div class="panel-body">
@@ -950,6 +966,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <h2 id="gallery-title">動画 <span class="head-count" id="gallery-count"></span></h2>
         <div class="head-tools">
           <span class="preview-label" id="player-label"></span>
+          <span class="long-video-tools" id="long-video-tools" hidden><button id="long-play">通して再生</button><button id="long-join">つないで1本にする</button></span>
         </div>
       </div>
       <div class="panel-body">
@@ -2176,6 +2193,13 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 (then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
     planRequests: "Requests from the user for each clip (highest priority for that clip; make the clip do exactly what is requested, and make the whole story lead into it naturally). If a request is vague or indirect, turn it into the specific, concrete act or action it means and write that, following WORDING:",
     planMaxTokens: 8192,
+    // 区間の間に画像（読み込んだ画像や、残しておくつなぎの画像）があるときは、その画像も見せてストーリーを組み立てる
+    planKeys: "Fixed pictures at the clip boundaries. The video passes exactly through each of these pictures, so plan the story to reach each picture at that moment: the clip before it must end exactly in the picture (same people, pose, place and framing) and the clip after it starts from it. If a picture shows a different place, time, pose, outfit or situation from what comes before, make the story lead there naturally and describe in that clip how it gets there (a movement, a transition or a scene change). Describe the people as they appear in the pictures, following NAMES:",
+    planKeyLine: "- Between 区間{a} and 区間{b}{pic}: {desc}",
+    planKeyLast: "- The very last frame of 区間{a} (the end of the whole video){pic}: {desc}",
+    planKeyPic: " (Picture {k})",
+    planKeyNoDesc: "(see the picture)",
+    planFixed: "These clips are already made and must stay as they are. Copy their 区間 lines exactly as given, and write the 物語 and the other 区間 lines so that the whole story connects naturally with them:",
     planStrict: "Your previous answer could not be read. This time, output exactly {n} lines and nothing else (no headings, no markdown, no explanations), each starting with 区間 and its number and a colon, like \"区間1: ...\", from 区間1 to 区間{n}.",
     planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
     firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
@@ -2199,7 +2223,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       needPrev: "区間{k}の前の区間（区間{p}）がまだできていないため、作れません。前の区間から作ってください。",
       needSegments: "まだ区間がありません。「最初から実行」を押すか、「区間を追加」で区間を作ってください。",
       needText: "区間{k}の内容が空です。区間の内容を書くか、「ストーリーを作り直す」を押してください。",
-      nothing: "作る区間がありません（すべてできています）。作り直したい区間にチェックを入れてください。",
+      nothing: "作る区間がありません（すべてできています）。作り直したい区間の「作り直す」スイッチをオンにしてください。",
       needAll: "まだできていない区間があります（区間{k}）。すべての区間を作ってからつないでください。",
       jobFailed: "区間{k}の動画を作れなかったので、ここで止めました。",
       loadingFfmpeg: "動画をつなぐ準備をしています（初回だけ、つなぐためのプログラム 約30MB を読み込みます）…",
@@ -2207,7 +2231,14 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       joining: "区間をつないでいます… {p}%",
       joined: "{n} 区間をつないで、{s} 秒の動画にしました。「動画を保存」で保存できます（区間ごとの動画も「動画」欄にあります）。",
       joinFailed: "動画をつなげませんでした: ",
+      joinStep: "つないで1本に",
+      joinCardLoading: "つなぐ準備中（つなぐプログラムを読み込んでいます）…",
+      joinCardReading: "区間の動画を読み込んでいます…",
+      joinCardJoining: "区間をつないで1本にしています… {p}%",
+      joinCardSaving: "仕上げています…",
+      joinCardFailed: "つなげませんでした",
       playing: "▶ 通して再生中: 区間{k} / {n}",
+      segPlaying: "区間{k}の動画をサムネイルの中で再生しています（押すと一時停止）。プロンプト欄に、この区間のプロンプトを出しています。",
       segPreview: "区間{k}の動画です（区間の動画を押しても、左の設定は変わりません）。",
       joinedPreview: "つないだ長い動画です（押しても、左の設定は変わりません）。",
       removeConfirm: "区間{k}を一覧から消しますか？（作った動画は「動画」欄に残ります）",
@@ -2216,10 +2247,10 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       keyFailed: "つなぎの画像（区間{a}→{b}）を作れませんでした: ",
       keyRedo: "つなぎの画像を作り直したので、区間{a}と区間{b}を作り直します。",
       keyBusy: "生成中は、つなぎの画像を入れ替えられません。",
-      keyDropped: "{label}に、読み込んだ画像を入れました（下のプレビューに表示しています）。前後の区間の「作り直す」がオンになっているので、「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
+      keyDropped: "{label}に、読み込んだ画像を入れました（下のプレビューに表示しています）。前後の区間の「作り直す」がオンになっているので、「選んだ区間の動画を作り直す」を押すと、この画像で動画を作り直します。",
       keyDropFailed: "画像を読み込めませんでした: ",
-      keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
-      keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「Stable Diffusion で作り直す」（同じプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトを作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作る」を押すと、この画像で動画を作り直します。",
+      keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間の動画を作り直す」を押すと、この画像で動画を作り直します。",
+      keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「Stable Diffusion で作り直す」（同じプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトを作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間の動画を作り直す」を押すと、この画像で動画を作り直します。",
       keyRewritten: "前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「Stable Diffusion のプロンプト」で確かめられます）。",
       keyUnloading: "Stable Diffusion のモデルを VRAM から外して、動画づくりに移ります…",
       sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
@@ -3766,7 +3797,7 @@ class LlmClient {
   }
 
   // 長い動画: 全体のストーリーを区間に分けてもらう
-  generatePlan({ total, lengths, contextText, optionsText, direction, story, requests = [], images, signal, strict = false, scene = "" }) {
+  generatePlan({ total, lengths, contextText, optionsText, direction, story, requests = [], images, signal, strict = false, scene = "", keysText = "", fixed = [] }) {
     const scfg = USER_SETTINGS.story;
     const lcfg = USER_SETTINGS.long;
     const head = scfg.system.split("Write the result in natural Japanese only")[0].replaceAll("{seconds}", String(total));
@@ -3776,6 +3807,9 @@ class LlmClient {
     if (direction) user += `\n\n${scfg.directionHeader} ${direction}`;
     const asked = requests.map((t, i) => (t.trim() ? `区間${i + 1}: ${t.trim()}` : "")).filter(Boolean);
     if (asked.length) user += `\n\n${lcfg.planRequests}\n${asked.join("\n")}`;
+    if (keysText) user += `\n\n${lcfg.planKeys}\n${keysText}`;
+    const kept = fixed.map((t, i) => (t ? `区間${i + 1}: ${t}` : "")).filter(Boolean);
+    if (kept.length) user += `\n\n${lcfg.planFixed}\n${kept.join("\n")}`;
     if (story) user += `\n\n${lcfg.planKeepStory}\n${story}`;
     if (strict) user += `\n\n${lcfg.planStrict.replaceAll("{n}", String(lengths.length))}`;
     // 区間が多いと答えが長くなるので、出力の上限を少し広げる
@@ -6471,7 +6505,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-rethink"]) $(id).disabled = busy;
     document.querySelectorAll("#long-scene button").forEach((b) => { b.disabled = busy; });
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
     if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn(); });
@@ -6602,6 +6636,7 @@ class MainView {
     $("flow-info").textContent = cfg.flowInfo[this.store.uiFlow];
     $("sec-long").hidden = !long;
     $("long-panel").hidden = !long;
+    $("long-video-tools").hidden = !long;
     this.applyLongPromptView(long);
     $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
     $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
@@ -7526,6 +7561,9 @@ class MainView {
       this.renderLong();
     });
     this.on($("long-gen"), "click", () => this.makeLongSegments());
+    this.on($("long-rethink"), "click", () => this.rethinkLong());
+    this.on($("zoom-close"), "click", () => $("zoom-dialog").close());
+    this.on($("zoom-dialog"), "click", (e) => { if (e.target.id !== "zoom-cap") $("zoom-dialog").close(); });
     this.on($("long-sd"), "change", () => { this.saveUi({ longSd: $("long-sd").checked }); this.fillLongOptions(); this.renderLong(); this.statusBar.refreshSd(); });
     this.fillLongOptions();
     this.on($("long-play"), "click", () => this.playThrough());
@@ -7625,12 +7663,8 @@ class MainView {
     const thumb = el("button", "long-thumb");
     thumb.type = "button";
     thumb.setAttribute("aria-label", `区間${i + 1}の動画を再生`);
-    this.on(thumb, "click", () => {
-      if (!seg.job?.url) return;
-      this.selectJob(seg.job);
-      this.showLongJob(seg.job);
-      $("video").play().catch(() => {});
-    });
+    // 押すと、このサムネイルの中で再生する（もう一度押すと一時停止）。プロンプト欄にはこの区間のプロンプトを出す
+    this.on(thumb, "click", () => this.playInThumb(thumb, seg));
     const main = el("div", "long-main");
     const head = el("div", "long-head");
     const name = el("span", "long-name", `区間${i + 1}`);
@@ -7645,6 +7679,7 @@ class MainView {
       this.updateLongButtons();
     });
     pickLabel.append(pick, "作り直す");
+    pickLabel.title = "オンにした区間を、上のボタンでまとめて作り直します";
     const time = el("span", "long-time", MainView.segClock(start, seg.seconds));
     const secLabel = el("label", "long-sec");
     const sec = el("input");
@@ -7673,7 +7708,7 @@ class MainView {
       this.renderLong();
     });
     del.disabled = this.longSegs.length <= 1;
-    head.append(name, time, secLabel, pickLabel, state, del);
+    head.append(name, time, secLabel, state, pickLabel, del);
     const field = (labelText, value, placeholder, onInput) => {
       const wrap = el("label", "long-field");
       const ta = el("textarea", "autogrow");
@@ -7707,6 +7742,47 @@ class MainView {
     main.append(head, ask, text, foot);
     row.append(thumb, main);
     return row;
+  }
+
+  playInThumb(thumb, seg) {
+    const job = seg.job;
+    if (!job?.url) return;
+    let video = thumb.querySelector("video");
+    if (video && video.dataset.url === job.url) {
+      if (video.paused) video.play().catch(() => {}); else video.pause();
+      return;
+    }
+    // ほかの区間で再生中の動画は止めて、サムネイルに戻す
+    $("long-list").querySelectorAll(".long-thumb video").forEach((v) => this.stopThumbVideo(v));
+    video = document.createElement("video");
+    video.src = job.url;
+    video.dataset.url = job.url;
+    video.playsInline = true;
+    video.volume = 0.5;
+    video.poster = job.thumb || "";
+    const mark = document.createElement("span");
+    mark.className = "long-playmark";
+    mark.textContent = "押すと一時停止";
+    video.addEventListener("pause", () => { mark.textContent = "押すと再生"; });
+    video.addEventListener("play", () => { mark.textContent = "押すと一時停止"; });
+    video.addEventListener("ended", () => this.stopThumbVideo(video));
+    thumb.append(video, mark);
+    video.play().catch(() => {});
+    this.showLongPrompt(job);
+    this.status(USER_SETTINGS.long.messages.segPlaying.replace("{k}", seg.job.segment ? seg.job.segment.index + 1 : this.longSegs.indexOf(seg) + 1));
+  }
+
+  stopThumbVideo(video) {
+    video.pause();
+    video.parentElement?.querySelector(".long-playmark")?.remove();
+    video.remove();
+  }
+
+  // 画像を画面いっぱいに拡大して見せる（押すか Esc で閉じる）
+  zoomImage(src, caption) {
+    $("zoom-img").src = src;
+    $("zoom-cap").textContent = caption || "";
+    $("zoom-dialog").showModal();
   }
 
   static segClock(start, seconds) {
@@ -7750,8 +7826,9 @@ class MainView {
       img.src = key.img.src;
       img.alt = "";
       thumb.append(img);
-      thumb.title = "押すと下のプレビューに大きく表示します";
-      this.on(thumb, "click", () => this.showKey(b));
+      thumb.title = "押すと拡大して表示します";
+      thumb.dataset.has = "true";
+      this.on(thumb, "click", () => this.zoomImage(key.img.src, `${this.keyLabel(b)}${info.source === "drop" ? `（${info.name}）` : ""}`));
     } else {
       thumb.append(el("span", "", "画像なし\nここに画像をドロップ"));
       thumb.title = "画像をドロップするか、「画像を選ぶ」で入れられます";
@@ -7888,7 +7965,11 @@ class MainView {
       const thumb = row.querySelector(".long-thumb");
       const src = (pending || seg.job)?.thumb || "";
       const img = thumb.querySelector("img");
-      if (src && img?.getAttribute("src") !== src) {
+      const playing = thumb.querySelector("video");
+      if (playing && (pending || playing.dataset.url !== seg.job?.url)) this.stopThumbVideo(playing);
+      if (thumb.querySelector("video")) {
+        // サムネイルの中で再生中は、そのままにする
+      } else if (src && img?.getAttribute("src") !== src) {
         const next = document.createElement("img");
         next.src = src;
         next.alt = "";
@@ -7909,9 +7990,14 @@ class MainView {
     const segs = this.longSegs || [];
     const picked = segs.filter((g) => g.picked).length;
     const missing = segs.filter((g) => !g.job).length;
-    $("long-gen").textContent = picked ? `選んだ区間を作る（${picked}）` : "まだの区間を作る";
+    $("long-gen").textContent = picked ? `選んだ区間を作り直す（${picked}）` : "まだの区間を作る";
+    $("long-gen").title = picked ? "「作り直す」をオンにした区間を、いまの内容のまま作り直します" : "まだ動画がない区間を作ります";
+    $("long-rethink").textContent = picked ? `選んだ区間をストーリーから考え直す（${picked}）` : "全区間をストーリーから考え直す";
+    $("long-rethink").title = picked ? "選んだ区間の内容を、ほかの区間とつながるように考え直し、プロンプト・つなぎの画像・動画も作り直します"
+      : "全体のストーリーから考え直し、プロンプト・つなぎの画像・動画もすべて作り直します";
     const all = segs.length > 0 && segs.every((g) => g.job?.url);
     $("long-gen").disabled = !!this.running || !segs.length || (!picked && !missing);
+    $("long-rethink").disabled = !!this.running || !segs.length;
     $("long-play").disabled = !all;
     $("long-join").disabled = !!this.running || !all;
   }
@@ -7935,8 +8021,31 @@ class MainView {
     });
   }
 
+  // ストーリーを組み立てるときに見せる、区間の間の画像（読み込んだ画像と、残しておくつなぎの画像）。
+  // 画像を読める文章AIなら画像も渡し、文章では「どの区間の間か」と画像のプロンプト（メタデータ）を伝える
+  planKeyPictures(segs, n, offset, vision, dropOnly = false) {
+    const cfg = USER_SETTINGS.long;
+    const lines = [];
+    const images = [];
+    const max = this.longEnd() === "i2va" ? n - 1 : n;
+    for (let b = 1; b <= max; b++) {
+      const holder = b < n ? segs[b] : this.longFinal?.n === n ? this.longFinal : null;
+      if (!holder?.key || (dropOnly && holder.keyInfo?.source !== "drop")) continue;
+      let pic = "";
+      if (vision) {
+        const img = holder.key.img;
+        images.push(this.toDataUrl(img, img.naturalWidth || img.width, img.naturalHeight || img.height));
+        pic = cfg.planKeyPic.replace("{k}", offset + images.length);
+      }
+      const desc = (holder.keyInfo?.source === "drop" ? holder.keyInfo.meta?.prompt : holder.key.prompt) || holder.key.prompt || cfg.planKeyNoDesc;
+      lines.push((b < n ? cfg.planKeyLine : cfg.planKeyLast).replace("{a}", b).replace("{b}", b + 1).replace("{pic}", pic).replace("{desc}", desc));
+    }
+    return { text: lines.join("\n"), images };
+  }
+
   // 全体のストーリーを考えて、区間ごとの内容に分けてもらう。keepStory なら、いまのストーリーのまま区間だけ分け直す
-  async planLong(signal, keepStory, fresh = false) {
+  // only（区間の番号の Set）を渡すと、その区間だけを考え直す（ほかの区間の内容はそのまま渡して、つながるように書いてもらう）
+  async planLong(signal, keepStory, fresh = false, only = null) {
     const cfg = USER_SETTINGS.long;
     this.requireSource();
     const llm = this.requireLlm();
@@ -7953,10 +8062,14 @@ class MainView {
     this.planBusy(["story"]);
     const ctx = await this.llmContext();
     const optionsText = this.storyOptionsText().replace(/^長さ: .*$/m, `長さ: 全体 ${sum}秒（${lengths.length}区間）`);
+    // 区間の間にある画像（読み込んだ画像・残すつなぎの画像）も見せる
+    const keys = this.planKeyPictures(old, lengths.length, ctx.images.length, !!llm.profile?.vision, fresh);
+    const images = [...ctx.images, ...keys.images];
+    const fixed = only ? lengths.map((_, i) => (only.has(i) ? "" : old[i]?.text || "")) : [];
     const text = await llm.generatePlan({
       total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
-      story: keepStory ? $("story").value.trim() : "", requests: lengths.map((_, i) => old[i]?.instruction || ""), images: ctx.images, signal,
-      scene: this.sceneCfg().plan,
+      story: keepStory ? $("story").value.trim() : "", requests: lengths.map((_, i) => old[i]?.instruction || ""), images, signal,
+      scene: this.sceneCfg().plan, keysText: keys.text, fixed,
     });
     let plan = LlmClient.parsePlan(text, lengths.length);
     let note = "";
@@ -7965,7 +8078,8 @@ class MainView {
       const story = keepStory ? $("story").value.trim() : plan.story || text.trim();
       const again = await llm.generatePlan({
         total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
-        story, requests: lengths.map((_, i) => old[i]?.instruction || ""), images: ctx.images, signal, strict: true, scene: this.sceneCfg().plan,
+        story, requests: lengths.map((_, i) => old[i]?.instruction || ""), images, signal, strict: true, scene: this.sceneCfg().plan,
+        keysText: keys.text, fixed,
       });
       const second = LlmClient.parsePlan(again, lengths.length);
       if (second.segments.some((x) => x)) {
@@ -7986,7 +8100,7 @@ class MainView {
       // 自分で入れたつなぎの画像は、「最初から実行」でも残す（Stable Diffusion で作った画像は作り直す）
       if (fresh && old[i]?.keyInfo?.source === "drop") Object.assign(g, { key: old[i].key, keyInfo: old[i].keyInfo, keyPlan: old[i].keyPlan });
       g.seconds = sec;
-      if (plan.segments[i]) g.text = plan.segments[i];
+      if (plan.segments[i] && (!only || only.has(i))) g.text = plan.segments[i];
       return g;
     });
     this.doneBusy("story");
@@ -7994,6 +8108,33 @@ class MainView {
     this.syncLongControls();
     this.renderLong();
     this.status(note || cfg.messages.planned.replace("{n}", lengths.length), !!note);
+  }
+
+  // 選んだ区間（選んでいなければ全区間）を、全体のストーリーから考え直して、プロンプト・つなぎの画像・動画まで作り直す。
+  // 選んでいない区間の内容と動画はそのまま残し、それとつながるように考えてもらう。
+  // 両側とも作り直す境目の Stable Diffusion のつなぎの画像は作り直す（片側が残る境目は、残る動画とつながるように画像も残す）
+  rethinkLong() {
+    const segs = this.longSegs || [];
+    if (!segs.length) { this.status(USER_SETTINGS.long.messages.needSegments, true); return; }
+    const picked = segs.map((g, i) => (g.picked ? i : -1)).filter((i) => i >= 0);
+    const list = picked.length ? picked : segs.map((_, i) => i);
+    const set = new Set(list);
+    this.guard(async (signal) => {
+      this.requireSource();
+      this.requireVideo();
+      const n = segs.length;
+      for (let b = 1; b <= n; b++) {
+        const both = set.has(b - 1) && (b === n || set.has(b));
+        const holder = this.keyHolder(b);
+        if (!both || !holder.key || holder.keyInfo?.source === "drop") continue;
+        Object.assign(holder, { key: null, keyInfo: null });
+        if (!holder.keyPlan?.manual) holder.keyPlan = null;
+      }
+      this.keyNotes = [];
+      await this.planLong(signal, false, false, set.size === n ? null : set);
+      await this.generateSegments(signal, list);
+      if (this.longSegs.every((g) => g.job?.blob)) await this.joinCore(signal);
+    });
   }
 
   makeLongSegments() {
@@ -8309,7 +8450,7 @@ class MainView {
   }
 
   // つなぎの画像だけを作り直す（動画は作らない）。気に入ったら、前後の区間の「作り直す」がオンになっているので
-  // 「選んだ区間を作る」で動画を作り直す
+  // 「選んだ区間の動画を作り直す」で動画を作り直す
   // rewrite = true（「プロンプトを作り直す」）のときは、いまのプロンプトを「ずれていた答え」として文章AIに見せ、
   // 前後のつなぎの画像・区間の情報からプロンプトを必ず書き直してから画像を作る（手で書いたプロンプトも書き直す）
   redoKey(b, rewrite = false) {
@@ -8501,27 +8642,57 @@ class MainView {
       const missing = segs.findIndex((g) => !g.job?.blob);
       if (missing >= 0) throw new UserError(m.needAll.replace("{k}", missing + 1));
       this.running.phase = null;
+      const started = Date.now();
+      const jobs = segs.map((g) => g.job);
+      const total = jobs.reduce((t, j) => t + (j.duration || j.seconds), 0);
+      const fps = WorkflowMapper.samplingInfo(jobs[0].workflow || jobs[0].profile.workflow).fps || 24;
+      const base = jobs[0];
+      // つなぐ処理に入ったらすぐ「動画」欄にカードを出し、つないでいる最中だとわかるようにする（進み具合もカードに出す）
+      const joined = {
+        ...base, id: ++this.jobSeq, stamp: timestamp(), state: "running", note: m.joinCardLoading, progress: 0, warning: "", warningLong: "", memoryNote: "",
+        controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4", blob: null, url: null, joining: true,
+        filename: `${String(base.filename || "stillmotion").replace(/\.\w+$/, "")}_long.mp4`,
+        seconds: Math.round(total * 10) / 10, duration: total,
+        prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"), promptJa: "", story: $("story").value,
+        segment: null, last: null, lastImage: null, batchIndex: 1, batchTotal: 1, keyPrompts: null,
+        joined: { segments: jobs.map((j, i) => ({ index: i + 1, seconds: j.seconds, mode: j.options.mode, story: segs[i].text, seed: j.values?.seed ?? null, comfy_filename: j.filename || null })) },
+        queuedAt: started, startedAt: started, finishedAt: null,
+      };
+      // カードの「中止」で、つなぐ処理を止める
+      joined.controller.signal.addEventListener("abort", () => this.running?.controller.abort());
+      this.jobs.push(joined);
+      this.selectJob(joined);
+      this.setStep("video", "active", m.joinStep);
+      const gallery = $("gallery");
+      gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
+      const progress = (p, note) => {
+        if (joined.state !== "running") return;
+        if (joined.progress === p && joined.note === note) return;
+        this.setJob(joined, { progress: p, note });
+        this.setStep("video", "active", `${m.joinStep} ${Math.round(p * 100)}%`);
+      };
       this.status(m.loadingFfmpeg);
       let ff;
       try {
         ff = await this.loadFfmpeg();
       } catch (err) {
+        this.setJob(joined, { state: "error", note: m.joinCardFailed });
         throw new UserError(m.ffmpegFailed + (err?.message || err));
       }
-      const started = Date.now();
-      const jobs = segs.map((g) => g.job);
-      const total = jobs.reduce((t, j) => t + (j.duration || j.seconds), 0);
-      const fps = WorkflowMapper.samplingInfo(jobs[0].workflow || jobs[0].profile.workflow).fps || 24;
       const names = [];
       const onLog = ({ message }) => {
         const t = String(message).match(/time=(\d+):(\d+):([\d.]+)/);
-        if (t) this.status(m.joining.replace("{p}", Math.min(99, Math.round(((+t[1] * 3600 + +t[2] * 60 + +t[3]) / total) * 100))));
+        if (!t) return;
+        const pct = Math.min(99, Math.round(((+t[1] * 3600 + +t[2] * 60 + +t[3]) / total) * 100));
+        this.status(m.joining.replace("{p}", pct));
+        progress(0.05 + pct / 100 * 0.95, m.joinCardJoining.replace("{p}", pct));
       };
       const abort = () => { ff.terminate(); this.ffmpeg = null; };
       ff.on("log", onLog);
       signal.addEventListener("abort", abort);
       try {
         this.status(m.joining.replace("{p}", 0));
+        progress(0.02, m.joinCardReading);
         for (const [i, j] of jobs.entries()) {
           const name = `seg${i}${j.ext || ".mp4"}`;
           await ff.writeFile(name, new Uint8Array(await j.blob.arrayBuffer()));
@@ -8534,26 +8705,21 @@ class MainView {
         if (code !== 0) throw new UserError(`${m.joinFailed}ffmpeg のエラー（${code}）`);
         const data = await ff.readFile("out.mp4");
         const raw = new Blob([data], { type: "video/mp4" });
-        const base = jobs[0];
-        const joined = {
-          ...base, id: ++this.jobSeq, stamp: timestamp(), state: "done", note: "", progress: 1, warning: "", warningLong: "", memoryNote: "",
-          controller: new AbortController(), comfy: null, promptId: null, ext: ".mp4",
-          filename: `${String(base.filename || "stillmotion").replace(/\.\w+$/, "")}_long.mp4`,
-          seconds: Math.round(total * 10) / 10, duration: total,
-          prompt: jobs.map((j, i) => `[区間${i + 1}]\n${j.prompt}`).join("\n\n"), promptJa: "", story: $("story").value,
-          segment: null, last: null, lastImage: null, batchIndex: 1, batchTotal: 1, keyPrompts: null,
-          joined: { segments: jobs.map((j, i) => ({ index: i + 1, seconds: j.seconds, mode: j.options.mode, story: segs[i].text, seed: j.values?.seed ?? null, comfy_filename: j.filename || null })) },
-          queuedAt: started, startedAt: started, finishedAt: Date.now(),
-        };
+        progress(0.99, m.joinCardSaving);
+        joined.finishedAt = Date.now();
         joined.blob = await this.embedMetadata(joined, raw);
         joined.url = URL.createObjectURL(joined.blob);
-        this.jobs.push(joined);
+        delete joined.joining;
+        this.setJob(joined, { state: "done", note: "", progress: 1 });
         this.selectJob(joined);
-        const gallery = $("gallery");
-        gallery.scrollTo({ left: gallery.scrollWidth, behavior: "smooth" });
         this.status(m.joined.replace("{n}", jobs.length).replace("{s}", joined.seconds));
       } catch (err) {
-        if (signal.aborted) throw new DOMException("aborted", "AbortError");
+        delete joined.joining;
+        if (signal.aborted) {
+          if (joined.state !== "canceled") this.setJob(joined, { state: "canceled", note: "" });
+          throw new DOMException("aborted", "AbortError");
+        }
+        this.setJob(joined, { state: "error", note: m.joinCardFailed });
         throw err instanceof UserError ? err : new UserError(m.joinFailed + (err?.message || err));
       } finally {
         signal.removeEventListener("abort", abort);
@@ -9012,7 +9178,7 @@ class MainView {
     empty.textContent = {
       preparing: `#${job.id} を準備しています…`,
       queued: `#${job.id} は順番待ちです。前の動画が終わると作り始めます。`,
-      running: `#${job.id} を生成中です（${percent}%）。完成するとここで再生できます。${job.memoryNote ? `\n${job.memoryNote}` : ""}`,
+      running: job.joining ? `#${job.id} 区間をつないで1本にしています（${percent}%）。できあがるとここで再生できます。` : `#${job.id} を生成中です（${percent}%）。完成するとここで再生できます。${job.memoryNote ? `\n${job.memoryNote}` : ""}`,
       error: `#${job.id} は作れませんでした。`,
       canceled: `#${job.id} は中止しました。`,
     }[job.state] || "";
@@ -9026,7 +9192,7 @@ class MainView {
     $("gallery-count").textContent = this.jobs.length
       ? `${this.jobs.length}件${pending.length ? `（うち生成待ち・生成中 ${pending.length}件）` : ""}` : "";
     if (pending.length) {
-      this.setStep("video", "active", running ? `#${running.id} 生成中・残り${pending.length}件` : `${pending.length}件 順番待ち`);
+      this.setStep("video", "active", running?.joining ? `つないで1本に ${Math.round(running.progress * 100)}%` : running ? `#${running.id} 生成中・残り${pending.length}件` : `${pending.length}件 順番待ち`);
     } else {
       this.setStep("video", this.jobs.some((j) => j.state === "done") ? "done" : "idle", this.jobs.length ? `${this.jobs.length}件` : "");
     }
@@ -9117,7 +9283,7 @@ class MainView {
     card.dataset.state = job.state;
     card.setAttribute("aria-current", String(job === this.selectedJob));
     const thumb = card.querySelector(".job-thumb");
-    thumb.querySelector(".job-badge").textContent = USER_SETTINGS.jobStates[job.state];
+    thumb.querySelector(".job-badge").textContent = job.joining ? "つないでいます" : USER_SETTINGS.jobStates[job.state];
     const spinner = thumb.querySelector(".spinner");
     if (pending && !spinner) thumb.append(el("span", "spinner"));
     if (!pending && spinner) spinner.remove();
