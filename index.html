@@ -2150,11 +2150,11 @@ Write the result in natural Japanese only, in exactly this form and nothing else
       subtle: { label: "控えめ", info: "元の画像を動かした動画を、そのまま長くしたような動画にします（同じ場所・同じ構図のまま、動きが少しずつ進みます）。",
         plan: "SCENE CHANGES: minimal. This is simply a longer version of animating the given image: keep the same place, the same framing and the same ongoing situation for the whole video; the action develops slowly and continuously, with no jumps in place or time.",
         clip: "Scene changes: minimal. Keep the same place and framing as the first frame; the camera moves only gently.",
-        key: "Keep the same location, background, lighting and roughly the same camera framing as the base image.", denoise: 0.45, keep: 0.5 },
+        key: "Keep the same location, background, lighting and roughly the same camera framing as the previous keyframe.", denoise: 0.45, keep: 0.5 },
       normal: { label: "ふつう", info: "話が少しずつ進み、区間ごとにカメラの向きや距離、人物の位置が変わります（場所は同じまま）。",
         plan: "SCENE CHANGES: moderate. The story progresses: the action develops into new actions, and between clips the camera may change its angle or distance (closer, wider, from the side) or the people may move to another spot nearby, but stay in the same overall location and time.",
         clip: "Scene changes: moderate. The camera may change its angle or distance smoothly during the clip, but the place stays the same.",
-        key: "Keep the same location and lighting; change the camera angle, shot size and the people's position and pose as the story requires.", denoise: 0.62, keep: 0.4 },
+        key: "Keep the same location and lighting as the previous keyframe; change the camera angle, shot size and the people's position and pose as the story requires.", denoise: 0.62, keep: 0.4 },
       big: { label: "大げさ", info: "短い映画のように、区間ごとに構図・場所・時間が大きく変わります（つなぎの画像を Stable Diffusion で作ると、場面をはっきり変えられます）。",
         plan: "SCENE CHANGES: large. Make it like a short film: clips may jump to clearly different compositions, camera angles, places or times (scene changes between clips), while keeping the same people and their appearance.",
         clip: "Scene changes: large. If this clip starts a new scene, establish the new place and composition clearly from the first frame.",
@@ -2169,27 +2169,32 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     defaultEnd: "fl2va",
     sdPollMs: 700,
     keySystem: `You write a Stable Diffusion prompt for one still image: the keyframe at the boundary between two clips of a longer video - the last moment of clip {a}, which is also the first moment of clip {b}.
-Start from the base Stable Diffusion prompt and keep everything that defines the people and the style exactly as written: character tags and character names (Stable Diffusion understands them), appearance, hair, eyes, outfit, body, quality and style tags, artist tags, LoRA tags such as <lora:name:0.8>, and the weight syntax such as (tag:1.2).
-Change only the tags that describe what is different at this moment according to the story: the act and action, pose, position, hands, facial expression, gaze, camera angle and shot size, and - only when the scene changes - location, background, time of day and lighting. Use concrete, specific tags for acts, actions, poses and body parts, taken from the same vocabulary as the base prompt; never vague or euphemistic words.
+Two different sources, used for different things:
+- WHO and STYLE come from the base Stable Diffusion prompt (the original picture): copy word for word every tag that defines the people and the style - character tags and character names (Stable Diffusion understands them), the number of people such as 1girl / 2girls / 1boy, appearance, hair, eyes, body, outfit and accessories (unless the story changes them), quality and style tags, artist tags, LoRA tags such as <lora:name:0.8>, and the weight syntax such as (tag:1.2).
+- WHAT IS HAPPENING NOW (act, action, pose, position, where the people are, location, background, lighting, camera angle and shot size) comes from the previous keyframe - the latest fixed picture before this moment - and from the story. The original picture only shows how the video STARTED. The user may have placed pictures in between that show a completely different pose, act or scene (for example the original shows a person lying asleep and a later picture shows the person standing); from then on the video continues from that later picture. Never go back to the pose, act, place or situation of the original picture unless the story explicitly returns to it, and drop the base prompt's tags for pose, act, position, place and camera that no longer apply.
+Start from the previous keyframe's state and change only what moves on during clip {a} according to the story, so the change is gradual and natural; if the next keyframe is given, this moment lies between the two and leads into it. Use concrete, specific tags for acts, actions, poses and body parts, taken from the same vocabulary as the base prompt; never vague or euphemistic words.
 {scene}
-CONSISTENCY (most important): this keyframe must look like a frame of the same video as the keyframes before and after it. The people are exactly the people of the base prompt and of the original picture - copy every tag about who they are word for word (character tags and names, the number of people such as 1girl / 2girls / 1boy, hair, eyes, skin, body, outfit and accessories) and keep the quality, style, artist and LoRA tags word for word. Never add, remove or replace a person, and never change hair, eyes, outfit or style unless the story explicitly says so. The previous keyframe is the moment just before this one: start from it and change only what moves on during clip {a}, so the change is gradual and natural. If the next keyframe is given, this moment lies between the two. The base prompt always wins over the neighbors for who the people are and how they look.
+CONSISTENCY (most important): this keyframe must look like a frame of the same video as the keyframes right before and after it - the same people (never add, remove or replace a person), the same appearance and style, and a pose, place and framing that continue naturally from the previous keyframe.
 Write comma-separated English tags in the same style as the base prompt. Output only the prompt on one line - no explanation, no labels, no quotes.`,
-    keyUser: "Base Stable Diffusion prompt (who the people are and the style - keep these tags):\n{prompt}\n\nWhole story (Japanese):\n{story}\n\nClip {a} (ends at this keyframe): {prev}\nClip {b} (starts at this keyframe): {next}",
+    keyUser: "Base Stable Diffusion prompt (the original picture: use it for WHO the people are and the STYLE only - not for the pose, act or place):\n{prompt}\n\nWhole story (Japanese):\n{story}\n\nClip {a} (ends at this keyframe): {prev}\nClip {b} (starts at this keyframe): {next}",
     // 前後のつなぎの画像・区間の動画の情報（あるものだけ足す）
     keyNeighbors: {
-      prevKey: "Previous keyframe (start of clip {p}) Stable Diffusion prompt - change gradually from this:",
+      prevKey: "Previous keyframe (start of clip {p}) Stable Diffusion prompt - this is the CURRENT state (act, pose, place, framing); continue from it and change gradually:",
       prevBase: "Previous keyframe: the original picture itself (clip 1 starts from it), so start from the base prompt.",
-      prevPicture: "Previous keyframe: a picture chosen by the user (no prompt; see the attached picture).",
+      prevPicture: "Previous keyframe: a picture chosen by the user (no prompt). It is the CURRENT state: read the act, pose, place and framing from the attached picture of the previous keyframe and continue from it.",
+      nextPicture: "Next keyframe (end of clip {b}): a picture chosen by the user (no prompt). This moment must lead naturally into it: read its act, pose, place and framing from the attached picture of the next keyframe.",
       nextKey: "Next keyframe (end of clip {b}) Stable Diffusion prompt - this moment leads into it:",
       clipPrompt: "Video prompt of clip {k} (what moves during it):",
       pictures: "Attached pictures, in order: {list}. Keep the people looking exactly like the original picture.",
-      original: "the original picture",
+      original: "the original picture (only for who the people are and the style; the video has moved on from it)",
       prev: "the previous keyframe",
       next: "the next keyframe",
     },
     keyRejected: "A previous answer for this keyframe was rejected by the user because it drifted away from the other keyframes (for example other people, another outfit, another style, or an unrelated scene). Do not repeat it; write it again so that it continues naturally from the previous keyframe and keeps the base prompt's people. Rejected answer:\n{bad}",
-    keyDrift: "Your answer dropped too many tags of the base prompt, so it would show other people or another style. Write it again: copy every tag about the people, their appearance and outfit, and every quality, style, artist and LoRA tag from the base prompt word for word, and change only the action, pose, expression, camera and (only if the scene changes) the place.",
+    keyDrift: "Your answer changed too much from the previous keyframe and the people of the base prompt, so it would show other people, another style or a sudden jump. Write it again: copy every tag about who the people are, their appearance and outfit, and every quality, style, artist and LoRA tag from the base prompt word for word, keep the act, pose, place and framing of the previous keyframe, and change only what moves on during this clip.",
     keyClipChars: 1200,
+    keyNoPrompt: "(no prompt - this picture was placed by the user; read everything from the picture itself)",
+    keyStartNote: "（区間{k}の最初のフレーム（添付の画像1）は、区間の間に置いた画像です。話は元の画像の場面から進んでいるので、ポーズ・行為・場所・構図は添付の画像1とその画像の情報から読み取り、元の画像の状況に戻さないでください。人物の見た目と画風は、元の画像のプロンプト「{base}」と同じです）",
     planRules: `The video is split into {n} consecutive clips that are generated one after another: each clip starts from the last frame of the previous clip. So the story must flow continuously across the clips - the same people, outfits and place unless the story itself changes them - and every clip contains one clear, continuous piece of the action that fits its length (do not cram too much into a short clip, and do not let a clip stand still). Clip lengths: {list}.
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown):
 画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
@@ -8465,9 +8470,10 @@ class MainView {
     const ctx = this.keyContext(b);
     const lines = [];
     if (b === 1) lines.push(nb.prevBase);
-    else if (ctx.prevPrompt) lines.push(`${nb.prevKey.replace("{p}", b)}\n${ctx.prevPrompt}`);
+    else if (ctx.prevPrompt) lines.push(`${nb.prevKey.replace("{p}", (ctx.prevIndex ?? b - 1) + 1)}\n${ctx.prevPrompt}`);
     else if (ctx.prevImg) lines.push(nb.prevPicture);
     if (ctx.nextPrompt) lines.push(`${fill(nb.nextKey)}\n${ctx.nextPrompt}`);
+    else if (ctx.nextImg) lines.push(fill(nb.nextPicture));
     const clip = (k) => {
       const t = (segs[k - 1]?.prompt || "").trim();
       return t ? `${nb.clipPrompt.replace("{k}", k)}\n${t.length > cfg.keyClipChars ? `${t.slice(0, cfg.keyClipChars)}…` : t}` : "";
@@ -8487,18 +8493,21 @@ class MainView {
     if (rejected.trim()) lines.push(cfg.keyRejected.replace("{bad}", rejected.trim()));
     user += `\n\n${lines.filter(Boolean).join("\n\n")}`;
     const pick = (answer) => answer.split("\n").map((x) => x.trim().replace(/^(prompt|positive prompt|プロンプト)\s*[:：]\s*/i, "").replace(/^["'`]+|["'`]+$/g, "")).find(Boolean) || "";
-    const keep = this.sceneCfg().keep ?? 0.4;
+    // ずれの目安は、元の画像ではなく「直前のつなぎの画像」と比べる（途中で別のポーズ・場面の画像を入れたとき、元の画像に戻らないように）。
+    // 直前の画像にプロンプトがないとき（読み込んだ画像）だけ、元のプロンプトと比べて目安をゆるめる
+    const anchor = ctx.prevPrompt || this.meta.prompt;
+    const keep = (this.sceneCfg().keep ?? 0.4) * (ctx.prevPrompt ? 1 : 0.5);
     let best = "", bestScore = -1;
     for (let tries = 0; tries < 2; tries++) {
       const answer = pick(await llm.chat(system, tries ? `${user}\n\n${cfg.keyDrift}` : user, images.length ? images : null, signal));
       if (!answer) continue;
       const fixed = MainView.keepLoras(answer, this.meta.prompt);
-      const score = MainView.tagOverlap(this.meta.prompt, fixed);
+      const score = MainView.tagOverlap(anchor, fixed);
       if (score > bestScore) { best = fixed; bestScore = score; }
       if (score >= keep) break;
     }
     this.setStep("story", "done", `つなぎ ${i}/${n}`);
-    return best || this.meta.prompt;
+    return best || anchor;
   }
 
   // つなぎの画像 b の前後（前: b-1、次: b+1）の画像とプロンプト。b-1 = 0 は元の画像
@@ -8510,10 +8519,16 @@ class MainView {
       : h.keyPlan && (h.keyPlan.manual || h.keyPlan.from === MainView.keySource(this.longSegs, k)) ? h.keyPlan.prompt || "" : "").trim();
     if (b === 1) Object.assign(out, { prevPrompt: this.meta?.prompt || "", prevImg: this.img });
     else if (b > 1) {
-      const h = this.keyHolder(b - 1);
-      out.prevPrompt = promptOf(h, b - 1);
-      // つなぎの画像がなければ、前の区間の動画の最後のフレーム
-      out.prevImg = h.key?.img || this.longSegs[b - 2]?.last?.img || null;
+      // 直前のつなぎの画像（なければ、さらに前へさかのぼる。どこにもなければ元の画像）
+      const k = this.prevKeyIndex(b);
+      if (k) {
+        const h = this.keyHolder(k);
+        out.prevPrompt = promptOf(h, k);
+        out.prevImg = h.key?.img || (k === b - 1 ? this.longSegs[b - 2]?.last?.img : null) || null;
+        out.prevIndex = k;
+      } else {
+        Object.assign(out, { prevPrompt: this.meta?.prompt || "", prevImg: this.img, prevIndex: 0 });
+      }
     }
     if (b + 1 <= this.keyMax()) {
       const h = this.keyHolder(b + 1);
@@ -8521,6 +8536,15 @@ class MainView {
       out.nextImg = h.key?.img || null;
     }
     return out;
+  }
+
+  // 境目 b より前で、画像かプロンプトがあるいちばん近いつなぎの画像の番号（なければ 0 = 元の画像）
+  prevKeyIndex(b) {
+    for (let k = b - 1; k >= 1; k--) {
+      const h = this.keyHolder(k);
+      if (h.key || (h.keyPlan?.prompt && (h.keyPlan.manual || h.keyPlan.from === MainView.keySource(this.longSegs, k)))) return k;
+    }
+    return 0;
   }
 
   // SD のプロンプトをタグの集まりにする（重み付けの括弧・LoRA・BREAK は外し、小文字・空白にそろえる）
@@ -8582,7 +8606,11 @@ class MainView {
     width = snap(width * scale);
     height = snap(height * scale);
     const scene = this.sceneCfg();
-    const init = scene.denoise === null ? null : await SdClient.initImage(this.img, width, height);
+    // img2img の元は、直前のつなぎの画像（なければ元の画像）。途中で別のポーズ・場面の画像を入れたとき、
+    // そのあとの画像が元の画像の構図に引き戻されないように、いちばん近い前の画像から続ける
+    const k = this.prevKeyIndex(b);
+    const from = (k && this.keyHolder(k).key?.img) || this.img;
+    const init = scene.denoise === null ? null : await SdClient.initImage(from, width, height);
     // 作り直すたびにシードを変える（同じプロンプトでも別の絵にする）
     const seed = Number.isInteger(this.meta.seed) ? this.meta.seed + b + 1000 * (holder.keyTry || 0) : Math.floor(Math.random() * 2 ** 31);
     let out;
@@ -8596,7 +8624,7 @@ class MainView {
     const frame = await MainView.frameFromCanvasFile(new File([blob], `key${b}_${width}x${height}.png`, { type: "image/png" }), width, height);
     holder.key = { ...frame, isKey: true, prompt };
     holder.keyInfo = {
-      source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}）` : "txt2img", model: this.meta.model, seed,
+      source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}・${from === this.img ? "元の画像" : this.keyLabel(k)}から）` : "txt2img", model: this.meta.model, seed,
       sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [],
     };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
@@ -8686,8 +8714,15 @@ class MainView {
     const end = this.segCtx?.mode === "FL2VA" ? keyOf(i + 1) || (useSd ? null : segs[i + 1]?.first) : null;
     const images = [picture(start || this.baseFrame())];
     if (end) images.push(picture(end));
-    const meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
+    // 最初・最後のフレームがつなぎの画像のときは、画像の情報もその画像のプロンプトにする
+    // （元の画像のプロンプトのままだと、途中で別のポーズ・場面の画像を入れても、元の画像の状況に引き戻されるため）
+    const clean = (t) => String(t || "").replace(/<lora:[^>]*>/gi, "").replace(/\s*,\s*(,\s*)+/g, ", ").trim();
+    let meta = size ? { ...this.meta, width: size.width, height: size.height } : this.meta;
+    const startKey = start?.isKey ? start : null;
+    if (startKey) meta = { ...meta, prompt: startKey.prompt || "", cleanPrompt: clean(startKey.prompt) || USER_SETTINGS.long.keyNoPrompt };
+    const lastMeta = end?.isKey ? { ...meta, prompt: end.prompt || "", cleanPrompt: clean(end.prompt) || USER_SETTINGS.long.keyNoPrompt } : null;
     const parts = [`全体の物語:\n${$("story").value.trim()}`];
+    if (startKey) parts.push(USER_SETTINGS.long.keyStartNote.replace("{k}", i + 1).replace("{base}", clean(this.meta.prompt)));
     if (i > 0) parts.push(`前の区間（区間${i}）: ${segs[i - 1].text}`);
     parts.push(`この区間（区間${i + 1} / 全${segs.length}区間、${seg.seconds}秒）: ${seg.text || seg.instruction}`);
     if (seg.instruction.trim()) parts.push(`この区間への指示（いちばん優先）: ${seg.instruction.trim()}`);
@@ -8695,7 +8730,7 @@ class MainView {
     if (!start) parts.push(`（区間${i + 1}の最初のフレームは、区間${i}の最後の場面です。添付の画像は元の画像なので、人物の見た目の参考にしてください）`);
     return llm.generatePrompt({
       style: this.store.styleFor(this.store.video), skills: this.store.activeSkillObjects(),
-      meta, images, settingsText: this.settingsText(), lastMeta: null, seconds: seg.seconds,
+      meta, images, settingsText: this.settingsText(), lastMeta, seconds: seg.seconds,
       current: null, instruction: null, signal, refText: null, story: parts.join("\n"), segment: true,
     });
   }
