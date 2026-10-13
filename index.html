@@ -668,6 +668,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .preview-actions { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .long-video-tools { display: flex; gap: 6px; }
 .long-video-tools[hidden] { display: none; }
+#long-i2i-field[hidden], #long-i2i-info[hidden] { display: none; }
 .preview-label.active { color: var(--accent-text); font-weight: 700; }
 /* プレビューの高さは、ブラウザの表示エリアの高さの半分を基準にする（小さい画面でもつぶれないよう最低 280px） */
 .screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-s); display: grid; place-items: center; overflow: hidden; }
@@ -869,6 +870,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" id="long-end-info"></p>
           <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を Stable Diffusion で作る</label>
           <p class="note" id="long-sd-info"></p>
+          <label class="check" id="long-i2i-field"><input type="checkbox" id="long-i2i"> 前の画像を下敷きにする（img2img）</label>
+          <p class="note" id="long-i2i-info"></p>
         </div>
       </section>
 
@@ -2349,6 +2352,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「画像AI」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
       sdNoModel: "ComfyUI にモデル「{name}」が見つかりません。元の画像と同じモデル（checkpoint）を ComfyUI の models/checkpoints に入れてください。",
       sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → 次のつなぎの画像」の FL2VA で作ります（区間1は元の画像から、最後の区間は「終わりの画像」まで。ただし「最後の区間」を「成り行き」にしたときは、最後の区間だけ I2VA。すべての区間の継ぎ目が同じ画像になるので、つなぎ目がそろいます）。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
+      i2iOff: "オフ（おすすめ）: つなぎの画像は、画像のプロンプトだけで作ります（txt2img）。ポーズや場面がプロンプトのとおりに変わります。人物の見た目は、プロンプトの人物・画風・LoRA のタグでそろえます。",
+      i2iOn: "オン: 直前のつなぎの画像（区間1→2 は元の画像）を下敷きにして作ります（img2img。強さは場面転換で決まり、「大げさ」では下敷きにしません）。見た目は似ますが、下敷きの画像のポーズや構図が強く残るので、プロンプトで「立つ」などに変えても元のポーズのままになりやすいです。",
       sdInfoOff: "オフのときは、前の区間の動画の最後のフレームから次の区間を作ります。",
       promptHint: "「動画」欄や区間の動画を押すと、その動画を作ったときのプロンプトがここに出ます。",
     },
@@ -6677,7 +6682,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-rethink", "long-reseed"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-i2i", "long-rethink", "long-reseed"]) $(id).disabled = busy;
     document.querySelectorAll("#long-scene button").forEach((b) => { b.disabled = busy; });
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
     if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn(); });
@@ -7677,6 +7682,9 @@ class MainView {
     }));
     $("long-end-info").textContent = cfg.ends[end].info;
     $("long-sd").checked = this.longSdOn();
+    $("long-i2i").checked = !!this.store.ui.longKeyI2i;
+    $("long-i2i-field").hidden = $("long-i2i-info").hidden = !this.longSdOn();
+    $("long-i2i-info").textContent = this.store.ui.longKeyI2i ? cfg.messages.i2iOn : cfg.messages.i2iOff;
     $("long-sd-info").textContent = this.longSdOn() ? cfg.messages.sdInfoOn : cfg.messages.sdInfoOff;
   }
 
@@ -7763,6 +7771,7 @@ class MainView {
     this.on($("long-reseed"), "click", () => this.reseedSegments());
     this.on($("zoom-close"), "click", () => $("zoom-dialog").close());
     this.on($("zoom-dialog"), "click", (e) => { if (e.target.id !== "zoom-cap") $("zoom-dialog").close(); });
+    this.on($("long-i2i"), "change", () => { this.saveUi({ longKeyI2i: $("long-i2i").checked }); this.fillLongOptions(); });
     this.on($("long-sd"), "change", () => { this.saveUi({ longSd: $("long-sd").checked }); this.fillLongOptions(); this.renderLong(); this.statusBar.refreshSd(); });
     this.fillLongOptions();
     this.on($("long-play"), "click", () => this.playThrough());
@@ -8919,7 +8928,10 @@ class MainView {
     const k = this.prevKeyIndex(b);
     const from = (k && this.keyHolder(k).key?.img) || this.img;
     // 元の画像から作るときは、左パネルの切り抜き（合わせ方・位置・大きさ）をそのまま使う
-    const init = scene.denoise === null ? null : from === this.img && video
+    // 既定では、書いてもらったプロンプトだけで作る（txt2img）。img2img だと下敷きの画像のポーズや構図が強く残り、
+    // プロンプトに standing とあっても、元の画像が寝ているなら寝た絵になってしまうため。下敷きにするのはスイッチをオンにしたときだけ
+    const useInit = !!this.store.ui.longKeyI2i && scene.denoise !== null;
+    const init = !useInit ? null : from === this.img && video
       ? await new Promise((resolve) => FrameFitter.render(this.img, { width, height }, this.store.ui.fit, this.focus).toBlob(resolve, "image/png"))
       : await SdClient.initImage(from, width, height);
     // 作り直すたびにシードを変える（同じプロンプトでも別の絵にする）
@@ -9314,7 +9326,7 @@ class MainView {
       settings.ui.runCount = this.store.ui.runCount;
       // 作り方（長い動画も）と、長い動画の左パネルの設定も入れる
       settings.ui.flow = this.store.uiFlow;
-      for (const k of ["longTotal", "longCount", "longSd", "longScene", "longEnd"]) if (this.store.ui[k] !== undefined) settings.ui[k] = this.store.ui[k];
+      for (const k of ["longTotal", "longCount", "longSd", "longScene", "longEnd", "longKeyI2i"]) if (this.store.ui[k] !== undefined) settings.ui[k] = this.store.ui[k];
       const state = {
         format: USER_SETTINGS.state.format, version: USER_SETTINGS.state.version, savedAt: new Date().toISOString(),
         settings, videoName: this.store.video?.name || "", llmName: this.store.llm?.name || "",
