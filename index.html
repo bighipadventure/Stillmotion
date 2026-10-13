@@ -8902,6 +8902,14 @@ class MainView {
     const st = this.meta.settings || {};
     const snap = (x) => Math.max(64, Math.round(x / 8) * 8);
     let width = st.width || this.meta.width, height = st.height || this.meta.height;
+    // 大きさ（画素数）は元の画像と同じくらいのまま、縦横比は動画の大きさ（左パネルの縦横比）に合わせる
+    const video = this.frameSize();
+    if (video) {
+      const ratio = video.width / video.height;
+      const area = width * height;
+      width = Math.sqrt(area * ratio);
+      height = width / ratio;
+    }
     const scale = Math.min(1, 1536 / Math.max(width, height));
     width = snap(width * scale);
     height = snap(height * scale);
@@ -8910,7 +8918,10 @@ class MainView {
     // そのあとの画像が元の画像の構図に引き戻されないように、いちばん近い前の画像から続ける
     const k = this.prevKeyIndex(b);
     const from = (k && this.keyHolder(k).key?.img) || this.img;
-    const init = scene.denoise === null ? null : await SdClient.initImage(from, width, height);
+    // 元の画像から作るときは、左パネルの切り抜き（合わせ方・位置・大きさ）をそのまま使う
+    const init = scene.denoise === null ? null : from === this.img && video
+      ? await new Promise((resolve) => FrameFitter.render(this.img, { width, height }, this.store.ui.fit, this.focus).toBlob(resolve, "image/png"))
+      : await SdClient.initImage(from, width, height);
     // 作り直すたびにシードを変える（同じプロンプトでも別の絵にする）
     const seed = Number.isInteger(this.meta.seed) ? this.meta.seed + b + 1000 * (holder.keyTry || 0) : Math.floor(Math.random() * 2 ** 31);
     let out;
