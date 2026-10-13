@@ -2341,8 +2341,9 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       keyDropped: "{label}に、読み込んだ画像を入れました（下のプレビューに表示しています）。前後の区間の「作り直す」がオンになっているので、「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
       keyDropFailed: "画像を読み込めませんでした: ",
       keyRedoneLast: "終わりの画像（区間{a}の最後）を作り直しました（下のプレビューに表示しています）。気に入ったら、区間{a}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
-      keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「別シードで再生成」（同じプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトを作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
-      keyRewritten: "前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「画像のプロンプト」で確かめられます）。",
+      keyRedone: "つなぎの画像（区間{a}→{b}）を作り直しました（下のプレビューに表示しています）。気に入らなければもう一度「画像を再生成」（いまのプロンプトで別のシード）か、絵の中身がおかしいときは「プロンプトから作り直す」を、気に入ったら区間{a}と区間{b}の「作り直す」がオンになっているので「選んだ区間を作り直す」を押すと、この画像で動画を作り直します。",
+      keyNoPrompt: "画像のプロンプトがまだありません。「プロンプトから作り直す」を押すか、「画像のプロンプト」に書いてください。",
+      keyRewritten: "全体のストーリーを見直し、前後のつなぎの画像と区間の内容をもとに、プロンプトを書き直しました（「画像のプロンプト」で確かめられます）。",
       sdPreparingStep: "画像AIの準備",
       sdPreparing: "画像AI（{name}）を立ち上げています（モデルを読み込んで、試しに小さな画像を1枚作って確かめます）…",
       sdReloading: "画像AI（{name}）のモデルがうまく読み込めていなかったので、モデルを読み込み直しています…",
@@ -6685,7 +6686,7 @@ class MainView {
     for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-i2i", "long-rethink", "long-reseed"]) $(id).disabled = busy;
     document.querySelectorAll("#long-scene button").forEach((b) => { b.disabled = busy; });
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
-    if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn(); });
+    if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn() || el.dataset.lock === "true"; });
     if (!busy) $("long-list").querySelectorAll(".long-key-pick input, .long-reseed").forEach((el) => { el.disabled = el.dataset.lock === "true"; });
     document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.updatePromptOptions();
@@ -8075,20 +8076,23 @@ class MainView {
     head.append(el("span", "long-keysrc", !key ? (sd ? "まだありません（区間を作るときに Stable Diffusion で作ります）" : "なし（前の区間の最後のフレームから続けます）")
       : info.source === "drop" ? `読み込んだ画像: ${info.name}` : "Stable Diffusion で作った画像"));
     const tools = el("div", "long-keytools");
-    const reseedKey = !!key && info.source !== "drop" && !!holder.keyPlan?.prompt;
-    const sdBtn = el("button", "long-key-btn long-key-sd long-key-redo", reseedKey ? "別シードで再生成" : "Stable Diffusion で作る");
+    // 画像を再生成: いま「画像のプロンプト」に入っているプロンプトのまま、シードだけ変えて作る（文章AIは使わない）
+    const hasPrompt = !!(holder.keyPlan?.prompt || "").trim();
+    const sdBtn = el("button", "long-key-btn long-key-sd long-key-redo", "画像を再生成");
     sdBtn.type = "button";
-    sdBtn.disabled = !sd;
-    sdBtn.title = sd ? (reseedKey ? "プロンプトはそのままで、シードだけ変えてこの画像を作り直します（文章AIは使いません。動画は作りません）"
-      : "文章AIがプロンプトを書いてから、この画像を作ります（動画は作りません）") : "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます";
-    this.on(sdBtn, "click", () => this.redoKey(b, false, reseedKey));
-    // プロンプトがおかしいとき: 前後の画像・区間をもとに、プロンプトから書き直して作る
-    const rwBtn = el("button", "long-key-btn long-key-sd long-key-rewrite long-key-redo", "プロンプトを作り直す");
+    sdBtn.dataset.lock = String(!hasPrompt);
+    sdBtn.disabled = !sd || !hasPrompt;
+    sdBtn.title = !sd ? "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます"
+      : hasPrompt ? "いま「画像のプロンプト」に入っているプロンプトのまま、シードだけ変えてこの画像を作り直します（文章AIは使いません。動画は作りません）"
+      : "画像のプロンプトがまだありません。「プロンプトから作り直す」で作るか、「画像のプロンプト」に書いてください";
+    this.on(sdBtn, "click", () => this.redoKey(b, "image"));
+    // プロンプトから作り直す: 全体のストーリーを見直してから、文章AIにプロンプトを書き直してもらい、画像も作る
+    const rwBtn = el("button", "long-key-btn long-key-sd long-key-rewrite long-key-redo", "プロンプトから作り直す");
     rwBtn.type = "button";
     rwBtn.disabled = !sd;
-    rwBtn.title = sd ? "いまのプロンプトを捨てて、前後のつなぎの画像と区間の内容をもとに文章AIにプロンプトを書き直してもらい、画像も作り直します（手で直したプロンプトも書き直します）"
+    rwBtn.title = sd ? "全体のストーリーに矛盾・破綻がないか確かめてから、前後のつなぎの画像と区間の内容をもとに文章AIにプロンプトを書き直してもらい、画像も作ります（手で直したプロンプトも書き直します。動画は作りません）"
       : "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます";
-    this.on(rwBtn, "click", () => this.redoKey(b, true));
+    this.on(rwBtn, "click", () => this.redoKey(b, "prompt"));
     const file = el("input");
     file.type = "file";
     file.accept = "image/*";
@@ -8166,8 +8170,13 @@ class MainView {
     const ta = el("textarea");
     ta.rows = 3;
     ta.value = holder.keyPlan?.prompt || "";
-    ta.placeholder = "区間を作るとき（または「Stable Diffusion で作る」を押したとき）に文章AIが書きます。手で書くと、そのまま使います";
-    this.on(ta, "input", () => { holder.keyPlan = { prompt: ta.value, from: MainView.keySource(this.longSegs, b), manual: !!ta.value.trim() }; });
+    ta.placeholder = "区間を作るとき（または「プロンプトから作り直す」を押したとき）に文章AIが書きます。手で書くと、そのまま使います";
+    this.on(ta, "input", () => {
+      holder.keyPlan = { prompt: ta.value, from: MainView.keySource(this.longSegs, b), manual: !!ta.value.trim() };
+      // プロンプトが入ったら「画像を再生成」を押せるようにする
+      sdBtn.dataset.lock = String(!ta.value.trim());
+      sdBtn.disabled = !sd || !ta.value.trim() || !!this.running;
+    });
     pdet.append(ta);
     main.append(pdet);
     card.append(thumb, main);
@@ -8968,25 +8977,30 @@ class MainView {
   // 「選んだ区間を作り直す」で動画を作り直す
   // rewrite = true（「プロンプトを作り直す」）のときは、いまのプロンプトを「ずれていた答え」として文章AIに見せ、
   // 前後のつなぎの画像・区間の情報からプロンプトを必ず書き直してから画像を作る（手で書いたプロンプトも書き直す）
-  redoKey(b, rewrite = false, reseed = false) {
+  // つなぎの画像を作り直す（動画は作らない）。気に入ったら、前後の区間の「作り直す」がオンになっているので
+  // 「選んだ区間を作り直す」で動画を作り直す。
+  // mode = "image"（画像を再生成）: いまの「画像のプロンプト」のまま、シードだけ変えて作る。文章AIは使わない
+  // mode = "prompt"（プロンプトから作り直す）: 全体のストーリーを見直してから、文章AIにプロンプトを書き直してもらい、画像を作る
+  redoKey(b, mode = "image") {
     const m = USER_SETTINGS.long.messages;
     this.guard(async (signal) => {
       this.requireSource();
-      const llm = this.requireLlm();
       const segs = this.longSegs;
       const seg = this.keyHolder(b);
       if (!this.meta || this.meta.format === "none" || !this.meta.prompt) throw new UserError(m.sdNeedMeta);
-      // ⓪ 文章AI: 全体のストーリーを見直して、前後の区間の内容に無理がないか確かめる（直したときは、プロンプトも書き直す）
-      if (!reseed) await this.reviewLong(signal, new Set([b - 1, b].filter((i) => i >= 0 && i < segs.length)), new Set([b]));
-      // ① 文章AI: 前後の区間の内容が変わっていれば、プロンプトを書き直す（変わっていなければ同じプロンプトで、シードだけ変える）
-      if (!(reseed && seg.keyPlan?.prompt) && (rewrite || (!seg.keyPlan?.manual && seg.keyPlan?.from !== MainView.keySource(segs, b)))) {
-        const bad = rewrite ? (seg.keyPlan?.prompt || seg.key?.prompt || "") : "";
+      if (mode === "prompt") {
+        const llm = this.requireLlm();
+        // ⓪ 文章AI: 全体のストーリーを見直して、前後の区間の内容に矛盾・破綻・無理がないか確かめる
+        await this.reviewLong(signal, new Set([b - 1, b].filter((i) => i >= 0 && i < segs.length)), new Set([b]));
+        // ① 文章AI: 見直した内容と前後の画像をもとに、プロンプトを書き直す（手で直したプロンプトも書き直す）
         await this.freeComfyMemory();
-        seg.keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal, 1, 1, bad), from: MainView.keySource(segs, b) };
-        if (rewrite) (this.keyOpen ||= new Set()).add(b);
+        seg.keyPlan = { prompt: await this.writeKeyPrompt(b, llm, signal), from: MainView.keySource(segs, b) };
+        (this.keyOpen ||= new Set()).add(b);
         this.renderLong();
+      } else if (!(seg.keyPlan?.prompt || "").trim()) {
+        throw new UserError(m.keyNoPrompt);
       }
-      // ② Stable Diffusion: 新しいシードで作る
+      // ② 画像AI: 新しいシードで作る（「画像のプロンプト」の今の中身を使う）
       seg.keyTry = (seg.keyTry || 0) + (seg.key ? 1 : 0);
       if (this.longRun) this.longRun.keys = 1;
       await this.makeKeyImages(signal, [b]);
@@ -8995,7 +9009,7 @@ class MainView {
       this.renderLong();
       this.showKey(b);
       const done = b < segs.length ? m.keyRedone.replaceAll("{a}", b).replaceAll("{b}", b + 1) : m.keyRedoneLast.replaceAll("{a}", b);
-      this.status((rewrite ? `${m.keyRewritten}${done}` : done) + (this.reviewNote ? `\n${this.reviewNote}` : ""));
+      this.status((mode === "prompt" ? `${m.keyRewritten}${done}` : done) + (this.reviewNote ? `\n${this.reviewNote}` : ""));
       this.reviewNote = "";
     });
   }
