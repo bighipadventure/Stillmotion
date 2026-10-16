@@ -231,19 +231,26 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
 .banner { flex: none; background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1px; background: var(--line); }
+.layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: var(--side-w, 320px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1px; background: var(--line); }
 @media (max-width: 860px) {
   html, body { height: auto; }
   body { overflow: visible; }
   .layout { grid-template-columns: 1fr; grid-template-rows: none; }
   .col-output { overflow: visible; }
   .side-scroll { overflow: visible; }
+  .side-resizer { display: none; }
   .screen { height: auto; aspect-ratio: 16 / 9; }
   .pills { display: none; }
 }
 
 /* 左: プロパティパネル（上は個別にスクロール、実行ボタンは下に固定） */
-.col-input { background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+.col-input { background: var(--surface); display: flex; flex-direction: column; min-height: 0; position: relative; }
+/* 操作パネルの幅を変える境界線（つかんで左右にドラッグ。ダブルクリックで元の幅に戻す） */
+.side-resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 8px; z-index: 20; cursor: col-resize; touch-action: none; }
+.side-resizer::after { content: ""; position: absolute; top: 0; bottom: 0; left: 3px; width: 2px; background: transparent; transition: background .15s; }
+.side-resizer:hover::after, .side-resizer.dragging::after { background: var(--accent-text); }
+body.resizing-side { cursor: col-resize; user-select: none; }
+body.resizing-side iframe, body.resizing-side video { pointer-events: none; }
 .side-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 .psec { border-bottom: 1px solid var(--line); }
 .psec-title {
@@ -797,6 +804,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 
 <main class="layout">
   <aside class="col-input" aria-label="入力と指定">
+    <div class="side-resizer" id="side-resizer" role="separator" aria-orientation="vertical" aria-label="操作パネルの幅（ドラッグで変更、ダブルクリックで元に戻す）" title="ドラッグで操作パネルの幅を変えます（ダブルクリックで元の幅）" tabindex="0"></div>
     <div class="side-scroll">
       <section class="psec" aria-labelledby="flow-title">
         <h2 class="psec-title" id="flow-title">作り方</h2>
@@ -864,8 +872,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <label class="prop"><span class="prop-label">区間の数</span><input type="number" id="long-count" min="1" max="120" step="1" data-slider-min="1" data-slider-max="24" aria-label="区間の数"></label>
           <div id="long-len-slot"></div>
           <p class="note" id="long-info"></p>
-          <div class="prop"><span class="prop-label" id="long-scene-label">場面転換</span><div class="seg" id="long-scene" role="group" aria-labelledby="long-scene-label"></div></div>
-          <p class="note" id="long-scene-info"></p>
           <div class="prop"><span class="prop-label" id="long-end-label">最後の区間</span><div class="seg" id="long-end" role="group" aria-labelledby="long-end-label"></div></div>
           <p class="note" id="long-end-info"></p>
           <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を Stable Diffusion で作る</label>
@@ -2198,18 +2204,27 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     // 場面転換の大きさ: 区間分け（plan）と区間のプロンプト（clip）への指示、つなぎの画像の作り方（denoise: img2img の強さ。null は txt2img。keep: つなぎの画像のプロンプトに元のプロンプトのタグが最低どれだけ残っていればよいか。下回ると文章AIに書き直してもらう）
     scenes: {
       subtle: { label: "控えめ", info: "元の画像を動かした動画を、そのまま長くしたような動画にします（同じ場所・同じ構図のまま、動きが少しずつ進みます）。",
-        plan: "SCENE CHANGES: minimal. This is simply a longer version of animating the given image: keep the same place, the same framing and the same ongoing situation for the whole video; the action develops slowly and continuously, with no jumps in place or time.",
+        plan: "SCENE CHANGES: minimal. This is simply a longer version of animating the given image: keep the same place, the same framing and the same ongoing situation for the whole video; the action develops slowly and continuously, with no jumps in place or time. The camera stays at the angle of the given picture (at most a slow push in or a slight drift).",
         clip: "Scene changes: minimal. Keep the same place and framing as the first frame; the camera moves only gently.",
         key: "Keep the same location, background, lighting and roughly the same camera framing as the previous keyframe.", denoise: 0.45, keep: 0.5 },
       normal: { label: "ふつう", info: "話が少しずつ進み、区間ごとにカメラの向きや距離、人物の位置が変わります（場所は同じまま）。",
-        plan: "SCENE CHANGES: moderate. The story progresses: the action develops into new actions, and between clips the camera may change its angle or distance (closer, wider, from the side) or the people may move to another spot nearby, but stay in the same overall location and time.",
-        clip: "Scene changes: moderate. The camera may change its angle or distance smoothly during the clip, but the place stays the same.",
-        key: "Keep the same location and lighting as the previous keyframe; change the camera angle, shot size and the people's position and pose as the story requires.", denoise: 0.62, keep: 0.4 },
-      big: { label: "大げさ", info: "短い映画のように、区間ごとに構図・場所・時間が大きく変わります（つなぎの画像を Stable Diffusion で作ると、場面をはっきり変えられます）。",
-        plan: "SCENE CHANGES: large. Make it like a short film: clips may jump to clearly different compositions, camera angles, places or times (scene changes between clips), while keeping the same people and their appearance.",
-        clip: "Scene changes: large. If this clip starts a new scene, establish the new place and composition clearly from the first frame.",
-        key: "If the story moves to another place, time or composition at this moment, change the location, background, lighting and camera tags boldly; keep the people and their appearance.", denoise: null, keep: 0.3 },
+        plan: "SCENE CHANGES: moderate. The story progresses: the action develops into new actions, and from clip to clip the camera may change its angle or distance with a smooth move (push in, pull out, arc, tilt, pan, a 3/4 view or profile shot) or the people may move to another spot nearby, but stay in the same overall location and time.",
+        clip: "Scene changes: moderate. Follow the camera plan of this clip: change the angle or distance smoothly during the clip, but the place stays the same.",
+        key: "Keep the same location and lighting as the previous keyframe; set the camera angle, shot size and the people's position and pose as the camera plan and the story require.", denoise: 0.62, keep: 0.4 },
+      big: { label: "大げさ", info: "短い映画のように、ローアングル・俯瞰・ダッチアングル・肩越し・アークショット・クレーン・クラッシュズームなどのカメラワークで、アングル・動きと構図・場所・時間を大胆に変えます（長い動画では、カメラの向きが時系列に沿ってつながるように区間ごとに割り振ります）。",
+        plan: "SCENE CHANGES: large - make it a dramatic short film. Give every clip a bold, clearly different camera: striking angles and strong movements chosen from this camera vocabulary: {vocab} Vary them across the clips the way a film editor would (for example eye level → low angle → over-the-shoulder → bird's-eye view, with an arc shot, a crane shot or a crash zoom), and clips may also jump to other compositions, places or times, while keeping the same people and their appearance.",
+        clip: "Scene changes: large. Follow the camera plan of this clip boldly and cinematically: open with its starting camera angle, perform its camera movement with energy (named with film terms such as arc shot, crane shot, dolly zoom, crash zoom, tracking shot), and arrive at its ending camera angle. If this clip starts a new scene, establish the new place and composition clearly from the first frame.",
+        key: "Use the camera angle of the camera plan boldly (low angle, worm's-eye view, high angle, top shot, bird's-eye view, Dutch angle, over-the-shoulder, POV, profile...). If the story moves to another place, time or composition at this moment, change the location, background, lighting and camera tags boldly; keep the people and their appearance.", denoise: null, keep: 0.3 },
     },
+    // カメラを時系列でつなぐ指示（区間分け）。区間の行の先頭に「カメラ: 開始 → 動き → 終わり」を書いてもらい、
+    // 区間の終わりのアングル＝次の区間の始まりのアングル（つなぎの画像のアングル）にする
+    cameraPlan: {
+      auto: "CAMERA TIMELINE (strict): plan the camera of the whole video as one continuous timeline in story order. Start every 区間 line with 「カメラ: (starting angle) → (camera movement) → (ending angle)」 using concrete camera terms in Japanese with the English term in parentheses, for example 「カメラ: アイレベル(eye level) → ドリーイン(dolly in) → ローアングル(low angle)」. Clip 1 starts with the camera angle of the given picture. The ending angle of each clip is exactly the starting angle of the next clip, because the picture at their boundary is shared, so the camera never jumps back and forth between angles: change the angle step by step in story order, and return to an earlier angle only when the story deliberately does so. Fixed pictures at clip boundaries decide the angle at that moment - read their angle and plan the camera so it arrives there.",
+      static: "CAMERA: locked-off for the whole video - the same angle, framing and focal length in every clip, with no camera movement; start every 区間 line with 「カメラ: 固定(static)」. The scene changes only through the action, place and time.",
+    },
+    keyCamera: "CAMERA (strict): this keyframe shows the ending camera of clip {a}, which is the starting camera of clip {b}, as written in their 「カメラ」 parts - express that camera angle and shot size with matching tags (for example from below, from above, dutch angle, pov, from side, from behind, over the shoulder, close-up, upper body, full body, wide shot). Do not use the camera of an earlier or later moment.",
+    keyCameraLast: "CAMERA (strict): this keyframe shows the ending camera of the last clip, as written in its 「カメラ」 part - express that camera angle and shot size with matching tags.",
+    keyCameraStatic: "CAMERA: the camera is locked-off for the whole video - keep exactly the same camera angle and framing as the previous keyframe.",
     defaultScene: "normal",
     // 最後の区間の終わり方: fl2va は「終わりの画像」まで（最初と最後のフレームを決める）、i2va は最後のフレームを決めずに成り行きに任せる
     ends: {
@@ -2265,6 +2280,9 @@ Write the result in natural Japanese only, in exactly this form and nothing else
 - breaks: the end of one clip and the start of the next not matching (position, pose, place, framing), or a clip that does not arrive at the fixed picture at its end
 - impossible or unreasonable parts: too much action for the clip length, a clip that stands still, physically impossible movement, an order of events that does not make sense, conflicts with the user's requests for a clip
 - whether the remade clips still fit the clips before and after them, which stay as they are
+- the camera timeline: each clip's starting camera angle equals the previous clip's ending angle (the shared boundary picture), the camera does not jump back and forth between angles, and every 「カメラ」 part follows the current settings below
+CURRENT SETTINGS (scene change and camera; apply them to the [REMAKE] clips): {scene}
+Clips marked [REMAKE - SETTINGS CHANGED] were written with other scene-change or camera settings: rewrite them, including their 「カメラ」 part, so they follow the current settings, while still starting from the clip before and arriving at the clip after and at the fixed pictures.
 Only the clips marked [REMAKE] may be changed; clips marked [KEEP] are already made and must not change, so fix problems by changing the [REMAKE] clips so that they fit the [KEEP] clips and the fixed pictures. Keep the user's requests for each clip.
 {rules}
 Answer in natural Japanese only, in exactly this form and nothing else (no markdown):
@@ -2558,6 +2576,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   promptOptions: {
     header: "Generation settings (these take priority over everything above):",
     h3Only: ["mode", "music", "voice", "vocal", "camera"],
+    // 「大げさ」で使うカメラの言葉（アングルと動き。Stable Diffusion のタグも添える）
+    cameraVocab: "camera angles - eye level (straight-on), low angle (from below), high angle (from above), top shot / overhead shot (from directly above), bird's-eye view (from high above, wide), worm's-eye view (from the ground, extreme low angle), Dutch angle (tilted frame), over-the-shoulder shot (over the shoulder, from behind one person), POV / point of view (pov), 3/4 view (three-quarter view), profile shot (from side), reverse shot (from the opposite side); camera movements - pan, tilt, dolly in / push in, dolly out / pull out, truck (lateral tracking), tracking shot, zoom in / zoom out, crash zoom, crane shot (rising or lowering), drone shot, Steadicam, handheld, dolly zoom, arc shot (orbiting around the subject), pedestal (straight up or down), static / locked-off.",
     instructionLines: {
       I2VA: "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced.",
       FL2VA: "How the reference pictures align with the target video — Picture 1 (from Shot 1) aligns with the 0.00-second mark of the target video; Picture 2 (from Shot 1) aligns with the {S}-second mark of the target video.",
@@ -2589,10 +2609,14 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
         ["big", "大げさ", "Motion level: large and energetic. Athletic, expressive movement with strong momentum and big amplitude: deep anticipation, explosive action and large follow-through; hair, clothing and soft body parts swing widely and settle with inertia; the environment reacts strongly (gusts of wind, splashes, dust)."],
       ] },
       { key: "camera", label: "カメラ", default: "auto", choices: [
-        ["auto", "おまかせ", "Camera: choose the camera work that best fits the scene and the motion setting."],
+        ["auto", "おまかせ", "Camera: choose the camera angles and movements that best fit the scene, following the scene-change (場面転換) setting."],
         ["static", "固定", "Camera: one static shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\"."],
-        ["zoom", "ズーム", "Camera: one continuous shot with no cuts, in which the camera gradually pushes in toward the main subject at slow speed across the whole clip."],
-        ["cuts", "場面転換", "Camera: use 2–3 shots with clear cuts that change the viewpoint or the scene. Each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to ...\", and keeps the same characters and outfits."],
+      ] },
+      // 場面転換: カメラの角度・動きと、場面の変わり方の大きさ（長い動画では区間分け・区間・つなぎの画像の指示にも使う）
+      { key: "scene", label: "場面転換", default: "normal", choices: [
+        ["subtle", "控えめ", "Scene change: minimal. Keep the place and the composition of the picture; the camera moves only gently (a slow push in or slight drift at most)."],
+        ["normal", "ふつう", "Scene change: moderate. During the clip the camera may change its angle or distance once with one smooth move (push in, pull out, arc, tilt or pan), staying in the same place."],
+        ["big", "大げさ", "Scene change: large - make it bold and cinematic like a film trailer, using striking camera angles and movements named with these film terms: {vocab} For example 2-3 shots with clear cuts to clearly different angles (each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to a low-angle shot ...\"), keeping the same characters and outfits. If the mode needs one continuous shot (FL2VA or L2VA), do one dramatic continuous camera move instead of cuts (for example a fast arc shot, a crane shot or a crash zoom). If the camera is set to static, keep it static."],
       ] },
     ],
     singleShotModes: ["FL2VA", "L2VA"],
@@ -2634,6 +2658,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
+  // 操作パネル（左）の幅の範囲（px と、画面の幅に対する割合）
+  sidePanel: { min: 260, max: 720, maxRatio: 0.6 },
   // 画像の情報に入っているキャラクター名・人名は動画モデルには通じないので、見た目で言い換えさせる（ストーリーとプロンプトの両方）
   namingRule: `CHARACTER NAMES (strict): the image information may contain character names, person names, series or franchise titles, or artist names (tags such as "firstname lastname", "name (series)", "series name"). The video model has no idea who they are, so never write any of them. Refer to each person by their visible appearance instead - apparent sex and age, hair color and style, eye color, outfit, and other distinctive features - and keep using the same description for the same person every time (for example "the girl with long red hair in twin tails"). You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. If the input story contains names, replace them with appearance descriptions.`,
   // 表情: 顔が固まったり急に切り替わったりしないよう、人間らしく少しずつ変わる様子を書かせる（すべての作り方のプロンプトに足す）
@@ -5714,6 +5740,11 @@ class MainView {
     if (!cfg.fits.some(([v]) => v === ui.fit)) ui.fit = cfg.defaultFit;
     ui.runCount = Math.min(Math.max(Number(ui.runCount) || 1, 1), USER_SETTINGS.maxRunCount);
     ui.promptOptions ??= {};
+    // 前の版の「カメラ」の「ズーム」「場面転換」は、カメラ「おまかせ」＋場面転換（場面転換は「大げさ」）に置き換える。
+    // 「長い動画」にあった場面転換は、プロンプトの指定の場面転換に移す
+    if (ui.promptOptions.camera === "cuts" && !ui.promptOptions.scene) ui.promptOptions.scene = "big";
+    if (["zoom", "cuts"].includes(ui.promptOptions.camera)) ui.promptOptions.camera = "auto";
+    if (!ui.promptOptions.scene && USER_SETTINGS.long.scenes[ui.longScene]) ui.promptOptions.scene = ui.longScene;
     for (const g of USER_SETTINGS.promptOptions.groups) {
       if (!g.choices.some(([v]) => v === ui.promptOptions[g.key])) ui.promptOptions[g.key] = g.default;
     }
@@ -5861,6 +5892,7 @@ class MainView {
     this.on($("story-regen"), "click", () => this.regenerateStory());
     this.on($("story-to-prompt"), "click", () => this.storyToPrompt());
     this.bindLong();
+    this.bindSideResizer();
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
     this.on($("to-ja"), "click", () => this.translate("ja"));
@@ -6439,6 +6471,7 @@ class MainView {
         b.dataset.group = g.key;
         b.dataset.value = value;
         b.textContent = text;
+        if (g.key === "scene") b.title = USER_SETTINGS.long.scenes[value]?.info || "";
         this.on(b, "click", () => {
           this.saveUi({ promptOptions: { ...this.store.ui.promptOptions, [g.key]: value } });
           this.updatePromptOptions();
@@ -6464,7 +6497,6 @@ class MainView {
     if (this.isRef()) chosen.mode = "Ref2VA";
     // 長い動画: モードは区間ごとに決まる（前後の区間しだいで I2VA か FL2VA）
     if (this.isLong()) chosen.mode = this.segCtx?.mode || "I2VA";
-    if (chosen.camera === "cuts" && USER_SETTINGS.promptOptions.singleShotModes.includes(chosen.mode)) chosen.camera = "auto";
     if (!this.isH3()) {
       chosen.mode = "I2VA";
       for (const key of USER_SETTINGS.promptOptions.h3Only) if (key !== "mode") delete chosen[key];
@@ -6543,8 +6575,8 @@ class MainView {
     const cfg = USER_SETTINGS.promptOptions;
     const chosen = this.promptOptions();
     const ref = this.isRef();
-    const lines = cfg.groups.filter((g) => chosen[g.key] && (this.isH3() || !cfg.h3Only.includes(g.key)) && !(ref && g.key === "mode"))
-      .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2])
+    const lines = cfg.groups.filter((g) => chosen[g.key] && (this.isH3() || !cfg.h3Only.includes(g.key)) && !(ref && g.key === "mode") && !(this.segCtx && g.key === "scene"))
+      .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2].replace("{vocab}", cfg.cameraVocab))
       .map((line) => (ref ? line.replaceAll("integrated_multimodal_description", "detailed_description") : line));
     if (this.isH3() && !ref) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
     if (chosen.mode === "FL2VA" && !this.last && !this.segCtx) lines.push(cfg.lastSameAsFirst);
@@ -6684,7 +6716,6 @@ class MainView {
 
   setBusy(busy) {
     for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-i2i", "long-rethink", "long-reseed"]) $(id).disabled = busy;
-    document.querySelectorAll("#long-scene button").forEach((b) => { b.disabled = busy; });
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
     if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn() || el.dataset.lock === "true"; });
     if (!busy) $("long-list").querySelectorAll(".long-key-pick input, .long-reseed").forEach((el) => { el.disabled = el.dataset.lock === "true"; });
@@ -7626,12 +7657,46 @@ class MainView {
     };
   }
 
+  // 場面転換は「プロンプトの指定」の場面転換（いま操作パネルで選んでいるもの）
   longScene() {
-    return USER_SETTINGS.long.scenes[this.store.ui.longScene] ? this.store.ui.longScene : USER_SETTINGS.long.defaultScene;
+    const v = this.store.ui.promptOptions?.scene;
+    return USER_SETTINGS.long.scenes[v] ? v : USER_SETTINGS.long.defaultScene;
   }
 
   sceneCfg() {
     return USER_SETTINGS.long.scenes[this.longScene()];
+  }
+
+  // 区間のプロンプトを書いたときの操作パネルの指定（プロンプトの指定・長さ・方向）
+  optsKey() {
+    return JSON.stringify([this.store.ui.promptOptions, (this.store.ui.direction || "").trim()]);
+  }
+
+  // カメラが「固定」か（固定のときは、区間をまたいでもアングルを変えない）
+  cameraStatic() {
+    return this.store.ui.promptOptions?.camera === "static";
+  }
+
+  // いま操作パネルで選んでいる、場面転換とカメラ（作り直すときに、前と変わったかを見分けるもと）
+  sceneKey() {
+    return `${this.longScene()}/${this.cameraStatic() ? "static" : "auto"}`;
+  }
+
+  // 区間分け・見直しに渡す、場面転換とカメラの指示
+  planSceneText() {
+    const cfg = USER_SETTINGS.long;
+    return `${this.sceneCfg().plan.replace("{vocab}", USER_SETTINGS.promptOptions.cameraVocab)}\n${cfg.cameraPlan[this.cameraStatic() ? "static" : "auto"]}`;
+  }
+
+  // 区間のプロンプトに渡す、場面転換とカメラの指示
+  clipSceneText() {
+    return `${this.sceneCfg().clip} ${this.cameraStatic() ? "The camera is locked-off (static) for the whole clip." : "Follow the 「カメラ」 part of this clip's plan: open with its starting angle, perform its movement, and end at its ending angle, which is the first frame of the next clip."}`;
+  }
+
+  // つなぎの画像のプロンプトに渡す、場面転換とカメラの指示
+  keySceneText(last) {
+    const cfg = USER_SETTINGS.long;
+    return `${this.sceneCfg().key}\n${this.cameraStatic() ? cfg.keyCameraStatic : last ? cfg.keyCameraLast : cfg.keyCamera}`;
   }
 
   // 最後の区間の終わり方（fl2va: 終わりの画像まで / i2va: 成り行きに任せる）
@@ -7660,17 +7725,6 @@ class MainView {
 
   fillLongOptions() {
     const cfg = USER_SETTINGS.long;
-    const scene = this.longScene();
-    $("long-scene").replaceChildren(...Object.entries(cfg.scenes).map(([key, sc]) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = sc.label;
-      b.setAttribute("aria-pressed", String(key === scene));
-      b.disabled = !!this.running;
-      this.on(b, "click", () => { this.saveUi({ longScene: key }); this.fillLongOptions(); });
-      return b;
-    }));
-    $("long-scene-info").textContent = cfg.scenes[scene].info;
     const end = this.longEnd();
     $("long-end").replaceChildren(...Object.entries(cfg.ends).map(([key, e]) => {
       const b = document.createElement("button");
@@ -7726,6 +7780,43 @@ class MainView {
     const hi = Math.max(lo, Math.floor(total / min + 1e-9));
     if (count >= lo && count <= hi) return count;
     return Math.min(hi, Math.max(lo, Math.round(total / len)));
+  }
+
+  // 操作パネルの幅を、境界線のドラッグで変える（幅は保存して、次に開いたときも使う）
+  bindSideResizer() {
+    const cfg = USER_SETTINGS.sidePanel;
+    const layout = document.querySelector(".layout");
+    const handle = $("side-resizer");
+    const clamp = (w) => Math.round(Math.min(Math.max(w, cfg.min), Math.max(cfg.min, Math.min(cfg.max, window.innerWidth * cfg.maxRatio))));
+    const apply = (w) => { layout.style.setProperty("--side-w", `${clamp(w)}px`); };
+    if (this.store.ui.sideWidth) apply(this.store.ui.sideWidth);
+    let start = null;
+    this.on(handle, "pointerdown", (e) => {
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      start = { x: e.clientX, w: document.querySelector(".col-input").getBoundingClientRect().width };
+      handle.classList.add("dragging");
+      document.body.classList.add("resizing-side");
+    });
+    this.on(handle, "pointermove", (e) => { if (start) apply(start.w + e.clientX - start.x); });
+    const end = () => {
+      if (!start) return;
+      start = null;
+      handle.classList.remove("dragging");
+      document.body.classList.remove("resizing-side");
+      this.saveUi({ sideWidth: Math.round(document.querySelector(".col-input").getBoundingClientRect().width) });
+    };
+    this.on(handle, "pointerup", end);
+    this.on(handle, "pointercancel", end);
+    this.on(handle, "dblclick", () => { layout.style.removeProperty("--side-w"); this.saveUi({ sideWidth: null }); });
+    this.on(handle, "keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const w = clamp(document.querySelector(".col-input").getBoundingClientRect().width + (e.key === "ArrowRight" ? 16 : -16));
+      apply(w);
+      this.saveUi({ sideWidth: w });
+    });
+    this.on(window, "resize", () => { if (this.store.ui.sideWidth) apply(this.store.ui.sideWidth); });
   }
 
   bindLong() {
@@ -8416,7 +8507,7 @@ class MainView {
     const text = await llm.generatePlan({
       total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
       story: keepStory ? $("story").value.trim() : "", requests: lengths.map((_, i) => old[i]?.instruction || ""), images, signal,
-      scene: this.sceneCfg().plan, keysText: keys.text, fixed,
+      scene: this.planSceneText(), keysText: keys.text, fixed,
     });
     let plan = LlmClient.parsePlan(text, lengths.length);
     let note = "";
@@ -8425,7 +8516,7 @@ class MainView {
       const story = keepStory ? $("story").value.trim() : plan.story || text.trim();
       const again = await llm.generatePlan({
         total: sum, lengths, contextText: ctx.contextText, optionsText, direction: (this.store.ui.direction || "").trim(),
-        story, requests: lengths.map((_, i) => old[i]?.instruction || ""), images, signal, strict: true, scene: this.sceneCfg().plan,
+        story, requests: lengths.map((_, i) => old[i]?.instruction || ""), images, signal, strict: true, scene: this.planSceneText(),
         keysText: keys.text, fixed,
       });
       const second = LlmClient.parsePlan(again, lengths.length);
@@ -8451,6 +8542,7 @@ class MainView {
         // 内容が変わった区間に動画があれば、「作り直す」をオンにしておく（動画と内容が食い違ったままにしない）
         if (!fresh && g.job && g.text.trim() !== plan.segments[i].trim()) g.picked = true;
         g.text = plan.segments[i];
+        g.planKey = this.sceneKey();
       }
       return g;
     });
@@ -8477,8 +8569,9 @@ class MainView {
     await this.freeComfyMemory();
     const sys = USER_SETTINGS.story.system;
     const rules = sys.split("\n").filter((l) => /^(WORDING|NAMES) \(strict\)/.test(l)).join("\n");
-    const system = cfg.reviewSystem.replace("{rules}", rules);
-    const clips = segs.map((g, i) => cfg.reviewClip.replace("{k}", i + 1).replace("{s}", g.seconds).replace("{mark}", remake.has(i) ? "REMAKE" : "KEEP")
+    const system = cfg.reviewSystem.replace("{rules}", rules).replace("{scene}", this.planSceneText());
+    const sk = this.sceneKey();
+    const clips = segs.map((g, i) => cfg.reviewClip.replace("{k}", i + 1).replace("{s}", g.seconds).replace("{mark}", remake.has(i) ? (g.planKey && g.planKey !== sk ? "REMAKE - SETTINGS CHANGED" : "REMAKE") : "KEEP")
       .replace("{text}", g.text.trim() || "（未記入）").replace("{ask}", g.instruction.trim() ? `（ユーザーの指示: ${g.instruction.trim()}）` : ""));
     const ctx = await this.llmContext();
     const pics = this.planKeyPictures(segs, segs.length, ctx.images.length, !!llm.profile?.vision);
@@ -8508,6 +8601,7 @@ class MainView {
       const i = hit ? Number(hit[1]) - 1 : -1;
       if (i < 0 || !remake.has(i) || !hit[2].trim() || hit[2].trim() === segs[i].text.trim()) continue;
       segs[i].text = hit[2].trim();
+      segs[i].planKey = sk;
       fixed.push(i + 1);
     }
     this.setStep("story", "done", "見直し");
@@ -8616,7 +8710,13 @@ class MainView {
     // つなぎの画像を新しく作る境目（区間 b の最初＝区間 b-1 の最後）
     // （最後の区間の終わりにも画像を作り、すべての区間を「最初の画像 → 最後の画像」の FL2VA にして、継ぎ目をそろえる）
     // 別シードで再生成のときは、「作り直す」をオンにしたつなぎの画像（プロンプトがあるもの）だけを、同じプロンプトで作り直す
-    const keyList = reseed ? [...redoKeys].filter((b) => this.keyHolder(b).keyPlan?.prompt || this.keyHolder(b).key?.prompt).sort((a, b) => a - b) : useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b <= kmax && (!this.keyHolder(b).key || redoKeys.has(b))).sort((a, b) => a - b) : [];
+    // 前後の区間をどちらも作り直すつなぎの画像は、場面転換・カメラの指定が作ったときから変わっていれば作り直す
+    // （片側の区間が残るときは、残る動画とつながるように、画像はそのまま使う）
+    const staleKey = (b) => {
+      const h = this.keyHolder(b);
+      return h.keyInfo?.source === "sd" && h.keyOpts !== this.sceneKey() && set.has(b - 1) && (b >= n || set.has(b));
+    };
+    const keyList = reseed ? [...redoKeys].filter((b) => this.keyHolder(b).keyPlan?.prompt || this.keyHolder(b).key?.prompt).sort((a, b) => a - b) : useSd ? [...new Set(order.flatMap((i) => [i, i + 1]))].filter((b) => b > 0 && b <= kmax && (!this.keyHolder(b).key || redoKeys.has(b) || staleKey(b))).sort((a, b) => a - b) : [];
     if (keyList.length && (!this.meta || this.meta.format === "none" || !this.meta.prompt)) throw new UserError(m.sdNeedMeta);
     // 区間ごとのモード（あとで決まる画像に頼らず、ここで決めておく）
     const modeOf = (i) => {
@@ -8628,7 +8728,7 @@ class MainView {
     const ctxFor = (i) => {
       const fill = fillFor(i);
       const mode = modeOf(i);
-      const rules = [i === 0 ? fill(cfg.firstRule) : fill(cfg.continueRule), this.sceneCfg().clip];
+      const rules = [i === 0 ? fill(cfg.firstRule) : fill(cfg.continueRule), this.clipSceneText()];
       if (mode === "FL2VA") rules.push(cfg.endRule);
       return { mode, seconds: segs[i].seconds, rules };
     };
@@ -8651,7 +8751,8 @@ class MainView {
       const seg = segs[i];
       const ctx = ctxFor(i);
       if (reseed && seg.prompt.trim()) continue;
-      if (seg.prompt.trim() && seg.promptFor === MainView.segSource(seg) && (seg.promptManual || seg.promptMode === ctx.mode)) continue;
+      // プロンプトを書き直すのは、内容・モード・操作パネルの指定（場面転換・カメラ・BGM など）が、前に書いたときから変わったとき
+      if (seg.prompt.trim() && seg.promptFor === MainView.segSource(seg) && (seg.promptManual || (seg.promptMode === ctx.mode && seg.promptOpts === this.optsKey()))) continue;
       this.segCtx = ctx;
       try {
         this.running.phase = "prompt";
@@ -8660,7 +8761,7 @@ class MainView {
         this.setWork(`seg:${i}`, "prompt", cfg.work.prompt);
         seg.prompt = await this.makeSegmentPrompt(llm, i, signal, set);
         this.setWork(`seg:${i}`, "wait");
-        Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: ctx.mode, promptManual: false });
+        Object.assign(seg, { promptFor: MainView.segSource(seg), promptMode: ctx.mode, promptManual: false, promptOpts: this.optsKey() });
         this.renderLong();
       } finally {
         this.segCtx = null;
@@ -8755,7 +8856,7 @@ class MainView {
 
   // つなぎの画像のプロンプトを書き直すかどうかを決めるもとの文（前後の区間の内容・指示と、場面転換）
   static keySource(segs, b) {
-    return JSON.stringify([segs[b - 1]?.text, segs[b - 1]?.instruction, segs[b]?.text, segs[b]?.instruction, $("story").value]);
+    return JSON.stringify([segs[b - 1]?.text, segs[b - 1]?.instruction, segs[b]?.text, segs[b]?.instruction, $("story").value, window.stillmotion?.main?.sceneKey?.() || ""]);
   }
 
   // つなぎの画像のプロンプトを文章AIに書いてもらう（区間 b の最初＝区間 b-1 の最後の場面）。
@@ -8774,7 +8875,7 @@ class MainView {
     this.setWork(`key:${b}`, "prompt", cfg.work.keyPrompt);
     this.status(fill(m.keyPrompting));
     const last = b >= segs.length;
-    const system = fill(last ? cfg.keySystem.replace(", which is also the first moment of clip {b}", " - the very last frame of the whole video") : cfg.keySystem).replace("{scene}", this.sceneCfg().key);
+    const system = fill(last ? cfg.keySystem.replace(", which is also the first moment of clip {b}", " - the very last frame of the whole video") : cfg.keySystem).replace("{scene}", fill(this.keySceneText(last)));
     let user = fill(last ? cfg.keyUser.replace("Clip {b} (starts at this keyframe): {next}", "This keyframe is the very last frame of the whole video.") : cfg.keyUser).replace("{prompt}", this.meta.prompt).replace("{story}", $("story").value.trim() || "（なし）")
       .replace("{prev}", segText(segs[b - 1])).replace("{next}", last ? "（なし。この画像は動画全体の最後のフレーム）" : segText(segs[b]));
     // 前後のつなぎの画像（前: 区間 b の最初、次: 区間 b+1 の最後）と、前後の区間の動画のプロンプト
@@ -8955,6 +9056,7 @@ class MainView {
     const blob = await (await fetch(out.dataUrl)).blob();
     const frame = await MainView.frameFromCanvasFile(new File([blob], `key${b}_${width}x${height}.png`, { type: "image/png" }), width, height);
     holder.key = { ...frame, isKey: true, prompt };
+    holder.keyOpts = this.sceneKey();
     holder.keyInfo = {
       source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}・${from === this.img ? "元の画像" : this.keyLabel(k)}から）` : "txt2img", model: this.meta.model, seed,
       sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [], savedAs: out.savedAs || "",
