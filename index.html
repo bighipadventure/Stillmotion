@@ -2191,7 +2191,7 @@ const USER_SETTINGS = {
   story: {
     system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
 Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment. The Stable Diffusion prompt is the most reliable source for the action: find every tag that names an act, action, pose, position or interaction (who does what to whom or with what, with which body part or object) and treat them as facts about the scene. Ignore the negative prompt.
-Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Also decide how each person's facial expression changes - gradually and believably, the way a real person's face reacts to what is happening (eyes, eyebrows, cheeks and mouth together), never frozen and never snapping from one expression to another. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat.
+Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Also decide how each person's facial expression changes - gradually and believably, the way a real person's face reacts to what is happening (eyes, eyebrows, cheeks and mouth together), never frozen and never snapping from one expression to another. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat. When 動きの音 is 強調, name the concrete sound of each movement as it happens (衣擦れ, 足音, 液体の音, 肌が触れ合う・ぶつかる音, 物音) and the ambient sound of the place; when it is なし, mention no such sounds.
 WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag for an act or object has no natural Japanese word, write the tag word itself in katakana or as-is (this never applies to names - see below).
 NAMES (strict): the image information may contain character names, person names, series titles or artist names. The video model cannot understand them, so never write any of them. Call each person by their visible appearance instead (for example "赤い髪をツインテールにした少女", "茶色の短髪で緑の上着の少年"), and use the same description for the same person every time. You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
@@ -2601,7 +2601,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets, retention markers (fully_preserved, partially_preserved, attribute_transfer, weak_reference, fully_copy, partially_copy, reference), N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
   promptOptions: {
     header: "Generation settings (these take priority over everything above):",
-    h3Only: ["mode", "music", "voice", "vocal", "camera"],
+    h3Only: ["mode", "music", "voice", "vocal", "sfx", "camera"],
     // 「大げさ」で使うカメラの言葉（アングルと動き。Stable Diffusion のタグも添える）
     cameraVocab: "camera angles - eye level (straight-on), low angle (from below), high angle (from above), top shot / overhead shot (from directly above), bird's-eye view (from high above, wide), worm's-eye view (from the ground, extreme low angle), Dutch angle (tilted frame), over-the-shoulder shot (over the shoulder, from behind one person), POV / point of view (pov), 3/4 view (three-quarter view), profile shot (from side), reverse shot (from the opposite side); camera movements - pan, tilt, dolly in / push in, dolly out / pull out, truck (lateral tracking), tracking shot, zoom in / zoom out, crash zoom, crane shot (rising or lowering), drone shot, Steadicam, handheld, dolly zoom, arc shot (orbiting around the subject), pedestal (straight up or down), static / locked-off.",
     instructionLines: {
@@ -2628,6 +2628,12 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       { key: "vocal", label: "息・声の音", default: "off", choices: [
         ["on", "あり", "Non-verbal vocal sounds: allowed. Breathing, panting, sighs, gasps, moans, laughter and screams from characters may be described where they fit the action, in integrated_multimodal_description and overall_soundscape."],
         ["off", "なし", "Non-verbal vocal sounds: none. No breathing or breath sounds, panting, sighs, gasps, moans, laughter, giggles, screams or any other sound from a character's mouth, nose or throat, in any field including overall_soundscape."],
+      ] },
+      // 口から出る以外の音（衣擦れ・液体・肌が触れ合う音・足音・物音・背景の環境音）。音があるほうが動きのある動画になりやすい
+      { key: "sfx", label: "動きの音", default: "strong", choices: [
+        ["strong", "強調", "Action sounds and ambience (sounds that do not come from a mouth): emphasized. Make the soundscape rich, concrete and tightly synchronized with every movement - describe in overall_soundscape, in time order, each physical sound with its source, timing, rhythm and loudness: fabric rustling and clothes brushing or sliding, hair swishing, footsteps and shifting weight, liquid sounds (splashing, dripping, pouring, sloshing, wet sounds), skin and bodies touching, rubbing, patting or slapping against each other, impacts and thuds, objects being moved, handled or set down, furniture creaking; plus a continuous ambient bed of the place (room tone, wind, rain, water, birds, traffic, crowd, distant city). Every visible motion has an audible sound; never leave the soundscape silent and never write N/A for it. Mouth sounds still follow the speech and breath/voice settings."],
+        ["normal", "ふつう", "Action sounds and ambience: describe the physical sounds of the motion and the ambient sound of the place in overall_soundscape where they naturally fit."],
+        ["off", "なし", "Action sounds and ambience: none. No footsteps, fabric, liquid, body, impact or object sounds and no ambient sound of the place."],
       ] },
       { key: "motion", label: "動き", default: "normal", choices: [
         ["subtle", "控えめ", "Motion level: subtle. Keep the actions small and calm, but fully alive and physically real (weight shifts, breathing, small gestures), with hair, clothing and the environment still moving continuously; never a frozen or puppet-like pose."],
@@ -2656,6 +2662,10 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       vocal: {
         en: "No vocal sounds from the characters: no breathing sounds, panting, sighs, gasps, moans, laughter or screams.",
         ja: "登場人物の声の音なし: 息づかい・あえぎ・ため息・息をのむ音・うめき声・笑い声・叫び声は聞こえない。",
+      },
+      sfx: {
+        en: "No action sounds or ambience: no footsteps, fabric, liquid, body, impact or object sounds, and no ambient sound of the place.",
+        ja: "動きの音なし: 足音・衣擦れ・液体の音・体の音・ぶつかる音・物音・その場の環境音は聞こえない。",
       },
     },
     soundscapeField: "overall_soundscape:",
@@ -6635,7 +6645,7 @@ class MainView {
           this.saveUi({ promptOptions: { ...this.store.ui.promptOptions, [g.key]: value } });
           this.updatePromptOptions();
           // セリフ・息・BGM を切り替えたら、できているプロンプトの音の指定もすぐ書き直す
-          if (["voice", "vocal", "music"].includes(g.key) && !this.running) {
+          if (["voice", "vocal", "music", "sfx"].includes(g.key) && !this.running) {
             if ($("prompt-en").value.trim()) $("prompt-en").value = this.applyAudioRules($("prompt-en").value);
             if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
           }
@@ -6700,7 +6710,7 @@ class MainView {
     // 素材から動画で、素材の音声（声・セリフ・BGM）を使うときは、素材の指定を優先して書き込まない
     const refAudio = this.isRef() && this.materialItems.some((i) => i.kind === "audio" || (i.kind === "video" && i.hasAudio && i.audioMode !== "off"));
     if (refAudio) return out;
-    const rules = ["voice", "vocal"].filter((k) => chosen[k] === "off").map((k) => cfg.audioRules[k][lang === "ja" ? "ja" : "en"]);
+    const rules = ["voice", "vocal", "sfx"].filter((k) => chosen[k] === "off").map((k) => cfg.audioRules[k][lang === "ja" ? "ja" : "en"]);
     if (rules.length) {
       const at = out.indexOf(cfg.soundscapeField);
       if (at >= 0) {
