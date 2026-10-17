@@ -270,7 +270,7 @@ body.resizing-side iframe, body.resizing-side video { pointer-events: none; }
 .adv-badge:empty { display: none; }
 .adv-arrow { margin-left: auto; font-size: 16px; color: var(--muted); }
 dialog#advanced {
-  width: min(900px, 100vw - 24px); height: min(760px, 100dvh - 24px); max-width: none; max-height: none;
+  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
   padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
@@ -330,7 +330,7 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .mat-icon { font-size: 18px; line-height: 1; }
 .mat-tag { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1.5; background: rgba(0, 0, 0, .7); color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 dialog#materials {
-  width: min(1040px, 100vw - 24px); height: min(820px, 100dvh - 24px); max-width: none; max-height: none;
+  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
   padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
@@ -696,7 +696,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 
 /* ===== SETTINGS DIALOG ===== */
 dialog#settings {
-  width: min(920px, 100vw - 24px); height: min(680px, 100dvh - 24px); max-width: none; max-height: none;
+  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
   padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
@@ -1091,9 +1091,20 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </div>
     </section>
     <section class="card">
-      <h4 class="card-title">ワークフローの設定</h4>
+      <h4 class="card-title">動画AI（ワークフローの設定）</h4>
       <p class="note" id="wfp-note"></p>
       <div class="wfp-grid" id="wf-params"></div>
+    </section>
+    <section class="card">
+      <h4 class="card-title">文章AI</h4>
+      <p class="note" id="adv-llm-note"></p>
+      <div class="wfp-grid" id="adv-llm"></div>
+    </section>
+    <section class="card">
+      <h4 class="card-title">画像AI（長い動画のつなぎの画像）</h4>
+      <p class="note" id="adv-sd-note"></p>
+      <div class="wfp-grid" id="adv-sd"></div>
+      <div class="row" style="margin-top:6px"><button id="adv-sd-reset" hidden>元の画像に合わせる設定に戻す</button></div>
     </section>
   </div>
   <div class="adv-foot">
@@ -1285,6 +1296,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <label class="check" style="margin:0"><input type="checkbox" id="vid-free"> 生成後に ComfyUI のGPUメモリを解放する（文章AIと同じGPUを使うならおすすめ）</label>
         <p class="note" style="margin:6px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
       </div>
+      <div class="card" id="vid-params-card">
+        <h4 class="card-title"><span class="num">4</span>モデル・LoRA・サンプラーなど <span class="badge">メイン画面の「詳しい設定」と同じ</span></h4>
+        <p class="note" id="vid-params-note"></p>
+        <div class="wfp-grid" id="vid-params"></div>
+        <div class="row" style="margin-top:6px"><button id="vid-params-reset" hidden>ワークフローの値に戻す</button></div>
+      </div>
       <div class="pane-actions"><button class="primary" id="vid-save">追加して使う</button><button class="danger" id="vid-del">この設定を削除</button><p class="msg" id="vid-msg"></p></div>
     </section>
 
@@ -1297,6 +1314,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         <div class="row"><button id="sd-test">接続を確かめる</button><span class="msg" id="sd-msg"></span></div>
         <p class="note" id="sd-cors"></p>
         <p class="note">同じ PC の GPU で動画も作るため、つなぎの画像を作り終えたら、Stable Diffusion のモデルを VRAM から外してから動画づくりに移ります。</p>
+      </div>
+      <div class="card">
+        <h4 class="card-title">画像の作り方 <span class="badge">メイン画面の「詳しい設定」と同じ</span></h4>
+        <p class="note" id="sd-gen-note"></p>
+        <div class="wfp-grid" id="sd-gen"></div>
+        <div class="row" style="margin-top:6px"><button id="sd-gen-reset" hidden>元の画像に合わせる設定に戻す</button></div>
       </div>
     </section>
 
@@ -2151,7 +2174,8 @@ const USER_SETTINGS = {
     skipKeys: ["expression", "filename_prefix", "type", "device", "PowerLoraLoaderHeaderWidget", "➕ Add Lora"],
     skipClasses: ["LoadImage"],
     keepKeys: { SelectCLIPDevice: ["device"] },   // skipKeys にあっても表示するもの
-    order: [/Lora/i, /Primitive|Switch/i, /Sampler|Scheduler|Guider/i, /Resolution/i, /UNET|Checkpoint|CLIP|VAE/i, /CreateVideo/i, /Save/i],
+    // 上から重要な順: モデル → テキストエンコーダー → VAE → LoRA → サンプラー（ステップ数・CFG など） → 値の切り替え → 解像度 → 動画の書き出し → 保存
+    order: [/UNET|Checkpoint|DiffusionModel|ModelLoader/i, /CLIPLoader|DualCLIP|TripleCLIP|TextEncoder/i, /VAELoader/i, /Lora/i, /Sampler|Scheduler|Guider|CFG/i, /Primitive|Switch/i, /Resolution/i, /CreateVideo/i, /Save/i],
     loraListClass: "LoraLoaderModelOnly",
   },
   editorLoaders: { llm: "loadLlm", video: "loadVideo", skill: "loadSkill", style: "loadStyle" },
@@ -3311,6 +3335,12 @@ Tips for better results:
     helpMissingNode: "ノード: ",
     helpMissingModel: "モデル: ",
     wfpNote: "「{name}」のワークフローの値です。変えた項目には ● が付きます（ワークフローごとに保存されます）。",
+    wfpNoProfile: "先に上でワークフローを登録して「追加して使う」を押すと、ここでモデル・LoRA・サンプラーなどを変えられます。",
+    advLlmNote: "いま使っている文章AI（{name}）の設定です。設定の「文章AI」と同じ値です。",
+    advLlmNone: "文章AIがまだ登録されていません。設定の「文章AI」で登録してください。",
+    sdGenNote: "つなぎの画像を作るときのモデル・サンプラーなどです。「元の画像と同じ」・空欄のままなら、元の画像のメタデータ（作ったときのモデル・設定）に合わせます。メイン画面の「詳しい設定」と同じ値です。",
+    sdGenOffline: "画像AI（{name}）につながらないため、モデルやサンプラーの一覧を読めませんでした（いまの値だけ表示しています）。",
+    sdSame: "元の画像と同じ",
     wfpNone: "このワークフローには、ここで変えられる値がありません。",
     wfpSimpleTitle: "スイッチ・数値",
     wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
@@ -4104,6 +4134,15 @@ class SdWebUiClient {
     return res;
   }
 
+  // モデル・サンプラー・スケジューラーの一覧（「詳しい設定」のプルダウン用）
+  async options() {
+    const [models, samplers, schedulers] = await Promise.all([
+      this.get("/sdapi/v1/sd-models").catch(() => []), this.get("/sdapi/v1/samplers").catch(() => []), this.get("/sdapi/v1/schedulers").catch(() => []),
+    ]);
+    if (!models.length && !samplers.length) throw new Error("no lists");
+    return { models: models.map((m) => m.title), samplers: samplers.map((x) => x.name), schedulers: schedulers.map((x) => x.label || x.name) };
+  }
+
   // 元の画像のモデル名を、WebUI のモデル一覧の名前（title）にする
   async resolveModel(name) {
     if (!name) return null;
@@ -4216,6 +4255,14 @@ class SdComfyClient {
   }
 
   // A1111 のサンプラー名・スケジューラー名を ComfyUI の名前にする
+  async options() {
+    const [models, samplers, schedulers] = await Promise.all([
+      this.inputList("CheckpointLoaderSimple", "ckpt_name"), this.inputList("KSampler", "sampler_name"), this.inputList("KSampler", "scheduler"),
+    ]);
+    if (!models.length && !samplers.length) throw new Error("no lists");
+    return { models, samplers, schedulers };
+  }
+
   static samplerName(name) {
     const map = {
       "euler a": "euler_ancestral", euler: "euler", lms: "lms", heun: "heun", dpm2: "dpm_2", "dpm2 a": "dpm_2_ancestral",
@@ -5862,7 +5909,8 @@ class MainView {
     this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5, zoom: 1 }; this.updateFrame(); });
     this.on($("crop-zoom"), "input", (e) => this.setZoom(100 / Number(e.target.value)));
     const adv = $("advanced");
-    this.on($("open-advanced"), "click", () => { this.renderWorkflowParams(); adv.showModal(); });
+    this.on($("open-advanced"), "click", () => { this.renderWorkflowParams(); this.renderLlmQuick(); this.renderSdGen(); adv.showModal(); });
+    this.on($("adv-sd-reset"), "click", () => { this.sdConfig().gen = {}; this.store.save(); this.renderSdGen(); });
     this.on($("close-advanced"), "click", () => adv.close());
     this.on($("done-advanced"), "click", () => adv.close());
     this.on(adv, "click", (e) => { if (e.target === adv) adv.close(); });
@@ -6059,8 +6107,7 @@ class MainView {
     return v ? WorkflowParams.apply(v.workflow, this.overridesFor()) : null;
   }
 
-  setOverride(param, value) {
-    const id = this.store.data.videoActive;
+  setOverride(param, value, id = this.store.data.videoActive, reset = $("wfp-reset")) {
     const all = (this.store.ui.overrides ??= {});
     const mine = { ...(all[id] || {}) };
     if (value === param.value) delete mine[param.path];
@@ -6068,8 +6115,9 @@ class MainView {
     if (Object.keys(mine).length) all[id] = mine;
     else delete all[id];
     this.store.save();
-    $("wfp-reset").hidden = !Object.keys(mine).length;
+    reset.hidden = !Object.keys(mine).length;
     this.updateAdvancedBadge();
+    if (id !== this.store.data.videoActive) return;
     if (param.path.endsWith("|multiple")) this.updateFrame();
     this.updateSpecCheck();
   }
@@ -6090,24 +6138,28 @@ class MainView {
     }
   }
 
-  async renderWorkflowParams() {
-    const v = this.store.video;
-    const box = $("wf-params");
-    const token = (this.wfpToken = (this.wfpToken || 0) + 1);
+  // ワークフローの設定（モデル・LoRA・サンプラーなど）を並べる。メイン画面の「詳しい設定」と、設定の「動画AI」のどちらにも出す
+  // （id はどの動画AIの設定か。変えた値は、その設定ごとに保存する）
+  async renderWorkflowParams({ box = $("wf-params"), id = this.store.data.videoActive, note = $("wfp-note"), reset = $("wfp-reset"), sub = $("adv-sub") } = {}) {
+    const v = this.store.data.videoProfiles[id];
+    const tokens = (this.wfpTokens ??= new Map());
+    const token = (tokens.get(box) || 0) + 1;
+    tokens.set(box, token);
     const cfg = USER_SETTINGS.workflowParams;
     const m0 = USER_SETTINGS.messages;
-    if (!v) { box.replaceChildren(); $("wfp-note").textContent = ""; $("wfp-reset").hidden = true; return; }
+    if (!v) { box.replaceChildren(); note.textContent = id === undefined || !id ? m0.wfpNoProfile : ""; reset.hidden = true; return; }
     const groups = WorkflowParams.list(v.workflow, v.mapping);
     const rank = (g) => { const i = cfg.order.findIndex((re) => re.test(g.classType)); return i < 0 ? cfg.order.length : i; };
     groups.sort((a, b) => rank(a) - rank(b));
     const comfy = new ComfyClient(v.comfyUrl);
     const classes = [...new Set([...groups.map((g) => g.classType), cfg.loraListClass])];
     const infos = Object.fromEntries(await Promise.all(classes.map(async (c) => [c, await comfy.nodeInfo(c)])));
-    if (token !== this.wfpToken) return;
+    if (token !== tokens.get(box)) return;
     const loraSpec = infos[cfg.loraListClass]?.required?.lora_name;
     const loraList = Array.isArray(loraSpec?.[0]) ? loraSpec[0] : null;
     const reachable = classes.some((c) => infos[c]);
-    const overrides = this.overridesFor();
+    const overrides = this.overridesFor(id);
+    const set = (param, val) => this.setOverride(param, val, id, reset);
     const specOf = (g, key) => { const info = infos[g.classType]; return info?.required?.[key] || info?.optional?.[key] || null; };
     const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
     const control = (param, spec, options) => {
@@ -6117,14 +6169,14 @@ class MainView {
         input = el("input");
         input.type = "checkbox";
         input.checked = !!current;
-        input.addEventListener("change", () => { this.setOverride(param, input.checked); row.classList.toggle("changed", input.checked !== param.value); });
+        input.addEventListener("change", () => { set(param, input.checked); row.classList.toggle("changed", input.checked !== param.value); });
       } else if (options) {
         input = el("select");
         const list = options.map(String).includes(String(current)) ? options : [current, ...options];
         fillSelect(input, list.map((o) => [String(o), String(o)]), String(current));
         input.addEventListener("change", () => {
           const val = typeof param.value === "number" ? Number(input.value) : input.value;
-          this.setOverride(param, val);
+          set(param, val);
           row.classList.toggle("changed", val !== param.value);
         });
       } else if (param.kind === "number") {
@@ -6139,14 +6191,14 @@ class MainView {
         input.addEventListener("change", () => {
           if (input.value === "") input.value = param.value;
           const val = Number(input.value);
-          this.setOverride(param, val);
+          set(param, val);
           row.classList.toggle("changed", val !== param.value);
         });
       } else {
         input = el("input");
         input.type = "text";
         input.value = current;
-        input.addEventListener("change", () => { this.setOverride(param, input.value); row.classList.toggle("changed", input.value !== param.value); });
+        input.addEventListener("change", () => { set(param, input.value); row.classList.toggle("changed", input.value !== param.value); });
       }
       input.setAttribute("aria-label", param.label);
       const row = el("label", "wfp-row");
@@ -6168,10 +6220,115 @@ class MainView {
     });
     box.replaceChildren(...nodes);
     const m = USER_SETTINGS.messages;
-    $("wfp-note").textContent = (groups.length ? m.wfpNote.replace("{name}", v.name) : m.wfpNone) + (groups.length && !reachable ? `\n${m.wfpOffline}` : "");
-    $("wfp-reset").hidden = !Object.keys(overrides).length;
-    $("adv-sub").textContent = `動画: ${v.name}`;
+    note.textContent = (groups.length ? m.wfpNote.replace("{name}", v.name) : m.wfpNone) + (groups.length && !reachable ? `\n${m.wfpOffline}` : "");
+    reset.hidden = !Object.keys(overrides).length;
+    if (sub) sub.textContent = `動画: ${v.name}`;
     this.updateAdvancedBadge();
+  }
+
+  // 「詳しい設定」の文章AI: いま使っている文章AIのモデル・温度・最大出力トークン数（設定の「文章AI」と同じ値）
+  renderLlmQuick(box = $("adv-llm")) {
+    const m = USER_SETTINGS.messages;
+    const llm = this.store.llm;
+    if (!llm) { box.replaceChildren(); $("adv-llm-note").textContent = m.advLlmNone; return; }
+    $("adv-llm-note").textContent = m.advLlmNote.replace("{name}", llm.name || "");
+    const row = (label, input) => {
+      const r = document.createElement("label");
+      r.className = "wfp-row";
+      const l = document.createElement("span");
+      l.className = "prop-label";
+      l.textContent = label;
+      input.setAttribute("aria-label", label);
+      r.append(l, input);
+      return r;
+    };
+    const group = document.createElement("div");
+    group.className = "wfp-group";
+    const title = document.createElement("div");
+    title.className = "wfp-title";
+    title.textContent = llm.name || "文章AI";
+    const model = document.createElement("select");
+    // モデルの一覧は、メイン画面の「文章AI」のプルダウンと同じもの
+    fillSelect(model, [...$("sel-model").options].map((o) => [o.value, o.textContent]), llm.model || "");
+    model.addEventListener("change", () => {
+      if (!model.value) return;
+      llm.model = model.value;
+      this.store.save();
+      $("sel-model").value = model.value;
+      this.statusBar.refresh();
+    });
+    const temp = document.createElement("input");
+    Object.assign(temp, { type: "number", min: 0, max: 1.5, step: 0.05, value: llm.temperature ?? 0.7 });
+    temp.addEventListener("change", () => { llm.temperature = Math.min(1.5, Math.max(0, Number(temp.value) || 0)); this.store.save(); });
+    const tok = document.createElement("input");
+    Object.assign(tok, { type: "number", min: 256, step: 256, value: llm.maxTokens ?? USER_SETTINGS.defaultMaxTokens ?? 4096 });
+    tok.addEventListener("change", () => { llm.maxTokens = Math.max(256, Math.round(Number(tok.value) || 0)); this.store.save(); });
+    group.append(title, row("モデル", model), row("発想の自由度（温度）", temp), row("最大出力トークン数", tok));
+    box.replaceChildren(group);
+  }
+
+  // 画像AI（つなぎの画像）の作り方: モデル・サンプラー・スケジューラー・ステップ数・CFG・CLIP スキップ。
+  // 空欄（元の画像と同じ）なら、元の画像のメタデータに合わせる。メイン画面の「詳しい設定」と、設定の「画像AI」のどちらにも出す
+  async renderSdGen(box = $("adv-sd"), note = $("adv-sd-note"), reset = $("adv-sd-reset")) {
+    const m = USER_SETTINGS.messages;
+    const cfg = this.sdConfig();
+    const gen = (cfg.gen ??= {});
+    const tokens = (this.sdGenTokens ??= new Map());
+    const token = (tokens.get(box) || 0) + 1;
+    tokens.set(box, token);
+    const client = SdClient.create(cfg);
+    const lists = await client.options?.().catch(() => null) || null;
+    if (token !== tokens.get(box)) return;
+    const meta = this.meta?.settings || {};
+    const same = (v) => `${m.sdSame}${v !== undefined && v !== null && v !== "" ? `（${v}）` : ""}`;
+    note.textContent = m.sdGenNote + (lists ? "" : `\n${m.sdGenOffline.replace("{name}", client.label)}`);
+    const changed = () => { reset.hidden = !Object.values(gen).some((v) => v !== "" && v !== null && v !== undefined); };
+    const save = (key, val) => {
+      if (val === "" || val === null || Number.isNaN(val)) delete gen[key]; else gen[key] = val;
+      this.store.save();
+      changed();
+    };
+    const row = (label, input, key) => {
+      const r = document.createElement("label");
+      r.className = "wfp-row";
+      r.classList.toggle("changed", gen[key] !== undefined);
+      const l = document.createElement("span");
+      l.className = "prop-label";
+      l.textContent = label;
+      input.setAttribute("aria-label", label);
+      input.addEventListener("change", () => r.classList.toggle("changed", gen[key] !== undefined));
+      r.append(l, input);
+      return r;
+    };
+    const select = (key, list, current, metaValue) => {
+      const sel = document.createElement("select");
+      const items = [...new Set([...(current ? [current] : []), ...(list || [])])];
+      fillSelect(sel, [["", same(metaValue)], ...items.map((x) => [x, x])], current || "");
+      sel.addEventListener("change", () => save(key, sel.value));
+      return sel;
+    };
+    const num = (key, attrs, metaValue) => {
+      const input = document.createElement("input");
+      Object.assign(input, { type: "number", ...attrs });
+      input.placeholder = same(metaValue);
+      input.value = gen[key] ?? "";
+      input.addEventListener("change", () => save(key, input.value === "" ? "" : Number(input.value)));
+      return input;
+    };
+    const group = document.createElement("div");
+    group.className = "wfp-group";
+    const title = document.createElement("div");
+    title.className = "wfp-title";
+    title.textContent = `${client.label}（${client.base}）`;
+    group.append(title,
+      row("モデル", select("model", lists?.models, gen.model, this.meta?.model), "model"),
+      row("サンプラー", select("sampler", lists?.samplers, gen.sampler, meta.sampler), "sampler"),
+      row("スケジューラー", select("scheduler", lists?.schedulers, gen.scheduler, meta.scheduler), "scheduler"),
+      row("ステップ数", num("steps", { min: 1, max: 150, step: 1 }, meta.steps), "steps"),
+      row("CFG", num("cfg", { min: 1, max: 30, step: 0.5 }, meta.cfg), "cfg"),
+      row("CLIP スキップ", num("clipSkip", { min: 1, max: 12, step: 1 }, meta.clipSkip), "clipSkip"));
+    box.replaceChildren(group);
+    changed();
   }
 
   // 左パネルのボタンに、変えている内容の要点を出す
@@ -8996,7 +9153,7 @@ class MainView {
       this.running.phase = "image";
       this.setStep("image", "active", m.sdPreparingStep);
       this.status(m.sdPreparing.replace("{name}", client.label));
-      if (client.ensureReady) await client.ensureReady(this.meta.model, signal, (step) => { if (step === "switch") this.status(m.sdReloading.replace("{name}", client.label)); });
+      if (client.ensureReady) await client.ensureReady(this.sdConfig().gen?.model || this.meta.model, signal, (step) => { if (step === "switch") this.status(m.sdReloading.replace("{name}", client.label)); });
       for (const [k, b] of list.entries()) await this.makeKeyImage(b, client, signal, k + 1, list.length);
     } finally {
       signal.removeEventListener("abort", abort);
@@ -9018,7 +9175,11 @@ class MainView {
     this.setStep("image", "active", `つなぎの画像 ${i}/${n}`);
     this.setWork(`key:${b}`, "image", holder.key ? cfg.work.imageRedo : cfg.work.image, !!holder.key);
     this.status(fill(m.keyMaking));
-    const st = this.meta.settings || {};
+    // 「詳しい設定」の画像AIで変えた値があれば、元の画像のメタデータより優先する
+    const gen = this.sdConfig().gen || {};
+    const st = { ...(this.meta.settings || {}) };
+    for (const k of ["sampler", "scheduler", "steps", "cfg", "clipSkip"]) if (gen[k] !== undefined && gen[k] !== "") st[k] = gen[k];
+    const model = gen.model || this.meta.model;
     const snap = (x) => Math.max(64, Math.round(x / 8) * 8);
     let width = st.width || this.meta.width, height = st.height || this.meta.height;
     // 大きさ（画素数）は元の画像と同じくらいのまま、縦横比は動画の大きさ（左パネルの縦横比）に合わせる
@@ -9048,7 +9209,7 @@ class MainView {
     const seed = Number.isInteger(this.meta.seed) ? this.meta.seed + b + 1000 * (holder.keyTry || 0) : Math.floor(Math.random() * 2 ** 31);
     let out;
     try {
-      out = await client.generate({ prompt, negative: this.meta.negative, model: this.meta.model, settings: st, width, height, seed, init, denoise: scene.denoise }, signal);
+      out = await client.generate({ prompt, negative: this.meta.negative, model, settings: st, width, height, seed, init, denoise: scene.denoise }, signal);
     } catch (err) {
       if (err.name === "AbortError" || err instanceof UserError) throw err;
       throw new UserError(fill(m.keyFailed) + (err.message || err));
@@ -9058,7 +9219,7 @@ class MainView {
     holder.key = { ...frame, isKey: true, prompt };
     holder.keyOpts = this.sceneKey();
     holder.keyInfo = {
-      source: "sd", backend: client.label, mode: init ? `img2img（強さ ${scene.denoise}・${from === this.img ? "元の画像" : this.keyLabel(k)}から）` : "txt2img", model: this.meta.model, seed,
+      source: "sd", backend: client.label, model, mode: init ? `img2img（強さ ${scene.denoise}・${from === this.img ? "元の画像" : this.keyLabel(k)}から）` : "txt2img", seed,
       sampler: st.sampler, scheduler: st.scheduler, steps: st.steps, cfg: st.cfg, negative: this.meta.negative, notes: out.notes || [], savedAs: out.savedAs || "",
     };
     this.keyNotes = [...new Set([...(this.keyNotes || []), ...(out.notes || [])])];
@@ -10440,8 +10601,15 @@ class SettingsView {
     for (const id of ["spec-vram", "spec-ram", "spec-reserve", "spec-gen", "spec-gpu"]) this.on($(id), "input", () => { this.renderMachineSummary(); this.autosave("machine"); });
     this.on($("spec-gen"), "change", () => this.autosave("machine"));
     this.on($("spec-auto"), "change", () => this.autosave("machine", 0));
-    this.on($("sd-url"), "change", () => { const d = this.sdConfig(); d.urls[d.backend] = $("sd-url").value.trim() || USER_SETTINGS.sd.backends[d.backend].url; this.store.save(); this.onChange?.(); });
-    this.on($("sd-test"), "click", () => this.testSd());
+    this.on($("sd-url"), "change", () => { const d = this.sdConfig(); d.urls[d.backend] = $("sd-url").value.trim() || USER_SETTINGS.sd.backends[d.backend].url; this.store.save(); this.onChange?.(); this.renderSdGen(); });
+    this.on($("sd-test"), "click", () => { this.testSd(); this.renderSdGen(); });
+    this.on($("sd-gen-reset"), "click", () => { this.sdConfig().gen = {}; this.store.save(); this.renderSdGen(); });
+    this.on($("vid-params-reset"), "click", () => {
+      delete (this.store.ui.overrides ??= {})[this.editing.video];
+      this.store.save();
+      this.renderVideoParams();
+      this.onChange?.();
+    });
     this.on($("spec-maker"), "change", () => { this.fillGpuModels($("spec-maker").value, ""); this.onGpuPicked(); this.autosave("machine"); });
     this.on($("spec-model"), "change", () => { this.onGpuPicked(); this.autosave("machine"); });
 
@@ -10491,7 +10659,13 @@ class SettingsView {
     }));
     $("sd-url").value = d.urls[d.backend];
     const origin = location.protocol.startsWith("http") ? location.origin : "*";
+    this.renderSdGen();
     $("sd-cors").textContent = `このページからつなぐには、${cfg.backends[d.backend].label} の起動オプションに「${cfg.backends[d.backend].cors.replace("{origin}", origin)}」を足して起動し直してください。`;
+  }
+
+  // 「画像の作り方」: メイン画面の「詳しい設定」と同じ表
+  renderSdGen() {
+    window.stillmotion?.main?.renderSdGen($("sd-gen"), $("sd-gen-note"), $("sd-gen-reset"));
   }
 
   async testSd() {
@@ -10507,6 +10681,9 @@ class SettingsView {
     document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
     document.querySelectorAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== name; });
     this.store.ui.settingsPane = name;
+    // メイン画面と同じ表（モデル・LoRA・サンプラーなど）は、開いたときにつながっている先から読み直す
+    if (name === "video") this.renderVideoParams();
+    if (name === "sd") this.renderSdGen();
     this.store.save();
   }
 
@@ -10935,6 +11112,12 @@ class SettingsView {
     setMsg($("wf-msg"), v ? WorkflowMapper.summary(v.mapping) : "");
     setMsg($("vid-msg"), "");
     this.syncNewMode("video");
+    this.renderVideoParams();
+  }
+
+  // 「モデル・LoRA・サンプラーなど」: メイン画面の「詳しい設定」と同じ表を、編集中の動画AIの設定について出す
+  renderVideoParams() {
+    window.stillmotion?.main?.renderWorkflowParams({ box: $("vid-params"), id: this.editing.video, note: $("vid-params-note"), reset: $("vid-params-reset"), sub: null });
   }
 
   renderMapping(wf, mapping) {
