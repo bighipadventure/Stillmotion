@@ -284,10 +284,12 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .adv-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--head); border-top: 1px solid var(--line); }
 .adv-foot .note { margin: 0; }
 .adv-foot .primary { margin-left: auto; min-width: 96px; }
-.wfp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 8px; align-items: start; }
+/* ワークフローの設定などは、重要な順に上から1つずつ並べる（横には並べない） */
+.wfp-grid { display: flex; flex-direction: column; gap: 8px; }
 .wfp-group { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); padding: 6px 8px 4px; }
 .wfp-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
-.wfp-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px; align-items: center; margin-bottom: 4px; }
+.wfp-row { display: grid; grid-template-columns: 220px minmax(0, 720px); gap: 8px; align-items: center; margin-bottom: 4px; }
+@media (max-width: 640px) { .wfp-row { grid-template-columns: 1fr; } }
 .wfp-row .prop-label { white-space: normal; line-height: 1.25; }
 .wfp-row.changed .prop-label { color: var(--accent-text); font-weight: 700; }
 .wfp-row.changed .prop-label::after { content: " ●"; }
