@@ -2229,13 +2229,17 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     encode: { preset: "veryfast", crf: 18, audioBitrate: "192k" },
     // 場面転換の大きさ: 区間分け（plan）と区間のプロンプト（clip）への指示、つなぎの画像の作り方（denoise: img2img の強さ。null は txt2img。keep: つなぎの画像のプロンプトに元のプロンプトのタグが最低どれだけ残っていればよいか。下回ると文章AIに書き直してもらう）
     scenes: {
+      static: { label: "固定", info: "カメラを三脚で据えたように一切動かさず、動画全体を同じアングル・同じ構図のままにします。動くのは人物や物、背景だけです。",
+        plan: "SCENE CHANGES: none for the camera. The camera is locked-off for the whole video at the angle and framing of the given picture; the story develops only through the action of the people and the scene in front of the camera, in the same place.",
+        clip: "Scene changes: none. The camera is locked-off (static) for the whole clip; keep exactly the same framing as the first frame.",
+        key: "Keep exactly the same location, background, lighting and camera framing as the previous keyframe; only the people's pose and action change.", denoise: 0.45, keep: 0.5 },
       subtle: { label: "控えめ", info: "元の画像を動かした動画を、そのまま長くしたような動画にします（同じ場所・同じ構図のまま、動きが少しずつ進みます）。",
         plan: "SCENE CHANGES: minimal. This is simply a longer version of animating the given image: keep the same place, the same framing and the same ongoing situation for the whole video; the action develops slowly and continuously, with no jumps in place or time. The camera stays at the angle of the given picture (at most a slow push in or a slight drift).",
         clip: "Scene changes: minimal. Keep the same place and framing as the first frame; the camera moves only gently.",
         key: "Keep the same location, background, lighting and roughly the same camera framing as the previous keyframe.", denoise: 0.45, keep: 0.5 },
-      normal: { label: "ふつう", info: "話が少しずつ進み、区間ごとにカメラの向きや距離、人物の位置が変わります（場所は同じまま）。",
-        plan: "SCENE CHANGES: moderate. The story progresses: the action develops into new actions, and from clip to clip the camera may change its angle or distance with a smooth move (push in, pull out, arc, tilt, pan, a 3/4 view or profile shot) or the people may move to another spot nearby, but stay in the same overall location and time.",
-        clip: "Scene changes: moderate. Follow the camera plan of this clip: change the angle or distance smoothly during the clip, but the place stays the same.",
+      normal: { label: "ふつう", info: "話が少しずつ進み、話の流れで必要なときだけ、カメラの向きや距離、人物の位置が変わります（場所は同じまま）。",
+        plan: "SCENE CHANGES: moderate. The story progresses: the action develops into new actions. Change the camera angle or distance only where the story calls for it (to show an action better, to follow a movement, or to mark a turn in the story) with a smooth move (push in, pull out, arc, tilt, pan, a 3/4 view or profile shot) - keeping the same angle for several clips is fine and often better; never change the camera just to fill every clip. The people may move to another spot nearby, but stay in the same overall location and time.",
+        clip: "Scene changes: moderate. Follow the camera plan of this clip: if it changes the angle or distance, do it smoothly; if it keeps the same angle, keep the camera steady. The place stays the same.",
         key: "Keep the same location and lighting as the previous keyframe; set the camera angle, shot size and the people's position and pose as the camera plan and the story require.", denoise: 0.62, keep: 0.4 },
       big: { label: "大げさ", info: "短い映画のように、ローアングル・俯瞰・ダッチアングル・肩越し・アークショット・クレーン・クラッシュズームなどのカメラワークで、アングル・動きと構図・場所・時間を大胆に変えます（長い動画では、カメラの向きが時系列に沿ってつながるように区間ごとに割り振ります）。",
         plan: "SCENE CHANGES: large - make it a dramatic short film. Give every clip a bold, clearly different camera: striking angles and strong movements chosen from this camera vocabulary: {vocab} Vary them across the clips the way a film editor would (for example eye level → low angle → over-the-shoulder → bird's-eye view, with an arc shot, a crane shot or a crash zoom), and clips may also jump to other compositions, places or times, while keeping the same people and their appearance.",
@@ -2245,7 +2249,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     // カメラを時系列でつなぐ指示（区間分け）。区間の行の先頭に「カメラ: 開始 → 動き → 終わり」を書いてもらい、
     // 区間の終わりのアングル＝次の区間の始まりのアングル（つなぎの画像のアングル）にする
     cameraPlan: {
-      auto: "CAMERA TIMELINE (strict): plan the camera of the whole video as one continuous timeline in story order. Start every 区間 line with 「カメラ: (starting angle) → (camera movement) → (ending angle)」 using concrete camera terms in Japanese with the English term in parentheses, for example 「カメラ: アイレベル(eye level) → ドリーイン(dolly in) → ローアングル(low angle)」. Clip 1 starts with the camera angle of the given picture. The ending angle of each clip is exactly the starting angle of the next clip, because the picture at their boundary is shared, so the camera never jumps back and forth between angles: change the angle step by step in story order, and return to an earlier angle only when the story deliberately does so. Fixed pictures at clip boundaries decide the angle at that moment - read their angle and plan the camera so it arrives there.",
+      auto: "CAMERA TIMELINE (strict): plan the camera of the whole video as one continuous timeline in story order. A clip may keep the same angle from start to end with no movement (for example 「カメラ: アイレベル(eye level) → 固定(static) → アイレベル(eye level)」) - only the scene-change setting decides how often the camera should change. Start every 区間 line with 「カメラ: (starting angle) → (camera movement) → (ending angle)」 using concrete camera terms in Japanese with the English term in parentheses, for example 「カメラ: アイレベル(eye level) → ドリーイン(dolly in) → ローアングル(low angle)」. Clip 1 starts with the camera angle of the given picture. The ending angle of each clip is exactly the starting angle of the next clip, because the picture at their boundary is shared, so the camera never jumps back and forth between angles: change the angle step by step in story order, and return to an earlier angle only when the story deliberately does so. Fixed pictures at clip boundaries decide the angle at that moment - read their angle and plan the camera so it arrives there.",
       static: "CAMERA: locked-off for the whole video - the same angle, framing and focal length in every clip, with no camera movement; start every 区間 line with 「カメラ: 固定(static)」. The scene changes only through the action, place and time.",
     },
     keyCamera: "CAMERA (strict): this keyframe shows the ending camera of clip {a}, which is the starting camera of clip {b}, as written in their 「カメラ」 parts - express that camera angle and shot size with matching tags (for example from below, from above, dutch angle, pov, from side, from behind, over the shoulder, close-up, upper body, full body, wide shot). Do not use the camera of an earlier or later moment.",
@@ -2601,7 +2605,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   translateToEn: "Translate the following Japanese text into natural English suitable as a MiniMax H3 video prompt. Keep these exactly as they are: the field names (integrated_multimodal_description:, subject_definitions:, summary:, retention_analysis:, detailed_description:, overall_soundscape:, non_diegetic_music:), shot labels such as [Shot 1], cut times such as 00:03.500, speaker IDs such as (S1), reference labels such as <Picture 1>, <Video 1>, <Audio 1> and <Subject 1>, task types in square brackets, retention markers (fully_preserved, partially_preserved, attribute_transfer, weak_reference, fully_copy, partially_copy, reference), N/A, and everything inside <d>...</d> (do not translate dialogue). Keep line breaks. Output only the English text.",
   promptOptions: {
     header: "Generation settings (these take priority over everything above):",
-    h3Only: ["mode", "music", "voice", "vocal", "sfx", "camera"],
+    h3Only: ["mode", "music", "voice", "vocal", "sfx"],
     // 「大げさ」で使うカメラの言葉（アングルと動き。Stable Diffusion のタグも添える）
     cameraVocab: "camera angles - eye level (straight-on), low angle (from below), high angle (from above), top shot / overhead shot (from directly above), bird's-eye view (from high above, wide), worm's-eye view (from the ground, extreme low angle), Dutch angle (tilted frame), over-the-shoulder shot (over the shoulder, from behind one person), POV / point of view (pov), 3/4 view (three-quarter view), profile shot (from side), reverse shot (from the opposite side); camera movements - pan, tilt, dolly in / push in, dolly out / pull out, truck (lateral tracking), tracking shot, zoom in / zoom out, crash zoom, crane shot (rising or lowering), drone shot, Steadicam, handheld, dolly zoom, arc shot (orbiting around the subject), pedestal (straight up or down), static / locked-off.",
     instructionLines: {
@@ -2640,15 +2644,12 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
         ["normal", "ふつう", "Motion level: natural. Clearly visible, lifelike movement with real weight and momentum: anticipation, follow-through, secondary motion of hair, clothing and soft body parts, and a background that keeps moving."],
         ["big", "大げさ", "Motion level: large and energetic. Athletic, expressive movement with strong momentum and big amplitude: deep anticipation, explosive action and large follow-through; hair, clothing and soft body parts swing widely and settle with inertia; the environment reacts strongly (gusts of wind, splashes, dust)."],
       ] },
-      { key: "camera", label: "カメラ", default: "auto", choices: [
-        ["auto", "おまかせ", "Camera: choose the camera angles and movements that best fit the scene, following the scene-change (場面転換) setting."],
-        ["static", "固定", "Camera: one static shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\"."],
-      ] },
       // 場面転換: カメラの角度・動きと、場面の変わり方の大きさ（長い動画では区間分け・区間・つなぎの画像の指示にも使う）
       { key: "scene", label: "場面転換", default: "normal", choices: [
+        ["static", "固定", "Camera: one static, locked-off shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\". Only the subjects and the scene move."],
         ["subtle", "控えめ", "Scene change: minimal. Keep the place and the composition of the picture; the camera moves only gently (a slow push in or slight drift at most)."],
-        ["normal", "ふつう", "Scene change: moderate. During the clip the camera may change its angle or distance once with one smooth move (push in, pull out, arc, tilt or pan), staying in the same place."],
-        ["big", "大げさ", "Scene change: large - make it bold and cinematic like a film trailer, using striking camera angles and movements named with these film terms: {vocab} For example 2-3 shots with clear cuts to clearly different angles (each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to a low-angle shot ...\"), keeping the same characters and outfits. If the mode needs one continuous shot (FL2VA or L2VA), do one dramatic continuous camera move instead of cuts (for example a fast arc shot, a crane shot or a crash zoom). If the camera is set to static, keep it static."],
+        ["normal", "ふつう", "Scene change: moderate. Change the camera angle or distance only when the action calls for it - then with one smooth move (push in, pull out, arc, tilt or pan), staying in the same place; if the action does not need it, keep the camera steady."],
+        ["big", "大げさ", "Scene change: large - make it bold and cinematic like a film trailer, using striking camera angles and movements named with these film terms: {vocab} For example 2-3 shots with clear cuts to clearly different angles (each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to a low-angle shot ...\"), keeping the same characters and outfits. If the mode needs one continuous shot (FL2VA or L2VA), do one dramatic continuous camera move instead of cuts (for example a fast arc shot, a crane shot or a crash zoom). "],
       ] },
     ],
     singleShotModes: ["FL2VA", "L2VA"],
@@ -2678,8 +2679,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     },
     refRolesWin: "Reference materials win over the speech, vocal-sound, music and camera settings above: if a material's role copies or references audio (a soundtrack, BGM, a voice or its words), keeps a soundtrack in sync with its video, or references a video's camera movement, follow that role for that part and apply the settings above only to everything else.",
     lastSameAsFirst: "Picture 2 is identical to Picture 1: the clip must return to the opening pose and composition at the end, so that it loops seamlessly.",
-    notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声・カメラの指定は使いません（動きと自由入力だけ反映します）。",
-    cutsSingleShot: "FL2VA と L2VA は公式ガイドどおり1カットで作るため、「場面転換」は使えません。",
+    notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声・動きの音の指定は使いません（動きと自由入力だけ反映します）。",
   },
   customModelValue: "__custom__",
   metadataFormat: "stillmotion-metadata",
@@ -5801,8 +5801,10 @@ class MainView {
     ui.promptOptions ??= {};
     // 前の版の「カメラ」の「ズーム」「場面転換」は、カメラ「おまかせ」＋場面転換（場面転換は「大げさ」）に置き換える。
     // 「長い動画」にあった場面転換は、プロンプトの指定の場面転換に移す
+    // 前の版の「カメラ」は「場面転換」にまとめた（固定 → 場面転換の「固定」、場面転換 → 「大げさ」）
+    if (ui.promptOptions.camera === "static") ui.promptOptions.scene = "static";
     if (ui.promptOptions.camera === "cuts" && !ui.promptOptions.scene) ui.promptOptions.scene = "big";
-    if (["zoom", "cuts"].includes(ui.promptOptions.camera)) ui.promptOptions.camera = "auto";
+    delete ui.promptOptions.camera;
     if (!ui.promptOptions.scene && USER_SETTINGS.long.scenes[ui.longScene]) ui.promptOptions.scene = ui.longScene;
     for (const g of USER_SETTINGS.promptOptions.groups) {
       if (!g.choices.some(([v]) => v === ui.promptOptions[g.key])) ui.promptOptions[g.key] = g.default;
@@ -6765,17 +6767,7 @@ class MainView {
       b.disabled = !h3 && cfg.h3Only.includes(b.dataset.group);
     });
     const mode = this.promptOptions().mode;
-    const singleShot = cfg.singleShotModes.includes(mode);
-    const cutsButton = document.querySelector('#prompt-options [data-group="camera"][data-value="cuts"]');
-    if (cutsButton) {
-      cutsButton.disabled ||= singleShot;
-      cutsButton.title = singleShot ? cfg.cutsSingleShot : "";
-      if (singleShot && ui.camera === "cuts") {
-        cutsButton.setAttribute("aria-pressed", "false");
-        document.querySelector('#prompt-options [data-group="camera"][data-value="auto"]').setAttribute("aria-pressed", "true");
-      }
-    }
-    $("mode-info").textContent = this.isRef() || this.isLong() ? "" : h3 ? cfg.modeInfo[mode] + (singleShot && ui.camera === "cuts" ? `\n${cfg.cutsSingleShot}` : "") : cfg.notH3;
+    $("mode-info").textContent = this.isRef() || this.isLong() ? "" : h3 ? cfg.modeInfo[mode] : cfg.notH3;
     $("last-box").hidden = mode !== "FL2VA" || this.isLong();
   }
 
@@ -7841,14 +7833,14 @@ class MainView {
     return JSON.stringify([this.store.ui.promptOptions, (this.store.ui.direction || "").trim()]);
   }
 
-  // カメラが「固定」か（固定のときは、区間をまたいでもアングルを変えない）
+  // 場面転換が「固定」か（固定のときは、カメラを動かさず、区間をまたいでもアングルを変えない）
   cameraStatic() {
-    return this.store.ui.promptOptions?.camera === "static";
+    return this.longScene() === "static";
   }
 
-  // いま操作パネルで選んでいる、場面転換とカメラ（作り直すときに、前と変わったかを見分けるもと）
+  // いま操作パネルで選んでいる場面転換（作り直すときに、前と変わったかを見分けるもと）
   sceneKey() {
-    return `${this.longScene()}/${this.cameraStatic() ? "static" : "auto"}`;
+    return this.longScene();
   }
 
   // 区間分け・見直しに渡す、場面転換とカメラの指示
@@ -7859,7 +7851,7 @@ class MainView {
 
   // 区間のプロンプトに渡す、場面転換とカメラの指示
   clipSceneText() {
-    return `${this.sceneCfg().clip} ${this.cameraStatic() ? "The camera is locked-off (static) for the whole clip." : "Follow the 「カメラ」 part of this clip's plan: open with its starting angle, perform its movement, and end at its ending angle, which is the first frame of the next clip."}`;
+    return `${this.sceneCfg().clip} ${this.cameraStatic() ? "The camera is locked-off (static) for the whole clip." : "Follow the 「カメラ」 part of this clip's plan: open with its starting angle, perform its movement (if any - when it keeps the same angle, keep the camera steady), and end at its ending angle, which is the first frame of the next clip."}`;
   }
 
   // つなぎの画像のプロンプトに渡す、場面転換とカメラの指示
