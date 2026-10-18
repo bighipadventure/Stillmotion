@@ -441,6 +441,12 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .dropzone.small { min-height: 90px; }
 #last-canvas { display: block; max-width: 100%; max-height: 160px; }
 .skill-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.engine-list { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.engine-list select { width: 100%; min-width: 0; }
+.engine-lora { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; cursor: pointer; }
+.engine-lora input { flex: none; margin: 0; }
+.engine-lora span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.engine-lora.off span { color: var(--muted); text-decoration: line-through; }
 .seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); }
 .seg button {
   flex: 1; min-width: 0; min-height: 26px; border: none; border-radius: 0; border-right: 1px solid var(--line-strong);
@@ -920,6 +926,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="prop"><span class="prop-label">文章AI</span><select id="sel-model" aria-label="文章AIのモデル" title="プロンプトを書く文章AIのモデル"></select></div>
           <p class="note" id="sel-model-note"></p>
           <div class="prop" id="sel-video-field"><span class="prop-label">ワークフロー</span><select id="sel-video" aria-label="ワークフロー（動画を作る ComfyUI のワークフロー）" title="動画を作る ComfyUI のワークフロー"></select></div>
+          <div class="prop prop-top" id="sel-models-field" hidden><span class="prop-label">モデル</span><div class="engine-list" id="sel-models"></div></div>
+          <div class="prop prop-top" id="sel-loras-field" hidden><span class="prop-label">LoRA</span><div class="engine-list" id="sel-loras"></div></div>
           <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
           <p class="note" id="skill-default-note"></p>
           <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
@@ -1092,7 +1100,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   <div class="adv-foot">
     <button class="danger" id="mat-clear">すべて外す</button>
     <span class="note">素材はこのページを開いている間だけ使えます（再読み込みや閉じると消えます）。&lt;Picture 1&gt; などのタグは、プロンプトの中で素材を指す名前です。</span>
-    <button class="primary" id="done-materials">閉じる</button>
   </div>
 </dialog>
 
@@ -1137,7 +1144,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   <div class="adv-foot">
     <button id="wfp-reset" hidden>ワークフローの値に戻す</button>
     <span class="note">変更はすぐに保存され、次の実行から使われます。</span>
-    <button class="primary" id="done-advanced">閉じる</button>
   </div>
 </dialog>
 
@@ -2215,6 +2221,11 @@ const USER_SETTINGS = {
     // 上から重要な順: モデル → テキストエンコーダー → VAE → LoRA → サンプラー（ステップ数・CFG など） → 値の切り替え → 解像度 → 動画の書き出し → 保存
     order: [/UNET|Checkpoint|DiffusionModel|ModelLoader/i, /CLIPLoader|DualCLIP|TripleCLIP|TextEncoder/i, /VAELoader/i, /Lora/i, /Sampler|Scheduler|Guider|CFG/i, /Primitive|Switch/i, /Resolution/i, /CreateVideo/i, /Save/i],
     loraListClass: "LoraLoaderModelOnly",
+    nodeOffKey: "__off",
+    bypassSlots: ["model", "clip"],
+    loraClass: /lora/i,
+    emptyLora: /^(none|)$/i,
+    modelKeys: ["unet_name", "model_name", "ckpt_name"],
   },
   editorLoaders: { llm: "loadLlm", video: "loadVideo", skill: "loadSkill", style: "loadStyle" },
   editorCollections: { llm: "llmProfiles", video: "videoProfiles", skill: "skills", style: "styles" },
@@ -2230,9 +2241,13 @@ Step 1 - analyze: look carefully at the picture(s) and read the image informatio
 Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Also decide how each person's facial expression changes - gradually and believably, the way a real person's face reacts to what is happening (eyes, eyebrows, cheeks and mouth together), never frozen and never snapping from one expression to another. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat. When 動きの音 is 強調, name the concrete sound of each movement as it happens (衣擦れ, 足音, 液体の音, 肌が触れ合う・ぶつかる音, 物音) and the ambient sound of the place, with its texture - sounds of skin and bodies are soft, muffled and low (柔らかい・こもった・鈍い音), never metallic, ringing or sharp; when it is なし, mention no such sounds.
 WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag for an act or object has no natural Japanese word, write the tag word itself in katakana or as-is (this never applies to names - see below).
 NAMES (strict): the image information may contain character names, person names, series titles or artist names. The video model cannot understand them, so never write any of them. Call each person by their visible appearance instead (for example "赤い髪をツインテールにした少女", "茶色の短髪で緑の上着の少年"), and use the same description for the same person every time. You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
-Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
+VOICES: decide each audible person's voice from who they are in the picture and tags, so that it clearly fits them: age (幼い子ども・少女・少年・若い女性・成人女性・成人男性・年配の人), sex, body build (小柄・細身・大柄・太っている), and the kind of being (人間・エルフ・獣人・魔物・ロボットなど) and character. Describe it by its sound with concrete words: pitch (高い・中くらい・低い), weight and thickness (細い・軽い・太い・重い・丸みのある), texture (澄んだ・柔らかい・甘い・息の混じった・かすれた・こもった・よく響く), and for a fantasy or non-human being its special quality (たとえば 透き通って少し反響する・低くうなるような・人間離れした). A large or heavy person has a thicker, deeper, rounder voice; a small child or girl a high, light one. The voice stays the same for the whole video, and the story's sounds from that person use this voice.
+Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these three):
 画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
+声: (one entry per person who can be heard (speaking, singing, breathing or any vocal sound), separated by 「／」: the person's appearance description as used in the other lines, then their voice, e.g. 「赤い髪の少女: 高く澄んだ、軽く明るい少女の声」 - follow VOICES; write なし when both speech and the breath/voice sounds are なし)
 物語: (3-6 sentences describing, in time order, what happens during the {seconds} seconds - actions, how the facial expressions change, movement of hair, clothes and body, the background, and sounds)`,
+    voiceRule: "VOICES (strict): the story's 声 line fixes each person's voice. Every time that person speaks, sings, breathes or makes any vocal sound, describe the sound in that voice: turn the description into concrete English (age and sex, pitch, weight, texture, and any special quality, e.g. \"a high, clear, light young girl's voice\" or \"a deep, thick, rounded voice of a heavyset man\") and use the same words every time, both where the sound happens in integrated_multimodal_description and in overall_soundscape. Never give a person a voice of another age, sex, build or kind. If a reference material gives a person's voice, follow the material for that person. The speech and vocal-sound settings still decide whether anyone is heard at all.",
+    voiceLine: /^\s*声\s*[:：]\s*(?!なし\s*$)\S/m,
     userHeader: "Image information:",
     optionsHeader: "Generation settings chosen by the user (Japanese):",
     directionHeader: "User direction (highest priority):",
@@ -2329,6 +2344,7 @@ Write comma-separated English tags in the same style as the base prompt. Output 
     planRules: `The video is split into {n} consecutive clips that are generated one after another: each clip starts from the last frame of the previous clip. So the story must flow continuously across the clips - the same people, outfits and place unless the story itself changes them - and every clip contains one clear, continuous piece of the action that fits its length (do not cram too much into a short clip, and do not let a clip stand still). Clip lengths: {list}.
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown):
 画像の状況: (1-2 sentences: who, where, wearing what, and the specific act or action happening right now, named concretely)
+声: (one entry per person who can be heard (speaking, singing, breathing or any vocal sound), separated by 「／」: the person's appearance description as used in the other lines, then their voice, e.g. 「赤い髪の少女: 高く澄んだ、軽く明るい少女の声」 - follow VOICES; write なし when both speech and the breath/voice sounds are なし)
 物語: (the whole story in time order, 3-8 sentences, following WORDING and NAMES strictly)
 区間1: (2-4 sentences: what happens during clip 1, in time order - name the exact act, action and pose with their specific common names, who does it to whom or with what and with which body part, and how (speed, strength, rhythm, direction); then how each person's facial expression changes during the clip (continuing from the previous clip), the movement of hair, clothes and body, the background, and sounds. WORDING and NAMES apply to every 区間 line: no abstract, vague or euphemistic wording, and no names - describe people by appearance)
 (then one line for each clip, from 区間1 to 区間{n}, exactly {n} lines)`,
@@ -2367,7 +2383,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     progressWeights: { image: 0.05, story: 0.1, prompt: 0.15, keys: 0.1, video: 0.5, join: 0.1 },
     planFixed: "These clips are already made and must stay as they are. Copy their 区間 lines exactly as given, and write the 物語 and the other 区間 lines so that the whole story connects naturally with them:",
     planStrict: "Your previous answer could not be read. This time, output exactly {n} lines and nothing else (no headings, no markdown, no explanations), each starting with 区間 and its number and a colon, like \"区間1: ...\", from 区間1 to 区間{n}.",
-    planKeepStory: "The overall story is already decided. Copy the 画像の状況 and 物語 lines exactly as given below, and only write the 区間 lines so that they follow this story:",
+    planKeepStory: "The overall story is already decided. Copy the 画像の状況, 声 and 物語 lines exactly as given below (if there is no 声 line, write one following VOICES), and only write the 区間 lines so that they follow this story:",
     firstRule: "This clip is part 1 of {n} of one continuous longer video and starts from the given image.",
     continueRule: "This clip is part {k} of {n} of one continuous longer video. <Picture 1> is the exact last frame of the previous clip: start from that frame with the action already in motion and continue it smoothly from the very first frame - no pause, no reset and no new pose at the start. Continue the facial expressions from that frame as well, and let them keep changing naturally.",
     endRule: "Picture 2 is the exact first frame of the next clip: arrive at that frame exactly at the end of this clip, matching its pose, position and framing.",
@@ -3311,6 +3327,8 @@ Tips for better results:
     materialsReading: "素材を読み込んでいます…",
     materialsClearConfirm: "素材をすべて外しますか？（元のファイルは消えません）",
     specOptimized: "このPCに合わせて最適化しました: ",
+    engineModel: "モデル",
+    engineLoraExt: /\.(safetensors|ckpt|pt|bin|gguf)$/i,
     specNothing: "最適化で変えるところはありませんでした。",
     specStillHeavy: "それでも目安を超えます（長さは3秒より短くしません）。大きさか長さを手で下げてください",
     specStillHeavyRef: "それでも目安を超えます（長さは3秒より短くしません）。参照動画を「使う範囲」で短くするか外してください",
@@ -4105,6 +4123,7 @@ class LlmClient {
     system += `\n\n${USER_SETTINGS.namingRule}\n\n${USER_SETTINGS.expressionRule}`;
     let user = refText ?? LlmClient.metaText(meta, lastMeta);
     if (story.trim()) user += `\n\n${segment ? USER_SETTINGS.long.promptHeader : current ? USER_SETTINGS.story.reviseHeader : USER_SETTINGS.story.promptHeader}\n${story.trim()}`;
+    if (USER_SETTINGS.story.voiceLine.test(story)) user += `\n\n${USER_SETTINGS.story.voiceRule}`;
     if (current) {
       user += `\n\nCurrent video prompt:\n${current}\n\nRewrite the video prompt following this instruction (it may be written in Japanese): ${instruction}`;
     }
@@ -5116,6 +5135,52 @@ class WorkflowParams {
     return groups;
   }
 
+  // ===== LoRA のオン・オフ =====
+  static bypassInputs(node) {
+    const inputs = node?.inputs || {};
+    return USER_SETTINGS.workflowParams.bypassSlots.map((name) => (this.isLink(inputs[name]) ? inputs[name] : null));
+  }
+
+  static canBypass(wf, id) {
+    return !!this.bypassInputs(wf[id])[0];
+  }
+
+  static bypass(wf, id) {
+    if (!wf[id] || !this.canBypass(wf, id)) return;
+    const through = this.bypassInputs(wf[id]);
+    for (const [nid, node] of Object.entries(wf)) {
+      if (nid === id) continue;
+      for (const [k, v] of Object.entries(node.inputs || {})) {
+        if (this.isLink(v) && v[0] === id && through[v[1]]) node.inputs[k] = [...through[v[1]]];
+      }
+    }
+    delete wf[id];
+  }
+
+  // [{ name, on, param }]（Power Lora Loader の各行と、LoRA を読み込むノード）
+  static loras(wf, mapping) {
+    const cfg = USER_SETTINGS.workflowParams;
+    const out = [];
+    for (const g of this.list(wf, mapping)) {
+      for (const p of g.params) {
+        if (p.kind !== "lora-on") continue;
+        const fileParam = g.params.find((f) => f.group === p.group && f.kind === "lora-file");
+        if (fileParam && !cfg.emptyLora.test(String(fileParam.value ?? ""))) out.push({ name: fileParam.value, fileParam, param: p });
+      }
+      const fileParam = g.params.find((p) => p.key === "lora_name");
+      if (fileParam && cfg.loraClass.test(g.classType) && this.canBypass(wf, g.id)) {
+        out.push({ name: fileParam.value, fileParam, param: { path: `${g.id}|${cfg.nodeOffKey}`, value: false, kind: "node-off" } });
+      }
+    }
+    return out;
+  }
+
+  // [{ group, param }]（拡散モデル・チェックポイントのファイル）
+  static models(wf, mapping) {
+    const keys = USER_SETTINGS.workflowParams.modelKeys;
+    return this.list(wf, mapping).flatMap((g) => g.params.filter((p) => keys.includes(p.key)).map((param) => ({ group: g, param })));
+  }
+
   static get(wf, path) {
     const [id, key, sub] = path.split("|");
     const v = wf[id]?.inputs?.[key];
@@ -5124,8 +5189,10 @@ class WorkflowParams {
 
   static apply(wf, overrides) {
     const out = clone(wf);
+    const offKey = USER_SETTINGS.workflowParams.nodeOffKey;
     for (const [path, value] of Object.entries(overrides || {})) {
       const [id, key, sub] = path.split("|");
+      if (key === offKey) { if (value) this.bypass(out, id); continue; }
       const inputs = out[id]?.inputs;
       if (!inputs || !(key in inputs)) continue;
       if (sub) {
@@ -5997,7 +6064,6 @@ class MainView {
     this.on($("open-advanced"), "click", () => { this.renderWorkflowParams(); this.renderLlmQuick(); this.renderSdGen(); adv.showModal(); });
     this.on($("adv-sd-reset"), "click", () => { this.sdConfig().gen = {}; this.store.save(); this.renderSdGen(); });
     this.on($("close-advanced"), "click", () => adv.close());
-    this.on($("done-advanced"), "click", () => adv.close());
     this.on(adv, "click", (e) => { if (e.target === adv) adv.close(); });
     this.on(adv, "close", () => this.updateAdvancedBadge());
     this.on($("wfp-reset"), "click", () => {
@@ -6437,6 +6503,53 @@ class MainView {
     const n = Object.keys(this.overridesFor()).length;
     if (n) parts.push(`${n}件変更`);
     $("adv-badge").textContent = parts.join("・");
+    this.renderEngineModels();
+  }
+
+  // ===== 左パネル「生成」のモデルと LoRA =====
+  async renderEngineModels() {
+    const v = this.store.video;
+    const token = (this.engineToken = (this.engineToken || 0) + 1);
+    if (!v) { $("sel-models-field").hidden = true; $("sel-loras-field").hidden = true; return; }
+    const id = this.store.data.videoActive;
+    const overrides = this.overridesFor(id);
+    const current = (param) => (param.path in overrides ? overrides[param.path] : param.value);
+    const models = WorkflowParams.models(v.workflow, v.mapping);
+    const loras = WorkflowParams.loras(v.workflow, v.mapping);
+    const comfy = new ComfyClient(v.comfyUrl);
+    const infos = Object.fromEntries(await Promise.all([...new Set(models.map((m) => m.group.classType))].map(async (c) => [c, await comfy.nodeInfo(c)])));
+    if (token !== this.engineToken) return;
+    const set = (param, value) => this.setOverride(param, value, id);
+    $("sel-models").replaceChildren(...models.map(({ group, param }) => {
+      const info = infos[group.classType];
+      const spec = info?.required?.[param.key] || info?.optional?.[param.key];
+      const value = String(current(param));
+      const list = Array.isArray(spec?.[0]) ? spec[0].map(String) : [];
+      const select = document.createElement("select");
+      fillSelect(select, (list.includes(value) ? list : [value, ...list]).map((o) => [o, o]), value);
+      select.title = `${group.title}: ${value}`;
+      select.setAttribute("aria-label", `${USER_SETTINGS.messages.engineModel}（${group.title}）`);
+      select.addEventListener("change", () => set(param, select.value));
+      return select;
+    }));
+    $("sel-models-field").hidden = !models.length;
+    $("sel-loras").replaceChildren(...loras.map((l) => {
+      const on = l.param.kind === "node-off" ? !current(l.param) : !!current(l.param);
+      const name = String(current(l.fileParam));
+      const row = document.createElement("label");
+      row.className = `engine-lora${on ? "" : " off"}`;
+      row.title = name;
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = on;
+      box.setAttribute("aria-label", `LoRA ${name}`);
+      box.addEventListener("change", () => set(l.param, l.param.kind === "node-off" ? !box.checked : box.checked));
+      const text = document.createElement("span");
+      text.textContent = name.replace(USER_SETTINGS.messages.engineLoraExt, "");
+      row.append(box, text);
+      return row;
+    }));
+    $("sel-loras-field").hidden = !loras.length;
   }
 
   applyVideoProfile() {
@@ -7178,7 +7291,6 @@ class MainView {
     }
     this.on($("mat-input"), "change", (e) => { this.addMaterials([...e.target.files]); e.target.value = ""; });
     this.on($("close-materials"), "click", () => dlg.close());
-    this.on($("done-materials"), "click", () => dlg.close());
     this.on(dlg, "click", (e) => { if (e.target === dlg) dlg.close(); });
     this.on($("mat-clear"), "click", () => {
       if (this.materialItems.length && confirm(USER_SETTINGS.messages.materialsClearConfirm)) this.setMaterials([]);
