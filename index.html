@@ -257,6 +257,12 @@ body.resizing-side iframe, body.resizing-side video { pointer-events: none; }
   margin: 0; padding: 5px 10px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted);
   background: var(--head); border-bottom: 1px solid var(--line);
 }
+.psec-title-tools { display: flex; align-items: center; gap: 8px; }
+.help-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-weight: 400; letter-spacing: 0; cursor: pointer; }
+/* 説明オフ: 左パネルの説明文を隠す（エラーや注意、生成する大きさなどの結果の表示は残す） */
+body.no-help #flow-info, body.no-help #long-info, body.no-help #long-end-info, body.no-help #long-sd-info, body.no-help #long-i2i-info,
+body.no-help #mode-info, body.no-help #skill-default-note, body.no-help #run-note, body.no-help .col-input .hint-help { display: none !important; }
+body.no-help #frame-info .frame-help { display: none; }
 .psec-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
 .psec-body > .field, .psec-body > details, .psec-body .field { margin: 0; }
 .prop { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; margin: 0; }
@@ -275,6 +281,12 @@ dialog#advanced {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
 }
 dialog#advanced[open] { display: flex; flex-direction: column; }
+dialog.leave { width: min(560px, 94vw); padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
+dialog.leave::backdrop { background: rgba(0, 0, 0, .55); }
+dialog.leave h2 { margin: 0 0 8px; font-size: 16px; }
+dialog.leave p { margin: 0 0 12px; line-height: 1.6; }
+.leave-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.leave-actions .primary { order: 9; }
 dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .adv-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
 .adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -395,6 +407,7 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec-bar > span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .2s; }
 .spec[data-level="warn"] .spec-bar > span { background: var(--lamp); }
 .spec[data-level="over"] .spec-bar > span { background: var(--danger); }
+#spec-undo { margin-top: 4px; min-height: 24px; padding: 0 10px; font-size: 12px; }
 .spec-issues { display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-s); padding: 6px 8px; background: var(--warn-soft); color: var(--on-warn-soft); max-height: 30vh; overflow-y: auto; }
 .spec[data-level="over"] .spec-issues { background: var(--danger-soft); color: var(--ink); }
 .spec[data-level="ok"] .spec-issues { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); }
@@ -809,7 +822,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     <div class="side-resizer" id="side-resizer" role="separator" aria-orientation="vertical" aria-label="操作パネルの幅（ドラッグで変更、ダブルクリックで元に戻す）" title="ドラッグで操作パネルの幅を変えます（ダブルクリックで元の幅）" tabindex="0"></div>
     <div class="side-scroll">
       <section class="psec" aria-labelledby="flow-title">
-        <h2 class="psec-title" id="flow-title">作り方</h2>
+        <h2 class="psec-title psec-title-tools"><span id="flow-title">作り方</span><label class="help-toggle" title="オフにすると、左パネルの説明文をすべて隠します（使い慣れた人向け）"><input type="checkbox" id="help-toggle" checked> 説明</label></h2>
         <div class="psec-body">
           <div class="seg" id="flow-mode" role="group" aria-labelledby="flow-title">
             <button type="button" data-flow="image">画像から動画</button>
@@ -926,6 +939,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <ul id="spec-list"></ul>
           <button type="button" class="primary" id="spec-optimize">このPCに合わせて最適化</button>
         </div>
+        <button type="button" id="spec-undo" hidden>最適化を元に戻す</button>
       </div>
       <div class="run-row">
         <label class="count-field"><span class="sr-only">本数</span><select id="run-count" aria-label="本数"></select></label>
@@ -1082,6 +1096,17 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   </div>
 </dialog>
 
+<dialog id="leave-dialog" class="leave" aria-labelledby="leave-title">
+  <h2 id="leave-title">作ったものがまだ残っています</h2>
+  <p id="leave-text">このまま閉じると、作った動画の一覧・ストーリー・区間・つなぎの画像はブラウザから消えます（ComfyUI と画像AIの保存先に残っているファイルは消えません）。</p>
+  <div class="leave-actions">
+    <button id="leave-state">状態を JSON で書き出す</button>
+    <button id="leave-long" hidden>長い動画をダウンロード</button>
+    <button class="danger" id="leave-close">保存せずに閉じる</button>
+    <button class="primary" id="leave-cancel">戻る</button>
+  </div>
+  <p class="note" id="leave-note"></p>
+</dialog>
 <dialog id="advanced" aria-labelledby="adv-title">
   <div class="dlg-head"><h2 id="adv-title">詳しい設定</h2><span class="adv-sub" id="adv-sub"></span><button id="close-advanced">閉じる</button></div>
   <div class="adv-body">
@@ -2173,6 +2198,17 @@ const USER_SETTINGS = {
       bit_depth: "ビット深度", color_space: "色空間", megapixels: "メガピクセル", resolution_steps: "解像度ステップ",
     },
     genericTitles: /^(整数|浮動小数点|真偽値|文字列|Int|Float|Boolean|String)$/i,
+    // 数値の入力範囲（ComfyUI の上限より狭い、ふつう使う範囲）。キーは入力の名前、byLabel は項目名から決めるもの
+    ranges: {
+      steps: { min: 1, max: 100 }, cfg: { min: 0, max: 20 }, denoise: { min: 0, max: 1 },
+      strength: { min: -2, max: 2 }, strength_model: { min: -2, max: 2 }, strength_clip: { min: -2, max: 2 },
+      shift: { min: 0, max: 20 }, max_shift: { min: 0, max: 20 }, base_shift: { min: 0, max: 20 },
+      fps: { min: 1, max: 60 }, frame_rate: { min: 1, max: 60 }, bit_depth: { min: 8, max: 16 }, crf: { min: 0, max: 51 },
+      multiple: { min: 8, max: 128 }, megapixels: { min: 0.1, max: 4 }, width: { min: 64, max: 4096 }, height: { min: 64, max: 4096 },
+      length: { min: 1, max: 1000 }, frames: { min: 1, max: 1000 }, num_frames: { min: 1, max: 1000 }, batch_size: { min: 1, max: 8 },
+      byLabel: [[/steps?|ステップ/, { min: 1, max: 100 }], [/\bcfg\b/, { min: 0, max: 20 }], [/denoise|デノイズ/, { min: 0, max: 1 }],
+        [/strength|強さ/, { min: -2, max: 2 }], [/shift/, { min: 0, max: 20 }], [/fps|frame.?rate/, { min: 1, max: 60 }]],
+    },
     skipKeys: ["expression", "filename_prefix", "type", "device", "PowerLoraLoaderHeaderWidget", "➕ Add Lora"],
     skipClasses: ["LoadImage"],
     keepKeys: { SelectCLIPDevice: ["device"] },   // skipKeys にあっても表示するもの
@@ -2191,7 +2227,7 @@ const USER_SETTINGS = {
   story: {
     system: `You are the director of a short live video made from a still image. Before anyone writes a video prompt, you plan what happens.
 Step 1 - analyze: look carefully at the picture(s) and read the image information (Stable Diffusion tags or the list of reference materials). Work out who or what is shown, their appearance and outfit, where it is, the time of day and weather, the pose, expression and mood, and what the subject is doing at this very moment. The Stable Diffusion prompt is the most reliable source for the action: find every tag that names an act, action, pose, position or interaction (who does what to whom or with what, with which body part or object) and treat them as facts about the scene. Ignore the negative prompt.
-Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Also decide how each person's facial expression changes - gradually and believably, the way a real person's face reacts to what is happening (eyes, eyebrows, cheeks and mouth together), never frozen and never snapping from one expression to another. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat. When 動きの音 is 強調, name the concrete sound of each movement as it happens (衣擦れ, 足音, 液体の音, 肌が触れ合う・ぶつかる音, 物音) and the ambient sound of the place; when it is なし, mention no such sounds.
+Step 2 - imagine: decide what most naturally happens next in the {seconds}-second video, following the user's direction and the generation settings when they are given. When the tags name an act or action, the story continues and develops exactly that act - do not change it into something else or skip it. Make the action physical and alive: weight and momentum, anticipation and landing, hair and clothing swaying, the background moving (wind in trees, waves, light), and the sounds that would be heard. Also decide how each person's facial expression changes - gradually and believably, the way a real person's face reacts to what is happening (eyes, eyebrows, cheeks and mouth together), never frozen and never snapping from one expression to another. Obey the speech and vocal-sound settings strictly: when speech is なし, nobody talks, sings or whispers in the story; when the breath/voice sounds are なし, do not mention breathing, panting, moans, laughter or any other sound from a character's mouth or throat. When 動きの音 is 強調, name the concrete sound of each movement as it happens (衣擦れ, 足音, 液体の音, 肌が触れ合う・ぶつかる音, 物音) and the ambient sound of the place, with its texture - sounds of skin and bodies are soft, muffled and low (柔らかい・こもった・鈍い音), never metallic, ringing or sharp; when it is なし, mention no such sounds.
 WORDING (strict): be concrete and literal. Never use abstract, vague or euphemistic wording such as "行為", "あれ", "そういうこと", "親密な時間", "触れ合う", "楽しむ", "ひととき", "何か", "交わる" in place of the real thing. Name every act, action, pose, body part, piece of clothing and object by its specific, common Japanese name, taking the meaning directly from the tags (for example a tag like "jumping" becomes "跳ぶ", not "体を動かす"). If a tag for an act or object has no natural Japanese word, write the tag word itself in katakana or as-is (this never applies to names - see below).
 NAMES (strict): the image information may contain character names, person names, series titles or artist names. The video model cannot understand them, so never write any of them. Call each person by their visible appearance instead (for example "赤い髪をツインテールにした少女", "茶色の短髪で緑の上着の少年"), and use the same description for the same person every time. You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. Say who does what, to whom or with what, with which body part, and how (speed, strength, rhythm, direction).
 Write the result in natural Japanese only, in exactly this form and nothing else (no English, no markdown, no headings other than these two):
@@ -2635,7 +2671,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       ] },
       // 口から出る以外の音（衣擦れ・液体・肌が触れ合う音・足音・物音・背景の環境音）。音があるほうが動きのある動画になりやすい
       { key: "sfx", label: "動きの音", default: "strong", choices: [
-        ["strong", "強調", "Action sounds and ambience (sounds that do not come from a mouth): emphasized. Make the soundscape rich, concrete and tightly synchronized with every movement - describe in overall_soundscape, in time order, each physical sound with its source, timing, rhythm and loudness: fabric rustling and clothes brushing or sliding, hair swishing, footsteps and shifting weight, liquid sounds (splashing, dripping, pouring, sloshing, wet sounds), skin and bodies touching, rubbing, patting or slapping against each other, impacts and thuds, objects being moved, handled or set down, furniture creaking; plus a continuous ambient bed of the place (room tone, wind, rain, water, birds, traffic, crowd, distant city). Every visible motion has an audible sound; never leave the soundscape silent and never write N/A for it. Mouth sounds still follow the speech and breath/voice settings."],
+        ["strong", "強調", "Action sounds and ambience (sounds that do not come from a mouth): emphasized. Make the soundscape rich, concrete and tightly synchronized with every movement - describe in overall_soundscape, in time order, each physical sound with its source, timing, rhythm and loudness: fabric rustling and clothes brushing or sliding, hair swishing, footsteps and shifting weight, liquid sounds (splashing, dripping, pouring, sloshing, wet sounds), skin and bodies touching, rubbing, patting or slapping against each other, impacts and thuds, objects being moved, handled or set down, furniture creaking; plus a continuous ambient bed of the place (room tone, wind, rain, water, birds, traffic, crowd, distant city). Every visible motion has an audible sound; never leave the soundscape silent and never write N/A for it. TIMBRE (important): for every sound also say what material makes it and how it sounds, so the audio model does not render harsh or artificial tones - sounds of skin, flesh and bodies are soft, muffled, dull, warm and low-pitched (soft fleshy pats, muffled skin-on-skin contact, damp soft slaps), fabric is a soft rustle, liquids are wet and gentle; never describe them as sharp, crisp, cracking or clapping, and use no metallic, ringing, clanking, clinking, tinny or echoing sounds unless a metal or glass object is actually shown making them. Mouth sounds still follow the speech and breath/voice settings."],
         ["normal", "ふつう", "Action sounds and ambience: describe the physical sounds of the motion and the ambient sound of the place in overall_soundscape where they naturally fit."],
         ["off", "なし", "Action sounds and ambience: none. No footsteps, fabric, liquid, body, impact or object sounds and no ambient sound of the place."],
       ] },
@@ -3370,6 +3406,8 @@ Tips for better results:
     stateSaving: "いまの状態をファイルにまとめています…",
     stateSaved: "いまの状態を {name} に保存しました。このファイルを画面にドロップすると、この状態に戻せます。",
     stateLoading: "保存した状態を読み込んでいます…",
+    leaveManual: "ブラウザの決まりで、ページからはタブを閉じられませんでした。タブの × をもう一度押してください（今度は確認は出ません）。",
+    specUndone: "最適化を元に戻しました（大きさ・長さ・ワークフローの設定・参照動画の縮小を、最適化する前の値にしました）。",
     stateVideos: "作った動画を ComfyUI の保存先から読み直しています… {i}/{n}",
     stateVideosDone: "保存した状態に戻しました。作った動画を {n} 本読み直しました。",
     stateVideosMissing: "（{n} 本は ComfyUI の保存先に見つからなかったため、飛ばしました）",
@@ -4983,6 +5021,17 @@ class Mp4Metadata {
 // ===== WORKFLOW PARAMS =====
 // ワークフローの中で「詳しい設定」から変えられる値を集め、上書きを当てる
 class WorkflowParams {
+  // 「詳しい設定」で入力できる数値の範囲（ふつう使う範囲。誤ってあり得ない値にしないため）
+  static saneRange(param) {
+    const r = USER_SETTINGS.workflowParams.ranges;
+    const key = String(param.key || param.path.split("|").pop() || "");
+    if (r[key]) return r[key];
+    // 「Steps（スイッチOFF時）」のように、汎用ノードの値でも名前からわかるもの
+    const label = String(param.label || "").toLowerCase();
+    for (const [re, range] of r.byLabel) if (re.test(label)) return range;
+    return null;
+  }
+
   static isLink(v) {
     return Array.isArray(v) && v.length === 2 && typeof v[0] === "string" && typeof v[1] === "number";
   }
@@ -5937,6 +5986,7 @@ class MainView {
       this.updateSpecCheck();
     });
     this.on($("spec-optimize"), "click", () => this.optimizeForSpec());
+    this.on($("spec-undo"), "click", () => this.undoOptimize());
     this.on($("spec-meter"), "click", () => this.openSettings("machine"));
     this.bindCanvas();
     const lastDrop = $("last-drop");
@@ -5955,6 +6005,8 @@ class MainView {
     this.on($("story-to-prompt"), "click", () => this.storyToPrompt());
     this.bindLong();
     this.bindSideResizer();
+    this.bindHelpToggle();
+    this.bindLeaveGuard();
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
     this.on($("cancel"), "click", () => this.cancel());
     this.on($("to-ja"), "click", () => this.translate("ja"));
@@ -6199,12 +6251,23 @@ class MainView {
         const opts = spec?.[1] || {};
         const isInt = spec?.[0] === "INT" || (!spec && Number.isInteger(param.value) && !param.path.endsWith("strength"));
         input.step = opts.step ?? (isInt ? 1 : 0.01);
-        if (opts.min !== undefined) input.min = opts.min;
-        if (opts.max !== undefined && opts.max < 1e9) input.max = opts.max;
+        // ComfyUI の上限（ステップ数 10000 など）は広すぎるので、ふつう使う範囲に狭める（ワークフローの値は必ず範囲に入れる）
+        const sane = WorkflowParams.saneRange(param);
+        let lo = opts.min, hi = opts.max !== undefined && opts.max < 1e9 ? opts.max : undefined;
+        if (sane) {
+          lo = Math.max(lo ?? -Infinity, sane.min);
+          hi = Math.min(hi ?? Infinity, sane.max);
+          if (Number.isFinite(Number(param.value))) { lo = Math.min(lo, Number(param.value)); hi = Math.max(hi, Number(param.value)); }
+        }
+        if (lo !== undefined && Number.isFinite(lo)) input.min = lo;
+        if (hi !== undefined && Number.isFinite(hi)) input.max = hi;
         input.value = current;
         input.addEventListener("change", () => {
           if (input.value === "") input.value = param.value;
-          const val = Number(input.value);
+          let val = Number(input.value);
+          if (input.min !== "" && val < Number(input.min)) val = Number(input.min);
+          if (input.max !== "" && val > Number(input.max)) val = Number(input.max);
+          input.value = val;
           set(param, val);
           row.classList.toggle("changed", val !== param.value);
         });
@@ -6338,8 +6401,8 @@ class MainView {
       row("モデル", select("model", lists?.models, gen.model, this.meta?.model), "model"),
       row("サンプラー", select("sampler", lists?.samplers, gen.sampler, meta.sampler), "sampler"),
       row("スケジューラー", select("scheduler", lists?.schedulers, gen.scheduler, meta.scheduler), "scheduler"),
-      row("ステップ数", num("steps", { min: 1, max: 150, step: 1 }, meta.steps), "steps"),
-      row("CFG", num("cfg", { min: 1, max: 30, step: 0.5 }, meta.cfg), "cfg"),
+      row("ステップ数", num("steps", { min: 1, max: 100, step: 1 }, meta.steps), "steps"),
+      row("CFG", num("cfg", { min: 1, max: 20, step: 0.5 }, meta.cfg), "cfg"),
       row("CLIP スキップ", num("clipSkip", { min: 1, max: 12, step: 1 }, meta.clipSkip), "clipSkip"));
     box.replaceChildren(group);
     changed();
@@ -6496,6 +6559,7 @@ class MainView {
       b.disabled = workflowSize;
     });
     const lines = [];
+    const helps = []; // 説明（「説明」スイッチがオフのときは隠す）
     let needsCrop = false;
     const mapping = this.store.video?.mapping || {};
     if (workflowSize) {
@@ -6503,23 +6567,27 @@ class MainView {
     } else if (this.isRef()) {
       const size = this.presetSize(Number(ui.megapixels));
       lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height));
-      lines.push(m.frameRef);
+      helps.push(m.frameRef);
     } else if (!this.meta) {
       const size = this.presetSize(Number(ui.megapixels));
       lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height));
-      lines.push(m.frameNoImage);
+      helps.push(m.frameNoImage);
     } else {
       const size = this.frameSize();
       const sameRatio = Math.abs(size.width / size.height - this.meta.width / this.meta.height) / (this.meta.width / this.meta.height) < USER_SETTINGS.frame.sameRatioTolerance;
       lines.push(m.frameSize.replace("{w}", size.width).replace("{h}", size.height) +
         m.frameSource.replace("{sw}", this.meta.width).replace("{sh}", this.meta.height).replace("{aspect}", ui.aspect.split(" ")[0]));
       const zoomed = ui.fit === "crop" && (this.focus.zoom ?? 1) > 1;
-      lines.push(sameRatio && !zoomed ? m.frameSame : ui.fit === "crop" ? m.frameCropHint : m.framePadHint);
+      helps.push(sameRatio && !zoomed ? m.frameSame : ui.fit === "crop" ? m.frameCropHint : m.framePadHint);
       needsCrop = (!sameRatio || zoomed) && ui.fit === "crop";
     }
     const sizeWritable = (mapping.aspect && mapping.megapixels) || (mapping.width && mapping.height);
     if (!workflowSize && this.store.video && !sizeWritable) lines.push(m.frameNoSizeSlot);
-    $("frame-info").textContent = lines.join("\n");
+    // 生成する大きさと注意はいつも出し、使い方の説明は「説明」スイッチがオフなら隠す
+    const help = document.createElement("span");
+    help.className = "frame-help";
+    help.textContent = helps.length ? `\n${helps.join("\n")}` : "";
+    $("frame-info").replaceChildren(document.createTextNode(lines[0] || ""), help, document.createTextNode(lines.slice(1).map((l) => `\n${l}`).join("")));
     $("reset-focus").hidden = !needsCrop;
     this.updateSpecCheck();
     const zoomable = !workflowSize && !!this.meta && ui.fit === "crop" && !this.isRef();
@@ -6876,7 +6944,7 @@ class MainView {
   }
 
   setBusy(busy) {
-    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-i2i", "long-rethink", "long-reseed"]) $(id).disabled = busy;
+    for (const id of ["run", "rerun-video", "revise", "to-ja", "to-en", "file-input", "change-image", "reset-focus", "crop-zoom", "megapixels", "last-input", "last-clear", "run-count", "direction", "open-materials", "spec-optimize", "spec-undo", "story-regen", "story-to-prompt", "long-total", "long-add", "long-gen", "long-join", "long-sd", "long-i2i", "long-rethink", "long-reseed"]) $(id).disabled = busy;
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
     if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.longSdOn() || el.dataset.lock === "true"; });
     if (!busy) $("long-list").querySelectorAll(".long-key-pick input, .long-reseed").forEach((el) => { el.disabled = el.dataset.lock === "true"; });
@@ -7327,6 +7395,7 @@ class MainView {
     const box = $("spec-check");
     const h3 = !!this.store.video && this.isH3();
     box.hidden = !h3;
+    $("spec-undo").hidden = !this.optimizeUndo;
     if (!h3) return;
     const { spec, result } = this.specEvaluation();
     const ratio = result.ratio;
@@ -7363,6 +7432,11 @@ class MainView {
     const m = USER_SETTINGS.messages;
     const c = USER_SETTINGS.machine;
     const { spec, ctx, result } = this.specEvaluation();
+    // 元に戻せるように、変える前の値を覚えておく（大きさ・長さ・ワークフローの設定・参照動画の縮小）
+    const before = {
+      videoId: this.store.data.videoActive, megapixels: this.store.ui.megapixels, seconds: Number($("seconds").value),
+      overrides: clone(this.overridesFor()), resize: Object.fromEntries(this.materialItems.map((i) => [i.id, i.resize ?? null])),
+    };
     const changes = [];
     let stillHeavy = false;
     for (const issue of result.issues) {
@@ -7407,8 +7481,30 @@ class MainView {
       this.updateFrame();
       if (this.isRef()) this.materialsChanged();
     }
+    if (changes.length) this.optimizeUndo = before;
     this.updateSpecCheck();
     this.status(changes.length ? m.specOptimized + changes.join("、") : m.specNothing);
+  }
+
+  // 「最適化を元に戻す」: 最適化する前の大きさ・長さ・ワークフローの設定・参照動画の縮小に戻す
+  undoOptimize() {
+    const u = this.optimizeUndo;
+    if (!u || this.running) return;
+    const all = (this.store.ui.overrides ??= {});
+    if (Object.keys(u.overrides).length) all[u.videoId] = clone(u.overrides); else delete all[u.videoId];
+    this.saveUi({ megapixels: u.megapixels, seconds: u.seconds });
+    $("megapixels").value = String(u.megapixels);
+    $("seconds").value = u.seconds;
+    $("seconds-out").textContent = u.seconds;
+    for (const [id, resize] of Object.entries(u.resize)) if (this.materialItems.some((i) => i.id === id)) this.updateMaterial(id, { resize: resize ?? undefined });
+    this.optimizeUndo = null;
+    this.store.save();
+    this.renderWorkflowParams();
+    this.updateAdvancedBadge();
+    this.updateFrame();
+    if (this.isRef()) this.materialsChanged();
+    this.updateSpecCheck();
+    this.status(USER_SETTINGS.messages.specUndone);
   }
 
   // PROMPT
@@ -7941,6 +8037,69 @@ class MainView {
     const hi = Math.max(lo, Math.floor(total / min + 1e-9));
     if (count >= lo && count <= hi) return count;
     return Math.min(hi, Math.max(lo, Math.round(total / len)));
+  }
+
+  // 「作り方」の見出しの「説明」スイッチ: オフで左パネルの説明文を隠す（保存して、次に開いたときもそのまま）
+  bindHelpToggle() {
+    const apply = () => {
+      const on = this.store.ui.showHelp !== false;
+      $("help-toggle").checked = on;
+      document.body.classList.toggle("no-help", !on);
+    };
+    this.on($("help-toggle"), "change", () => { this.saveUi({ showHelp: $("help-toggle").checked }); apply(); });
+    apply();
+  }
+
+  // 作ったもの（動画・ストーリー・区間・つなぎの画像）があるか
+  hasWork() {
+    return !!(this.running || this.jobs?.length || $("story").value.trim() || this.longSegs?.some((g) => g.job || g.key || g.text.trim()) || this.longFinal?.key);
+  }
+
+  // 作ったものがあるのにページを閉じる・再読み込みしようとしたら確かめる。
+  // タブやブラウザを閉じるときはブラウザの確認だけ。再読み込み（F5・Ctrl+R）は、保存のボタンが付いたアプリの確認画面を出す
+  bindLeaveGuard() {
+    const dlg = $("leave-dialog");
+    this.on(window, "beforeunload", (e) => {
+      if (this.allowLeave || !this.hasWork()) return;
+      // タブやブラウザを閉じるときは、ブラウザの確認だけを出す（1回で閉じられるように、アプリの確認画面は出さない）
+      e.preventDefault();
+      e.returnValue = "";
+    });
+    this.on(window, "keydown", (e) => {
+      const reload = e.key === "F5" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r");
+      if (!reload || this.allowLeave || !this.hasWork()) return;
+      e.preventDefault();
+      this.openLeaveDialog("reload");
+    });
+    this.on($("leave-cancel"), "click", () => dlg.close());
+    this.on($("leave-state"), "click", () => this.saveState());
+    this.on($("leave-long"), "click", () => {
+      const job = this.latestJoined();
+      if (job?.blob) downloadBlob(job.blob, String(job.filename || this.videoFileName(job)).split(/[\\/]/).pop());
+    });
+    this.on($("leave-close"), "click", () => {
+      this.allowLeave = true;
+      if (this.leaveMode === "reload") { location.reload(); return; }
+      window.close();
+      // ブラウザの決まりで、ページからはタブを閉じられないことが多い。そのときは、もう一度タブを閉じてもらう
+      setTimeout(() => { $("leave-note").textContent = USER_SETTINGS.messages.leaveManual; }, 300);
+    });
+  }
+
+  latestJoined() {
+    return [...(this.jobs || [])].reverse().find((j) => j.joined && j.state === "done" && j.blob) || null;
+  }
+
+  openLeaveDialog(mode) {
+    const dlg = $("leave-dialog");
+    if (dlg.open || !this.hasWork()) return;
+    this.leaveMode = mode;
+    const joined = this.latestJoined();
+    $("leave-long").hidden = !joined;
+    if (joined) $("leave-long").textContent = `長い動画をダウンロード（#${joined.id}・${joined.seconds}秒）`;
+    $("leave-close").textContent = mode === "reload" ? "保存せずに再読み込み" : "保存せずに閉じる";
+    $("leave-note").textContent = "";
+    dlg.showModal();
   }
 
   // 操作パネルの幅を、境界線のドラッグで変える（幅は保存して、次に開いたときも使う）
