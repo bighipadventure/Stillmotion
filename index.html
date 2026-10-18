@@ -889,7 +889,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" id="long-info"></p>
           <div class="prop"><span class="prop-label" id="long-end-label">最後の区間</span><div class="seg" id="long-end" role="group" aria-labelledby="long-end-label"></div></div>
           <p class="note" id="long-end-info"></p>
-          <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を Stable Diffusion で作る</label>
+          <label class="check"><input type="checkbox" id="long-sd"> つなぎの画像を作る</label>
           <p class="note" id="long-sd-info"></p>
           <label class="check" id="long-i2i-field"><input type="checkbox" id="long-i2i"> 前の画像を下敷きにする（img2img）</label>
           <p class="note" id="long-i2i-info"></p>
@@ -2294,10 +2294,10 @@ Write the result in natural Japanese only, in exactly this form and nothing else
     defaultScene: "normal",
     // 最後の区間の終わり方: fl2va は「終わりの画像」まで（最初と最後のフレームを決める）、i2va は最後のフレームを決めずに成り行きに任せる
     ends: {
-      fl2va: { label: "終わりの画像", info: "最後の区間も「最初の画像 → 終わりの画像」の FL2VA で作ります。動画の終わりの絵を決められます（Stable Diffusion がオフのときは、「終わりの画像」のエリアに画像を入れたときだけ FL2VA になります）。" },
+      fl2va: { label: "終わりの画像", info: "最後の区間も「最初の画像 → 終わりの画像」の FL2VA で作ります。動画の終わりの絵を決められます（「つなぎの画像を作る」がオフのときは、「終わりの画像」のエリアに画像を入れたときだけ FL2VA になります）。" },
       i2va: { label: "成り行き", info: "最後の区間は最後のフレームを決めずに I2VA で作り、動きの終わりは成り行きに任せます（「終わりの画像」は作りません）。" },
     },
-    defaultEnd: "fl2va",
+    defaultEnd: "i2va",
     sdPollMs: 700,
     keySystem: `You write a Stable Diffusion prompt for one still image: the keyframe at the boundary between two clips of a longer video - the last moment of clip {a}, which is also the first moment of clip {b}.
 Two different sources, used for different things:
@@ -2433,7 +2433,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       sdReloading: "画像AI（{name}）のモデルがうまく読み込めていなかったので、モデルを読み込み直しています…",
       sdNotReady: "画像AI（SD WebUI・{url}）のモデルを読み込めませんでした。WebUI を再起動してから、もう一度試してください。",
       keyUnloading: "Stable Diffusion のモデルを VRAM から外して、動画づくりに移ります…",
-      sdNeedMeta: "つなぎの画像を Stable Diffusion で作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
+      sdNeedMeta: "つなぎの画像を作るには、メタデータ（SD のプロンプトとモデル）が入った画像が必要です。",
       sdDown: "Stable Diffusion（{name}・{url}）につながりません。設定の「画像AI」で接続先を確かめてください。つなぎの画像を使わずに作るときは、スイッチをオフにしてください。",
       sdNoModel: "ComfyUI にモデル「{name}」が見つかりません。元の画像と同じモデル（checkpoint）を ComfyUI の models/checkpoints に入れてください。",
       sdInfoOn: "区間のつなぎ目の画像を、元の画像と同じモデル・設定で Stable Diffusion に作ってもらい、区間を「つなぎの画像 → 次のつなぎの画像」の FL2VA で作ります（区間1は元の画像から、最後の区間は「終わりの画像」まで。ただし「最後の区間」を「成り行き」にしたときは、最後の区間だけ I2VA。すべての区間の継ぎ目が同じ画像になるので、つなぎ目がそろいます）。前の区間の動画から絵を取り出さないので画質が落ちにくく、場面転換もはっきりします（そのぶん時間がかかります）。",
@@ -2566,7 +2566,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
 
   transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 13,
+  defaultsRevision: 14,
   legacyDefaultHashes: {
     style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
     refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
@@ -2596,7 +2596,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     workflowSizeLabel: "ワークフローのまま",
     fits: [["crop", "切り抜く"], ["blur", "ぼかし余白"], ["black", "黒い余白"]],
     defaultAspect: "16:9 (Widescreen)",
-    defaultMegapixels: 0.4,
+    defaultMegapixels: 0,     // 0 = ワークフローのまま
     defaultFit: "crop",
     sizeMultiple: 32,
     previewMaxSide: 760,
@@ -2657,7 +2657,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
         ["FL2VA", "FL2VA", "Mode: FL2VA. Picture 1 is the opening frame and Picture 2 is the final frame. Use a single shot ([Shot 1] only) and supply the motion path that connects them instead of describing two static images: first-frame state → observable intermediate changes → progressively narrowing differences → last-frame state, reached at the very end."],
         ["L2VA", "L2VA", "Mode: L2VA. <Picture 1> is the FINAL frame and belongs to the last shot. Use a single shot ([Shot 1] only): plausible preceding state → explicit action and transition path → gradual convergence → landing exactly on the composition of <Picture 1> at the end."],
       ] },
-      { key: "music", label: "BGM", default: "on", choices: [
+      { key: "music", label: "BGM", default: "off", choices: [
         ["on", "あり", "Non-diegetic music: yes. In non_diegetic_music, describe instrumentation, tempo, rhythm and dynamic changes in 1–3 sentences, without abstract mood words."],
         ["off", "なし", "Non-diegetic music: none. non_diegetic_music must be exactly N/A."],
       ] },
@@ -2665,12 +2665,12 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
         ["on", "あり", "Speech: characters may speak, sing, hum or whisper. Give each speaker a stable ID such as (S1), describe the voice when the speaker first appears, and write short natural lines you invent yourself inside <d>[Japanese] ...</d> (use another language tag only if the picture clearly suggests it)."],
         ["off", "なし", "Speech: none. No character speaks, sings, hums or whispers, on or off screen; use no speaker IDs and no <d> tags."],
       ] },
-      { key: "vocal", label: "息・声の音", default: "off", choices: [
+      { key: "vocal", label: "息・声の音", default: "on", choices: [
         ["on", "あり", "Non-verbal vocal sounds: allowed. Breathing, panting, sighs, gasps, moans, laughter and screams from characters may be described where they fit the action, in integrated_multimodal_description and overall_soundscape."],
         ["off", "なし", "Non-verbal vocal sounds: none. No breathing or breath sounds, panting, sighs, gasps, moans, laughter, giggles, screams or any other sound from a character's mouth, nose or throat, in any field including overall_soundscape."],
       ] },
       // 口から出る以外の音（衣擦れ・液体・肌が触れ合う音・足音・物音・背景の環境音）。音があるほうが動きのある動画になりやすい
-      { key: "sfx", label: "動きの音", default: "strong", choices: [
+      { key: "sfx", label: "動きの音", default: "normal", choices: [
         ["strong", "強調", "Action sounds and ambience (sounds that do not come from a mouth): emphasized. Make the soundscape rich, concrete and tightly synchronized with every movement - describe in overall_soundscape, in time order, each physical sound with its source, timing, rhythm and loudness: fabric rustling and clothes brushing or sliding, hair swishing, footsteps and shifting weight, liquid sounds (splashing, dripping, pouring, sloshing, wet sounds), skin and bodies touching, rubbing, patting or slapping against each other, impacts and thuds, objects being moved, handled or set down, furniture creaking; plus a continuous ambient bed of the place (room tone, wind, rain, water, birds, traffic, crowd, distant city). Every visible motion has an audible sound; never leave the soundscape silent and never write N/A for it. TIMBRE (important): for every sound also say what material makes it and how it sounds, so the audio model does not render harsh or artificial tones - sounds of skin, flesh and bodies are soft, muffled, dull, warm and low-pitched (soft fleshy pats, muffled skin-on-skin contact, damp soft slaps), fabric is a soft rustle, liquids are wet and gentle; never describe them as sharp, crisp, cracking or clapping, and use no metallic, ringing, clanking, clinking, tinny or echoing sounds unless a metal or glass object is actually shown making them. Mouth sounds still follow the speech and breath/voice settings."],
         ["normal", "ふつう", "Action sounds and ambience: describe the physical sounds of the motion and the ambient sound of the place in overall_soundscape where they naturally fit."],
         ["off", "なし", "Action sounds and ambience: none. No footsteps, fabric, liquid, body, impact or object sounds and no ambient sound of the place."],
@@ -3545,11 +3545,11 @@ class SettingsStore {
       styles,
       skills,
       activeSkills: [],
-      translate: true,
+      translate: false,
       seenGuide: false,
       machine: clone(USER_SETTINGS.machine.defaults),
       flowVideo: {},
-      ui: {},
+      ui: { longTotal: 20, longCount: 4, seconds: 5, longEnd: "i2va", longSd: false },
       defaultsRevision: USER_SETTINGS.defaultsRevision,
     };
   }
@@ -3582,6 +3582,13 @@ class SettingsStore {
     if ((data.defaultsRevision || 0) < 10 && data.machine.autoDetect !== false && data.machine.reserve > 2) data.machine.reserve = USER_SETTINGS.machine.defaults.reserve;
     data.flowVideo ??= {};
     // 考える過程を出すモデルでは上限に達しやすいので、文章AIの最大出力トークン数を1段階（2倍に）上げる
+    // 既定の値を見直したので（rev 14）、いま使っている人の選択も一度だけ新しい既定にそろえる
+    if ((data.defaultsRevision || 0) < 14) {
+      const ui = (data.ui ??= {});
+      Object.assign(ui, { megapixels: 0, fit: "crop", longTotal: 20, longCount: 4, seconds: 5, longEnd: "i2va", longSd: false });
+      ui.promptOptions = { ...(ui.promptOptions || {}), music: "off", voice: "off", vocal: "on", sfx: "normal", motion: "normal", scene: "normal" };
+      data.translate = false;
+    }
     if ((data.defaultsRevision || 0) < 13) {
       for (const p of Object.values(data.llmProfiles || {})) p.maxTokens = Math.min(32768, (Number(p.maxTokens) || 2048) * 2);
     }
@@ -8493,7 +8500,7 @@ class MainView {
     sdBtn.type = "button";
     sdBtn.dataset.lock = String(!hasPrompt);
     sdBtn.disabled = !sd || !hasPrompt;
-    sdBtn.title = !sd ? "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます"
+    sdBtn.title = !sd ? "左の「つなぎの画像を作る」をオンにすると使えます"
       : hasPrompt ? "いま「画像のプロンプト」に入っているプロンプトのまま、シードだけ変えてこの画像を作り直します（文章AIは使いません。動画は作りません）"
       : "画像のプロンプトがまだありません。「プロンプトから作り直す」で作るか、「画像のプロンプト」に書いてください";
     this.on(sdBtn, "click", () => this.redoKey(b, "image"));
@@ -8502,7 +8509,7 @@ class MainView {
     rwBtn.type = "button";
     rwBtn.disabled = !sd;
     rwBtn.title = sd ? "全体のストーリーに矛盾・破綻がないか確かめてから、前後のつなぎの画像と区間の内容をもとに文章AIにプロンプトを書き直してもらい、画像も作ります（手で直したプロンプトも書き直します。動画は作りません）"
-      : "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます";
+      : "左の「つなぎの画像を作る」をオンにすると使えます";
     this.on(rwBtn, "click", () => this.redoKey(b, "prompt"));
     const file = el("input");
     file.type = "file";
@@ -8522,7 +8529,7 @@ class MainView {
     redo.dataset.lock = String(!sd || info.source === "drop");
     redo.disabled = !sd || info.source === "drop";
     redo.setAttribute("aria-label", `${this.keyLabel(b)}を作り直す`);
-    redoLabel.title = !sd ? "左の「つなぎの画像を Stable Diffusion で作る」をオンにすると使えます"
+    redoLabel.title = !sd ? "左の「つなぎの画像を作る」をオンにすると使えます"
       : info.source === "drop" ? "自分で読み込んだ画像は作り直しません（「外す」と、次に作るときに Stable Diffusion で作ります）"
       : "オンにすると「選んだ区間を作り直す」で、この画像と前後の区間の動画をまとめて作り直します";
     this.on(redo, "change", () => {
