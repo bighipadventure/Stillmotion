@@ -2701,13 +2701,23 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       ] },
       // 場面転換: カメラの角度・動きと、場面の変わり方の大きさ（長い動画では区間分け・区間・つなぎの画像の指示にも使う）
       { key: "scene", label: "場面転換", default: "normal", choices: [
-        ["static", "固定", "Camera: one static, locked-off shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\". Only the subjects and the scene move."],
+        ["static", "固定", "Camera: one static, locked-off shot for the whole clip. The framing, angle and focal length never change, and there are no cuts; write \"The camera holds a static shot\". Never describe any camera movement - no push in, pull out, pan, tilt, truck, pedestal, zoom, arc, tracking, crane, drift or shake, not even with small amplitude or at slow speed. This overrides the camera notes and the example in the prompt format. Only the subjects and the scene move."],
         ["subtle", "控えめ", "Scene change: minimal. Keep the place and the composition of the picture; the camera moves only gently (a slow push in or slight drift at most)."],
         ["normal", "ふつう", "Scene change: moderate. Change the camera angle or distance only when the action calls for it - then with one smooth move (push in, pull out, arc, tilt or pan), staying in the same place; if the action does not need it, keep the camera steady."],
         ["big", "大げさ", "Scene change: large - make it bold and cinematic like a film trailer, using striking camera angles and movements named with these film terms: {vocab} For example 2-3 shots with clear cuts to clearly different angles (each later shot starts with a strictly increasing cut time inside the duration, e.g. \"[Shot 2] At 00:02.500, the camera cuts to a low-angle shot ...\"), keeping the same characters and outfits. If the mode needs one continuous shot (FL2VA or L2VA), do one dramatic continuous camera move instead of cuts (for example a fast arc shot, a crane shot or a crash zoom). "],
       ] },
     ],
     singleShotModes: ["FL2VA", "L2VA"],
+    // 場面転換「固定」のとき、文章AIが書いてしまったカメラの動きをプロンプトから外す
+    staticCamera: {
+      sentence: "The camera holds a static shot.",
+      still: /\b(static|locked[- ]off|stationary|holds? (a |the |its )?(static|still|steady|fixed)|remains? (still|static|fixed|steady)|stays? (still|static|fixed|steady|locked))\b/i,
+      move: /\bcamera\b[^.;!?]*?\b(push|pull|pan|tilt|truck|doll|zoom|arc|orbit|track|crane|pedestal|shake|shaking|roll|drift|glide|slide|move|moving|follow|circl|rise|rising|lower|swing|sweep|creep|approach|travel|descend|ascend|cut|reframe|rotat|sway|bob|jib|boom|whip)\w*/i,
+      lead: /^((?:\[Shot \d+\]\s*)?(?:At [\d:.]+,\s*)?)(?:and\s+)?(?:then\s+)?(?:meanwhile,\s*)?(?:slowly,\s*)?the camera\b/i,
+      nounLead: /^((?:\[Shot \d+\]\s*)?(?:At [\d:.]+,\s*)?)(?:a|an|the)\s+(?:[a-z-]+\s+){0,3}(?:push[- ]in|pull[- ]out|pan|tilt|dolly(?:[- ](?:in|out))?|zoom(?:[- ](?:in|out))?|tracking shot|arc shot|crane shot|camera (?:move|movement))\b/i,
+      clause: /,?\s*(?:while|as|with)\s+the camera\b[^,.;!?]*/gi,
+      fields: ["integrated_multimodal_description:", "detailed_description:"],
+    },
     // 「なし」を選んだ音の指定は、文章AIまかせにせず、プロンプトの overall_soundscape の先頭にアプリが必ず書き込む
     // （MiniMax H3 のテンプレートにはネガティブプロンプトがないため、プロンプトで明記するしかない）
     audioRules: {
@@ -6874,7 +6884,7 @@ class MainView {
           this.saveUi({ promptOptions: { ...this.store.ui.promptOptions, [g.key]: value } });
           this.updatePromptOptions();
           // セリフ・息・BGM を切り替えたら、できているプロンプトの音の指定もすぐ書き直す
-          if (["voice", "vocal", "music", "sfx"].includes(g.key) && !this.running) {
+          if (["voice", "vocal", "music", "sfx", "scene"].includes(g.key) && !this.running) {
             if ($("prompt-en").value.trim()) $("prompt-en").value = this.applyAudioRules($("prompt-en").value);
             if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
           }
@@ -6954,9 +6964,49 @@ class MainView {
         out = `${out.trimEnd()}\n\n${cfg.soundscapeField} ${rules.join(lang === "ja" ? "" : " ")}`;
       }
     }
+    if (lang !== "ja") out = this.applyStaticCamera(out);
     // BGM なし: non_diegetic_music は必ず N/A
     if (chosen.music === "off") {
       out = out.replace(new RegExp(`(^|\\n)(${cfg.musicField})([ \\t]*\\n?)[^\\n]*`), (m, lead, field, sep) => `${lead}${field}${sep.includes("\n") ? "\n" : " "}N/A`);
+    }
+    return out;
+  }
+
+  // ===== 場面転換「固定」のカメラ =====
+  applyStaticCamera(text) {
+    const cfg = USER_SETTINGS.promptOptions.staticCamera;
+    if (!this.cameraStatic()) return text;
+    if (this.isRef() && this.materialItems.some((i) => i.kind === "video")) return text;
+    const fixSentence = (sentence) => {
+      if (!cfg.move.test(sentence) && !cfg.nounLead.test(sentence)) return sentence;
+      const lead = sentence.match(cfg.lead) || sentence.match(cfg.nounLead);
+      if (lead) return `${lead[1]}${/,\s*$/.test(lead[1]) ? cfg.sentence.replace(/^The/, "the") : cfg.sentence}`;
+      return sentence.replace(cfg.clause, "");
+    };
+    const lines = text.split("\n").map((line) => {
+      if (!/\bcamera\b|push[- ]in|pull[- ]out|dolly|zoom|tracking shot|arc shot|crane shot/i.test(line)) return line;
+      const said = new Set();
+      let shot = "";
+      return line.split(/(?<=[.!?])\s+/).map(fixSentence).filter((p) => {
+        const body = p.replace(/^[a-z_]+:\s*/, "");
+        shot = body.match(/^\[Shot \d+\]/)?.[0] || shot;
+        const bare = body.replace(/^\[Shot \d+\]\s*/, "").replace(/^At [\d:.]+,\s*/, "");
+        if (bare.toLowerCase() !== cfg.sentence.toLowerCase()) return true;
+        if (said.has(shot)) return false;
+        said.add(shot);
+        return true;
+      }).join(" ");
+    });
+    let out = lines.join("\n");
+    if (!cfg.still.test(out)) {
+      const field = cfg.fields.find((f) => out.includes(f));
+      if (field) {
+        const at = out.indexOf(field) + field.length;
+        const lead = out.slice(at).match(/^[ \t]*\r?\n?/)[0].length;
+        const end = out.indexOf("\n", at + lead);
+        const stop = end < 0 ? out.length : end;
+        out = `${out.slice(0, stop).trimEnd()} ${cfg.sentence}${out.slice(stop)}`;
+      }
     }
     return out;
   }
