@@ -2727,6 +2727,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   maxRunCount: 8,
   // このアプリで再生する動画・音声の、最初の音量バーの位置（0〜1）。あとで変えた音量はそのまま
   initialVolume: 0.5,
+  // プレビューの下の操作バー（再生ボタンやシークバー）の高さ。ここを押したときはブラウザの操作に任せる
+  videoControlsHeight: 48,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
@@ -8196,6 +8198,24 @@ class MainView {
     this.on($("long-play"), "click", () => this.playThrough());
     this.on($("long-join"), "click", () => this.joinSegments());
     this.on($("video"), "ended", () => this.onVideoEnded());
+    // 一度に再生する動画は1つだけ。どれかが再生を始めたら、ほかの動画は止める
+    // （区間のサムネイルで再生していた動画は、止めるとサムネイルに戻す）
+    document.addEventListener("play", (e) => {
+      const playing = e.target;
+      if (!(playing instanceof HTMLMediaElement)) return;
+      document.querySelectorAll("video, audio").forEach((v) => {
+        if (v === playing || v.paused) return;
+        if (v.closest(".long-thumb")) this.stopThumbVideo(v); else v.pause();
+      });
+    }, true);
+    // プレビューの動画は、画面を押しても再生・一時停止できる（下の操作バーの部分はブラウザの操作のまま）
+    this.on($("video"), "click", (e) => {
+      const video = $("video");
+      const rect = video.getBoundingClientRect();
+      if (e.clientY > rect.bottom - USER_SETTINGS.videoControlsHeight) return;
+      e.preventDefault();
+      if (video.paused) video.play().catch(() => {}); else video.pause();
+    });
   }
 
   // 左パネルの「全体の長さ」「区間の数」を、区間の一覧に合わせて表示する
@@ -10180,6 +10200,8 @@ class MainView {
     if (patch.state === "running" && !job.startedAt) job.startedAt = Date.now();
     Object.assign(job, patch);
     this.renderJobs();
+    // 中止した動画は、カードを残さずに自動で消す（中止の処理が終わってから）
+    if (patch.state === "canceled" && this.jobs.includes(job)) setTimeout(() => { if (job.state === "canceled") this.removeJob(job); }, 0);
   }
 
   async cancelJob(job) {
@@ -10194,6 +10216,7 @@ class MainView {
     if (job.url) URL.revokeObjectURL(job.url);
     // 長い動画の区間の動画を消したときは、その区間を「まだ」に戻す
     for (const g of this.longSegs || []) if (g.job === job) Object.assign(g, { job: null, first: null, last: null });
+    for (const g of this.longSegs || []) if (g.pendingJob === job) g.pendingJob = null;
     this.jobs = this.jobs.filter((j) => j !== job);
     if (this.selectedJob === job) this.selectJob(null);
     else this.renderJobs();
@@ -10336,9 +10359,15 @@ class MainView {
     // カードのどこを押しても選べる。画像の部分を押したときは、完成していればそのまま再生する
     card.addEventListener("click", (e) => {
       if (e.target.closest(".job-act")) return;
+      const video = $("video");
+      // プレビュー中の動画のサムネイルをもう一度押したときは、再生・一時停止を切り替える
+      if (thumb.contains(e.target) && job.url && this.selectedJob === job && !this.playlist) {
+        if (video.paused) video.play().catch(() => {}); else video.pause();
+        return;
+      }
       this.selectJob(job);
       this.restoreJob(job);
-      if (thumb.contains(e.target) && job.url) $("video").play().catch(() => {});
+      if (thumb.contains(e.target) && job.url) video.play().catch(() => {});
     });
     // 削除・中止ボタンはサムネイルの右上に重ねる（サムネイル自体がボタンなので、中には入れず兄弟に置く）
     const act = el("button", "job-act");
