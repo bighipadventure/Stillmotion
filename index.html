@@ -2566,7 +2566,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
 
   transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 14,
+  defaultsRevision: 15,
   legacyDefaultHashes: {
     style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
     refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
@@ -2594,9 +2594,12 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     megapixels: [0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.98, 1.0, 1.2, 1.5, 1.8, 2.0],
     megapixelUnit: 1048576,
     workflowSizeLabel: "ワークフローのまま",
+    autoSizeValue: "auto",
+    autoSizeLabel: "自動（負荷の目安から）{mp}（{w}×{h}）",
     fits: [["crop", "切り抜く"], ["blur", "ぼかし余白"], ["black", "黒い余白"]],
     defaultAspect: "16:9 (Widescreen)",
     defaultMegapixels: 0,     // 0 = ワークフローのまま
+    defaultMegapixelsAuto: true,
     defaultFit: "crop",
     sizeMultiple: 32,
     previewMaxSide: 760,
@@ -3590,6 +3593,10 @@ class SettingsStore {
       Object.assign(ui, { megapixels: 0, fit: "crop", longTotal: 20, longCount: 4, seconds: 5, longEnd: "i2va", longSd: false });
       ui.promptOptions = { ...(ui.promptOptions || {}), music: "off", voice: "off", vocal: "on", sfx: "normal", motion: "normal", scene: "normal" };
       data.translate = false;
+    }
+    if ((data.defaultsRevision || 0) < 15) {
+      const ui = (data.ui ??= {});
+      ui.megapixelsAuto = !Number(ui.megapixels);
     }
     if ((data.defaultsRevision || 0) < 13) {
       for (const p of Object.values(data.llmProfiles || {})) p.maxTokens = Math.min(32768, (Number(p.maxTokens) || 2048) * 2);
@@ -5851,6 +5858,7 @@ class MainView {
     const cfg = USER_SETTINGS.frame;
     ui.aspect ??= cfg.defaultAspect;
     ui.megapixels ??= cfg.defaultMegapixels;
+    ui.megapixelsAuto ??= cfg.defaultMegapixelsAuto;
     ui.fit ??= cfg.defaultFit;
     if (!cfg.megapixels.includes(Number(ui.megapixels))) ui.megapixels = cfg.defaultMegapixels;
     if (!cfg.aspects.some(([v]) => v === ui.aspect)) ui.aspect = cfg.defaultAspect;
@@ -5976,7 +5984,12 @@ class MainView {
     this.on($("negative"), "input", (e) => this.saveUi({ negative: e.target.value }));
     this.on($("direction"), "input", (e) => this.saveUi({ direction: e.target.value }));
     this.on($("aspect"), "change", (e) => { this.saveUi({ aspect: e.target.value }); this.updateFrame(); });
-    this.on($("megapixels"), "change", (e) => { this.saveUi({ megapixels: Number(e.target.value) }); this.updateFrame(); });
+    this.on($("megapixels"), "change", (e) => {
+      const auto = e.target.value === USER_SETTINGS.frame.autoSizeValue;
+      this.saveUi(auto ? { megapixelsAuto: true } : { megapixelsAuto: false, megapixels: Number(e.target.value) });
+      if (auto) this.applyAutoSize();
+      this.updateFrame();
+    });
     this.on($("change-image"), "click", () => $("file-input").click());
     this.on($("reset-focus"), "click", () => { this.focus = { x: 0.5, y: 0.5, zoom: 1 }; this.updateFrame(); });
     this.on($("crop-zoom"), "input", (e) => this.setZoom(100 / Number(e.target.value)));
@@ -6549,11 +6562,35 @@ class MainView {
 
   fillMegapixelOptions() {
     const cfg = USER_SETTINGS.frame;
-    fillSelect($("megapixels"), cfg.megapixels.map((mp) => {
+    const ui = this.store.ui;
+    const autoMp = Number(ui.megapixels);
+    const autoSize = autoMp ? this.presetSize(autoMp) : null;
+    const autoLabel = cfg.autoSizeLabel.replace("{mp}", autoMp || "").replace("{w}", autoSize?.width ?? "").replace("{h}", autoSize?.height ?? "");
+    fillSelect($("megapixels"), [[cfg.autoSizeValue, autoLabel], ...cfg.megapixels.map((mp) => {
       if (!mp) return ["0", cfg.workflowSizeLabel];
       const size = this.presetSize(mp);
       return [String(mp), `${mp}（${size.width}×${size.height}）`];
-    }), String(this.store.ui.megapixels));
+    })], ui.megapixelsAuto ? cfg.autoSizeValue : String(ui.megapixels));
+  }
+
+  // ===== 大きさの自動調整 =====
+  recommendedMegapixels() {
+    const spec = new MachineSpec(this.store.data.machine);
+    const options = USER_SETTINGS.frame.megapixels.filter((x) => x > 0).sort((a, b) => a - b);
+    const seconds = Number($("seconds").value) || Number(this.store.ui.seconds) || 0;
+    const items = this.isRef() ? this.materialItems : [];
+    const limit = spec.budget * USER_SETTINGS.machine.warnRatio;
+    const fits = (mp) => mp <= spec.tier.maxMp + 1e-9 && spec.loadFor(mp, seconds, this.store.flow, items) <= limit + 1e-9;
+    return [...options].reverse().find(fits) || options[0];
+  }
+
+  applyAutoSize() {
+    const ui = this.store.ui;
+    if (!ui.megapixelsAuto) return false;
+    const mp = this.recommendedMegapixels();
+    if (Number(ui.megapixels) === mp) return false;
+    this.saveUi({ megapixels: mp });
+    return true;
   }
 
   updateFrame() {
@@ -7401,6 +7438,7 @@ class MainView {
 
   updateSpecCheck() {
     if (!this.store || !$("spec-check")) return;
+    if (this.applyAutoSize()) { this.updateFrame(); return; }
     const box = $("spec-check");
     const h3 = !!this.store.video && this.isH3();
     box.hidden = !h3;
@@ -7443,7 +7481,7 @@ class MainView {
     const { spec, ctx, result } = this.specEvaluation();
     // 元に戻せるように、変える前の値を覚えておく（大きさ・長さ・ワークフローの設定・参照動画の縮小）
     const before = {
-      videoId: this.store.data.videoActive, megapixels: this.store.ui.megapixels, seconds: Number($("seconds").value),
+      videoId: this.store.data.videoActive, megapixels: this.store.ui.megapixels, megapixelsAuto: !!this.store.ui.megapixelsAuto, seconds: Number($("seconds").value),
       overrides: clone(this.overridesFor()), resize: Object.fromEntries(this.materialItems.map((i) => [i.id, i.resize ?? null])),
     };
     const changes = [];
@@ -7473,7 +7511,7 @@ class MainView {
       stillHeavy = !fits(mp, seconds);
       if (mp !== ctx.mp) {
         changes.push(`大きさ ${ctx.mp}→${mp} MP`);
-        this.saveUi({ megapixels: mp });
+        this.saveUi({ megapixels: mp, megapixelsAuto: false });
       }
       if (seconds !== ctx.seconds) {
         changes.push(`長さ ${ctx.seconds}→${seconds} 秒`);
@@ -7501,8 +7539,7 @@ class MainView {
     if (!u || this.running) return;
     const all = (this.store.ui.overrides ??= {});
     if (Object.keys(u.overrides).length) all[u.videoId] = clone(u.overrides); else delete all[u.videoId];
-    this.saveUi({ megapixels: u.megapixels, seconds: u.seconds });
-    $("megapixels").value = String(u.megapixels);
+    this.saveUi({ megapixels: u.megapixels, megapixelsAuto: u.megapixelsAuto, seconds: u.seconds });
     $("seconds").value = u.seconds;
     $("seconds-out").textContent = u.seconds;
     for (const [id, resize] of Object.entries(u.resize)) if (this.materialItems.some((i) => i.id === id)) this.updateMaterial(id, { resize: resize ?? undefined });
@@ -7800,7 +7837,7 @@ class MainView {
       activeSkills: [...(d.activeSkills || [])], translate: !!d.translate,
       overrides: clone(this.overridesFor()),
       ui: clone({
-        aspect: ui.aspect, megapixels: ui.megapixels, fit: ui.fit, seconds: Number($("seconds").value),
+        aspect: ui.aspect, megapixels: ui.megapixels, megapixelsAuto: !!ui.megapixelsAuto, fit: ui.fit, seconds: Number($("seconds").value),
         seed: ui.seed ?? "", negative: ui.negative ?? "", direction: ui.direction ?? "", promptOptions: ui.promptOptions,
         flow: this.store.flow,
       }),
@@ -7818,6 +7855,7 @@ class MainView {
     d.activeSkills = r.activeSkills.filter((id) => d.skills[id]);
     d.translate = r.translate;
     Object.assign(this.store.ui, clone(r.ui));
+    this.store.ui.megapixelsAuto = !!r.ui.megapixelsAuto;
     const all = (this.store.ui.overrides ??= {});
     if (Object.keys(r.overrides).length) all[r.videoId] = clone(r.overrides);
     else delete all[r.videoId];
