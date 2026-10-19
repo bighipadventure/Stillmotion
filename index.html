@@ -1183,7 +1183,6 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="row"><button class="primary" id="cors-ext-comfy-download">web-app-cors（ComfyUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-comfy-msg"></span></div>
           <ol class="steps">
             <li>ZIP を ComfyUI の <code>custom_nodes</code> フォルダに展開し、<code>custom_nodes\web-app-cors\__init__.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\ComfyUI\custom_nodes</code></li>
-            <li>前の版の <code>novel_cors</code> を入れていた場合は、<code>custom_nodes\novel_cors</code> フォルダを削除します。</li>
             <li>起動オプション（Stability Matrix の「Extra Launch Arguments」など）に <code>--enable-cors-header</code> が入っていたら外します（付けたままだと、ほかのサイトからも接続できてしまいます）。起動オプションは空のままで使えます。</li>
             <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
             <li>ブラウザで <code id="cors-ext-comfy-ping"></code> を開き、<code>{"ok":true, …}</code> と出れば準備完了です。</li>
@@ -1195,8 +1194,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="row"><button class="primary" id="cors-ext-a1111-download">web-app-cors（WebUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-a1111-msg"></span></div>
           <ol class="steps">
             <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
-            <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
-            <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
+            <li>起動オプションには、何も書く必要はありません。</li>
             <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
@@ -1490,11 +1488,10 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、�
 1. このフォルダ（web-app-cors）を WebUI の extensions フォルダに置きます。
    extensions\\web-app-cors\\scripts\\web_app_cors.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\（パッケージ名。例: forge-neo）\\extensions）
-2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
-3. 起動オプションの --api と --cors-allow-origins=... は不要です（消して空にしてかまいません）。
-4. WebUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
-6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
+2. 起動オプションには、何も書く必要はありません。
+3. WebUI を停止して、起動し直します。
+4. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+5. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
 
 ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
 ログに「Exception in thread ... (webui_worker)」が出ている場合は、起動の途中で止まっています。
@@ -1637,12 +1634,11 @@ ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かす
 1. このフォルダ（web-app-cors）を ComfyUI の custom_nodes フォルダに置きます。
    custom_nodes\\web-app-cors\\__init__.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\ComfyUI\\custom_nodes）
-2. 前の版の novel_cors を入れていた場合は、custom_nodes\\novel_cors フォルダを削除します。
-3. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
+2. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
    付けたままだと、ほかのサイトからも接続できてしまいます。
-4. ComfyUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
-6. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
+3. ComfyUI を停止して、起動し直します。
+4. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+5. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
 
 外し方: custom_nodes\\web-app-cors フォルダを削除して、起動し直します。
 `,
@@ -3659,8 +3655,8 @@ Tips for better results:
     probeOk: "接続OK",
     probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可し、設定後は停止→起動し直してください。",
     corsExtSaved: {
-      comfy: "web-app-cors_ComfyUI.zip を保存しました。ComfyUI の custom_nodes フォルダに展開し、前の版の novel_cors を削除して、起動オプションの --enable-cors-header を外し、停止→起動し直してください。",
-      a1111: "web-app-cors_WebUI.zip を保存しました。WebUI の extensions フォルダに展開し、前の版の stillmange-cors を削除して、停止→起動し直してください。",
+      comfy: "web-app-cors_ComfyUI.zip を保存しました。ComfyUI の custom_nodes フォルダに展開し、起動オプションの --enable-cors-header を外し、停止→起動し直してください。",
+      a1111: "web-app-cors_WebUI.zip を保存しました。WebUI の extensions フォルダに展開して、停止→起動し直してください。",
     },
     probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
     llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
