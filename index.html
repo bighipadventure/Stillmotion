@@ -768,6 +768,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 12px; }
 .kv dt { font-weight: 700; }
 .kv dd { margin: 0; color: var(--muted); }
+.steps { margin: 8px 0 6px; padding-left: 20px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.steps li { margin-bottom: 4px; }
 .inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; }
 .pane-actions {
   position: sticky; bottom: 0; z-index: 2; margin: auto -16px 0; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
@@ -1176,11 +1178,28 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <p class="note" style="margin:0">うっかり「ブロック」した・確認が出ないときは、アドレスバー左のアイコン（設定のアイコン）→「サイトの設定」→「ローカル ネットワーク アクセス」を「許可」にして、ページを再読み込みします。Chrome か Edge で開いてください（Safari などでは動かない場合があります）。</p>
         </li>
         <li class="card">
-          <h4 class="card-title">ComfyUI に接続を許可する</h4>
-          <p class="note">Stability Matrix で ComfyUI のカードの歯車アイコンを開き、一番下の「Extra Launch Arguments」に次の1行を<strong>そのまま</strong>貼り付けて保存します。</p>
-          <div class="copyline"><code id="cors-comfy"></code><button data-copy="cors-comfy">コピー</button></div>
-          <p class="note">保存したら ComfyUI を一度「停止」してから「Launch」で起動し直します（保存だけでは反映されません）。</p>
-          <p class="note sub">ポータブル版: <code>run_nvidia_gpu.bat</code> の <code>main.py</code> の後ろ（同じ行）に追記。デスクトップ版: サーバー設定の CORS ヘッダーの項目に <code id="origin-1"></code> を入力。</p>
+          <h4 class="card-title">ComfyUI に接続を許可する（カスタムノード web-app-cors を入れる）</h4>
+          <p class="note">接続を許可する小さなカスタムノードを入れます（このページのアドレス <code id="cors-ext-comfy-origins"></code> と、このPCで動かすアプリ（localhost / 127.0.0.1）だけを許可します）。</p>
+          <div class="row"><button class="primary" id="cors-ext-comfy-download">web-app-cors（ComfyUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-comfy-msg"></span></div>
+          <ol class="steps">
+            <li>ZIP を ComfyUI の <code>custom_nodes</code> フォルダに展開し、<code>custom_nodes\web-app-cors\__init__.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\ComfyUI\custom_nodes</code></li>
+            <li>前の版の <code>novel_cors</code> を入れていた場合は、<code>custom_nodes\novel_cors</code> フォルダを削除します。</li>
+            <li>起動オプション（Stability Matrix の「Extra Launch Arguments」など）に <code>--enable-cors-header</code> が入っていたら外します（付けたままだと、ほかのサイトからも接続できてしまいます）。起動オプションは空のままで使えます。</li>
+            <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
+            <li>ブラウザで <code id="cors-ext-comfy-ping"></code> を開き、<code>{"ok":true, …}</code> と出れば準備完了です。</li>
+          </ol>
+        </li>
+        <li class="card">
+          <h4 class="card-title">（長い動画のつなぎの画像を SD WebUI で作るときだけ）SD WebUI に接続を許可する（拡張機能 web-app-cors を入れる）</h4>
+          <p class="note">A1111 / Forge / Forge Neo に、接続を許可する小さな拡張機能を入れます（許可するのは ComfyUI と同じく <code id="cors-ext-a1111-origins"></code> と localhost / 127.0.0.1 だけ）。画像生成用のAPIもこの拡張機能が有効にするので、起動オプションは空のままで使えます。</p>
+          <div class="row"><button class="primary" id="cors-ext-a1111-download">web-app-cors（WebUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-a1111-msg"></span></div>
+          <ol class="steps">
+            <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
+            <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
+            <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
+            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
+            <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
+          </ol>
         </li>
         <li class="card">
           <h4 class="card-title">文章AIのサーバーを起動して、CORS をオンにする</h4>
@@ -1455,6 +1474,279 @@ const USER_SETTINGS = {
   appName: "Stillmotion",
   pagesUrl: "https://bighipadventure.github.io/Stillmotion/",
   pagesOrigin: "https://bighipadventure.github.io",
+  corsExtensions: {
+    a1111: {
+      folder: "web-app-cors",
+      file: "scripts/web_app_cors.py",
+      zipName: "web-app-cors_WebUI.zip",
+      pingPath: "/web-app-cors/ping",
+      readme: `web-app-cors（Stable Diffusion WebUI 用の接続許可拡張機能）
+
+A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かすアプリ（http://localhost / http://127.0.0.1）からの接続を許可します。
+ほかのサイトからの接続は許可しません。
+起動オプションに --api を書かなくても、画像生成用のAPIを有効にします。
+
+入れ方
+1. このフォルダ（web-app-cors）を WebUI の extensions フォルダに置きます。
+   extensions\\web-app-cors\\scripts\\web_app_cors.py となれば正しい場所です。
+   （Stability Matrix の場合: Data\\Packages\\（パッケージ名。例: forge-neo）\\extensions）
+2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
+3. 起動オプションの --api と --cors-allow-origins=... は不要です（消して空にしてかまいません）。
+4. WebUI を停止して、起動し直します。
+5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
+
+ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
+ログに「Exception in thread ... (webui_worker)」が出ている場合は、起動の途中で止まっています。
+エラーに名前が出ている拡張機能を外してから、起動し直してください。
+
+外し方: extensions\\web-app-cors フォルダを削除して、起動し直します。
+`,
+      source: `from modules import script_callbacks, shared
+import re
+
+# ===== 許可するアクセス元 =====
+# このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）と、下に書いたサイトからの接続を許可します。
+# サイトを増やすときは ALLOWED_ORIGINS に "https://〇〇" の形で1行ずつ足してください。
+# 起動オプションの --api と --cors-allow-origins は不要です（入っていても動きます）。
+ALLOWED_ORIGINS = {
+__ORIGINS__
+}
+ALLOWED_ORIGIN_PATTERNS = [
+    r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$",
+]
+# True にすると、どのサイトからでも接続できます（開いたWebページから勝手に画像生成される危険があるため、ふだんは False のまま）
+ALLOW_ALL = False
+# True にすると、起動オプションに --api を書かなくても画像生成用のAPI（/sdapi/v1/...）を有効にします
+ENABLE_API = True
+
+NAME = "web-app-cors"
+VERSION = "1"
+PING_PATH = f"/{NAME}/ping"
+API_CHECK_PATH = "/sdapi/v1/txt2img"
+ALLOWED_METHODS = b"GET, POST, PUT, DELETE, OPTIONS"
+PREFLIGHT_MAX_AGE = b"600"
+PATTERNS = [re.compile(p, re.IGNORECASE) for p in ALLOWED_ORIGIN_PATTERNS]
+
+
+def is_allowed(origin):
+    if not origin:
+        return False
+    if ALLOW_ALL or origin in ALLOWED_ORIGINS:
+        return True
+    return any(p.match(origin) for p in PATTERNS)
+
+
+class WebAppCORS:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        origin = headers.get("origin")
+        if not is_allowed(origin):
+            await self.app(scope, receive, send)
+            return
+        cors = [
+            (b"access-control-allow-origin", origin.encode("latin-1")),
+            (b"access-control-allow-credentials", b"true"),
+            (b"access-control-allow-private-network", b"true"),
+            (b"vary", b"Origin"),
+        ]
+        if scope["method"] == "OPTIONS" and "access-control-request-method" in headers:
+            requested = headers.get("access-control-request-headers", "*").encode("latin-1")
+            await send({
+                "type": "http.response.start",
+                "status": 200,
+                "headers": cors + [
+                    (b"access-control-allow-methods", ALLOWED_METHODS),
+                    (b"access-control-allow-headers", requested),
+                    (b"access-control-max-age", PREFLIGHT_MAX_AGE),
+                    (b"content-length", b"0"),
+                ],
+            })
+            await send({"type": "http.response.body", "body": b""})
+            return
+        names = {name for name, _ in cors}
+
+        async def send_with_cors(message):
+            if message["type"] == "http.response.start":
+                kept = [h for h in message.get("headers", []) if h[0].lower() not in names]
+                message["headers"] = kept + cors
+            await send(message)
+
+        await self.app(scope, receive, send_with_cors)
+
+
+def api_registered(app):
+    return any(getattr(route, "path", "") == API_CHECK_PATH for route in app.routes)
+
+
+def enable_api(app):
+    if not ENABLE_API or api_registered(app):
+        return
+    from modules.api.api import Api
+    from modules.call_queue import queue_lock
+    Api(app, queue_lock)
+    print(f"[{NAME}] API enabled without --api")
+
+
+def ping_for(app):
+    def ping():
+        return {
+            "ok": True, "extension": NAME, "server": "webui", "version": VERSION,
+            "allowed_origins": sorted(ALLOWED_ORIGINS), "allowed_origin_patterns": ALLOWED_ORIGIN_PATTERNS, "allow_all": ALLOW_ALL,
+            "api": api_registered(app),
+        }
+    return ping
+
+
+def on_app_started(demo, app):
+    if getattr(app, "_web_app_cors", False):
+        return
+    app._web_app_cors = True
+    app.add_api_route(PING_PATH, ping_for(app), methods=["GET"])
+    try:
+        enable_api(app)
+    except Exception as exc:
+        print(f"[{NAME}] could not enable API: {exc}  (起動オプションに --api を付けてください)")
+    build = app.build_middleware_stack
+    app.build_middleware_stack = lambda: WebAppCORS(build())
+    app.middleware_stack = None
+    allowed = "ALL" if ALLOW_ALL else ", ".join(sorted(ALLOWED_ORIGINS) + ALLOWED_ORIGIN_PATTERNS)
+    print(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
+
+
+script_callbacks.on_app_started(on_app_started)
+`,
+    },
+    comfy: {
+      folder: "web-app-cors",
+      file: "__init__.py",
+      zipName: "web-app-cors_ComfyUI.zip",
+      pingPath: "/web-app-cors/ping",
+      readme: `web-app-cors（ComfyUI 用の接続許可カスタムノード）
+
+ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かすアプリ（http://localhost / http://127.0.0.1）からの接続を許可します。
+ほかのサイトからの接続は許可しません。
+
+入れ方
+1. このフォルダ（web-app-cors）を ComfyUI の custom_nodes フォルダに置きます。
+   custom_nodes\\web-app-cors\\__init__.py となれば正しい場所です。
+   （Stability Matrix の場合: Data\\Packages\\ComfyUI\\custom_nodes）
+2. 前の版の novel_cors を入れていた場合は、custom_nodes\\novel_cors フォルダを削除します。
+3. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
+   付けたままだと、ほかのサイトからも接続できてしまいます。
+4. ComfyUI を停止して、起動し直します。
+5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+6. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
+
+外し方: custom_nodes\\web-app-cors フォルダを削除して、起動し直します。
+`,
+      source: `import re
+import logging
+from aiohttp import web
+from multidict import CIMultiDict
+from server import PromptServer
+
+# ===== 許可するアクセス元 =====
+# このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）と、下に書いたサイトからの接続を許可します。
+# サイトを増やすときは ALLOWED_ORIGINS に "https://〇〇" の形で1行ずつ足してください。
+# 起動オプションの --enable-cors-header は外してください（付けたままだと、ここで許可していないサイトからも接続できてしまいます）。
+ALLOWED_ORIGINS = {
+__ORIGINS__
+}
+ALLOWED_ORIGIN_PATTERNS = [
+    r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$",
+]
+# True にすると、どのサイトからでも接続できます（開いたWebページからワークフローやカスタムノードを勝手に操作される危険があるため、ふだんは False のまま）
+ALLOW_ALL = False
+
+NAME = "web-app-cors"
+VERSION = "1"
+PING_PATH = f"/{NAME}/ping"
+ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+PREFLIGHT_MAX_AGE = "600"
+STRIP_HEADERS = {"origin", "sec-fetch-site"}
+PATTERNS = [re.compile(p, re.IGNORECASE) for p in ALLOWED_ORIGIN_PATTERNS]
+NODE_CLASS_MAPPINGS = {}
+NODE_DISPLAY_NAME_MAPPINGS = {}
+
+
+def is_allowed(origin):
+    if not origin:
+        return False
+    if ALLOW_ALL or origin in ALLOWED_ORIGINS:
+        return True
+    return any(p.match(origin) for p in PATTERNS)
+
+
+def cors_headers(origin):
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Private-Network": "true",
+        "Vary": "Origin",
+    }
+
+
+@web.middleware
+async def web_app_cors_middleware(request, handler):
+    origin = request.headers.get("Origin")
+    if not is_allowed(origin):
+        return await handler(request)
+    if request.method == "OPTIONS" and "Access-Control-Request-Method" in request.headers:
+        return web.Response(status=200, headers={
+            **cors_headers(origin),
+            "Access-Control-Allow-Methods": ALLOWED_METHODS,
+            "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers", "*"),
+            "Access-Control-Max-Age": PREFLIGHT_MAX_AGE,
+        })
+    forwarded = CIMultiDict((k, v) for k, v in request.headers.items() if k.lower() not in STRIP_HEADERS)
+    try:
+        response = await handler(request.clone(headers=forwarded))
+    except web.HTTPException as exc:
+        exc.headers.update(cors_headers(origin))
+        raise
+    if not response.prepared:
+        response.headers.update(cors_headers(origin))
+    return response
+
+
+async def ping(request):
+    return web.json_response({
+        "ok": True, "extension": NAME, "server": "comfyui", "version": VERSION,
+        "allowed_origins": sorted(ALLOWED_ORIGINS), "allowed_origin_patterns": ALLOWED_ORIGIN_PATTERNS, "allow_all": ALLOW_ALL,
+    })
+
+
+INSTALLED = {"done": False}
+
+
+def install():
+    server = PromptServer.instance
+    app = server.app
+    if INSTALLED["done"]:
+        return
+    try:
+        app.middlewares.insert(0, web_app_cors_middleware)
+    except RuntimeError as exc:
+        logging.error(f"[{NAME}] could not install middleware: {exc}")
+        return
+    server.routes.get(PING_PATH)(ping)
+    INSTALLED["done"] = True
+    allowed = "ALL" if ALLOW_ALL else ", ".join(sorted(ALLOWED_ORIGINS) + ALLOWED_ORIGIN_PATTERNS)
+    logging.info(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
+    print(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
+
+
+install()
+`,
+    },
+  },
   fileNamePrefix: "stillmotion_",
   // 「状態を保存」の JSON（画面にドロップすると、その状態に戻す）
   state: { format: "stillmotion-state", version: 1 },
@@ -2258,8 +2550,8 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   // Stable Diffusion（長い動画のつなぎの画像）の接続先。Stillmange と同じく SD WebUI（A1111 / Forge）か ComfyUI
   sd: {
     backends: {
-      a1111: { label: "SD WebUI（A1111 / Forge）", url: "http://127.0.0.1:7860", cors: "--api --cors-allow-origins={origin}" },
-      comfy: { label: "ComfyUI", url: "http://127.0.0.1:8188", cors: "--enable-cors-header {origin}" },
+      a1111: { label: "SD WebUI（A1111 / Forge）", url: "http://127.0.0.1:7860", cors: "--api --cors-allow-origins={origin}", corsNote: "このページからつなぐには、SD WebUI に拡張機能 web-app-cors（WebUI 用）を入れて起動し直してください（「はじめに」からダウンロードできます。起動オプションの --api と --cors-allow-origins は不要です）。" },
+      comfy: { label: "ComfyUI", url: "http://127.0.0.1:8188", corsNote: "このページからつなぐには、ComfyUI にカスタムノード web-app-cors（ComfyUI 用）を入れて起動し直してください（「はじめに」からダウンロードできます。起動オプションの --enable-cors-header は外します）。" },
     },
     defaultBackend: "a1111",
   },
@@ -3366,6 +3658,10 @@ Tips for better results:
     bannerSetup: "最初に、文章AIとComfyUIの接続を設定してください。",
     probeOk: "接続OK",
     probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可し、設定後は停止→起動し直してください。",
+    corsExtSaved: {
+      comfy: "web-app-cors_ComfyUI.zip を保存しました。ComfyUI の custom_nodes フォルダに展開し、前の版の novel_cors を削除して、起動オプションの --enable-cors-header を外し、停止→起動し直してください。",
+      a1111: "web-app-cors_WebUI.zip を保存しました。WebUI の extensions フォルダに展開し、前の版の stillmange-cors を削除して、停止→起動し直してください。",
+    },
     probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
     llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
     readingImage: "画像を読み込んでいます…",
@@ -3551,6 +3847,86 @@ class Net {
   static probeMessage(state) {
     const m = USER_SETTINGS.messages;
     return { ok: m.probeOk, cors: m.probeCors, down: m.probeDown }[state];
+  }
+}
+
+// ===== ZIP (STORED, NO COMPRESSION) =====
+class ZipWriter {
+  static crcTable = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  static crc32(bytes) {
+    let c = 0xffffffff;
+    for (const b of bytes) c = this.crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  }
+
+  static dosTime(d) {
+    return {
+      time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1),
+      date: ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate(),
+    };
+  }
+
+  static build(files) {
+    const enc = new TextEncoder();
+    const { time, date } = this.dosTime(new Date());
+    const parts = [], central = [];
+    let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.path);
+      const data = typeof f.data === "string" ? enc.encode(f.data) : f.data;
+      const crc = this.crc32(data);
+      const local = new DataView(new ArrayBuffer(30));
+      [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [8, 0, 2], [10, time, 2], [12, date, 2], [14, crc, 4], [18, data.length, 4], [22, data.length, 4], [26, name.length, 2], [28, 0, 2]]
+        .forEach(([o, v, n]) => (n === 4 ? local.setUint32(o, v, true) : local.setUint16(o, v, true)));
+      const dir = new DataView(new ArrayBuffer(46));
+      [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [10, 0, 2], [12, time, 2], [14, date, 2], [16, crc, 4], [20, data.length, 4], [24, data.length, 4], [28, name.length, 2], [30, 0, 2], [32, 0, 2], [34, 0, 2], [36, 0, 2], [38, 0, 4], [42, offset, 4]]
+        .forEach(([o, v, n]) => (n === 4 ? dir.setUint32(o, v, true) : dir.setUint16(o, v, true)));
+      parts.push(local, name, data);
+      central.push(dir, name);
+      offset += 30 + name.length + data.length;
+    }
+    const size = central.reduce((s, p) => s + p.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    [[0, 0x06054b50, 4], [4, 0, 2], [6, 0, 2], [8, files.length, 2], [10, files.length, 2], [12, size, 4], [16, offset, 4], [20, 0, 2]]
+      .forEach(([o, v, n]) => (n === 4 ? end.setUint32(o, v, true) : end.setUint16(o, v, true)));
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  }
+}
+
+// ===== CORS EXTENSIONS FOR COMFYUI / SD WEBUI (DOWNLOAD) =====
+class CorsExtension {
+  static origins() {
+    const page = location.protocol.startsWith("http") ? location.origin : null;
+    return [...new Set([...(page ? [page] : []), USER_SETTINGS.pagesOrigin])];
+  }
+
+  static pingUrl(backend, baseUrl) {
+    const fallback = backend === "comfy" ? USER_SETTINGS.defaultComfyUrl : USER_SETTINGS.sd.backends[backend].url;
+    return `${String(baseUrl || fallback).replace(/\/+$/, "")}${USER_SETTINGS.corsExtensions[backend].pingPath}`;
+  }
+
+  static zip(backend) {
+    const cfg = USER_SETTINGS.corsExtensions[backend];
+    const origins = this.origins();
+    const source = cfg.source.replace("__ORIGINS__", origins.map((o) => `    ${JSON.stringify(o)},`).join("\n"));
+    const readme = cfg.readme.replace("__ORIGINS_TEXT__", origins.join(" / ")).replace(/\n/g, "\r\n");
+    return ZipWriter.build([
+      { path: `${cfg.folder}/${cfg.file}`, data: source },
+      { path: `${cfg.folder}/README.txt`, data: readme },
+    ]);
+  }
+
+  static download(backend) {
+    downloadBlob(this.zip(backend), USER_SETTINGS.corsExtensions[backend].zipName);
   }
 }
 
@@ -10950,6 +11326,12 @@ class SettingsView {
       b.textContent = "コピーしました";
     }));
     this.on($("run-diag"), "click", () => this.diagnose());
+    for (const backend of Object.keys(USER_SETTINGS.corsExtensions)) {
+      this.on($(`cors-ext-${backend}-download`), "click", () => {
+        CorsExtension.download(backend);
+        setMsg($(`cors-ext-${backend}-msg`), USER_SETTINGS.messages.corsExtSaved[backend], "ok");
+      });
+    }
 
     this.on($("llm-pick"), "change", (e) => this.loadLlm(e.target.value));
     this.on($("llm-new"), "click", () => this.startNew("llm"));
@@ -11059,7 +11441,8 @@ class SettingsView {
     $("sd-url").value = d.urls[d.backend];
     const origin = location.protocol.startsWith("http") ? location.origin : "*";
     this.renderSdGen();
-    $("sd-cors").textContent = `このページからつなぐには、${cfg.backends[d.backend].label} の起動オプションに「${cfg.backends[d.backend].cors.replace("{origin}", origin)}」を足して起動し直してください。`;
+    const backend = cfg.backends[d.backend];
+    $("sd-cors").textContent = backend.corsNote || `このページからつなぐには、${backend.label} の起動オプションに「${backend.cors.replace("{origin}", origin)}」を足して起動し直してください。`;
   }
 
   // 「画像の作り方」: メイン画面の「詳しい設定」と同じ表
@@ -11264,8 +11647,11 @@ class SettingsView {
   // GUIDE
   fillGuide() {
     const origin = location.origin.startsWith("http") ? location.origin : USER_SETTINGS.pagesOrigin;
-    $("cors-comfy").textContent = `--enable-cors-header ${origin}`;
-    $("origin-1").textContent = origin;
+    const sdUrls = this.sdConfig().urls;
+    for (const backend of Object.keys(USER_SETTINGS.corsExtensions)) {
+      $(`cors-ext-${backend}-origins`).textContent = CorsExtension.origins().join(" / ");
+      $(`cors-ext-${backend}-ping`).textContent = CorsExtension.pingUrl(backend, backend === "comfy" ? this.store.video?.comfyUrl : sdUrls[backend]);
+    }
     $("origin-2").textContent = origin;
   }
 
