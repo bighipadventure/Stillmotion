@@ -1066,6 +1066,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </div>
         <div class="preview-actions">
           <button id="dl-video" disabled>動画を保存</button>
+          <button id="dl-gif" disabled>GIFで保存</button>
           <button id="dl-prompt" disabled>プロンプトを保存</button>
           <button class="primary" id="post-share" disabled>Prompt Reel に投稿</button>
         </div>
@@ -1748,6 +1749,22 @@ install()
     },
   },
   fileNamePrefix: "stillmotion_",
+  gif: {
+    fps: 12,
+    maxSide: 480,
+    maxFrames: 360,
+    colors: 256,
+    colorBits: 5,
+    loop: 0,
+    seekTimeoutMs: 5000,
+    messages: {
+      idle: "GIFで保存",
+      making: "GIFを作成中… {p}%",
+      fail: "GIFを作れませんでした: {reason}",
+      noVideo: "動画を読み込めません",
+      timeout: "動画の読み込みが時間切れになりました",
+    },
+  },
   // 「状態を保存」の JSON（画面にドロップすると、その状態に戻す）
   state: { format: "stillmotion-state", version: 1 },
   storageKey: "sd2video.settings.v1",
@@ -5633,6 +5650,202 @@ class WorkflowParams {
   }
 }
 
+// ===== GIF ENCODER =====
+class GifEncoder {
+  constructor(width, height, loop = USER_SETTINGS.gif.loop) {
+    this.width = width;
+    this.height = height;
+    this.bytes = [];
+    this.writeStr("GIF89a");
+    this.writeU16(width);
+    this.writeU16(height);
+    this.bytes.push(0x70, 0, 0);
+    this.bytes.push(0x21, 0xff, 0x0b);
+    this.writeStr("NETSCAPE2.0");
+    this.bytes.push(0x03, 0x01);
+    this.writeU16(loop);
+    this.bytes.push(0);
+  }
+
+  writeStr(text) { for (let i = 0; i < text.length; i++) this.bytes.push(text.charCodeAt(i)); }
+
+  writeU16(n) { this.bytes.push(n & 0xff, (n >> 8) & 0xff); }
+
+  static quantize(rgba) {
+    const cfg = USER_SETTINGS.gif;
+    const bits = cfg.colorBits;
+    const shift = 8 - bits;
+    const size = 1 << (bits * 3);
+    const counts = new Uint32Array(size);
+    const keys = new Uint32Array(rgba.length / 4);
+    for (let i = 0, p = 0; i < rgba.length; i += 4, p++) {
+      const k = ((rgba[i] >> shift) << (bits * 2)) | ((rgba[i + 1] >> shift) << bits) | (rgba[i + 2] >> shift);
+      keys[p] = k;
+      counts[k]++;
+    }
+    const mask = (1 << bits) - 1;
+    const half = 1 << (shift - 1);
+    const entries = [];
+    for (let k = 0; k < size; k++) {
+      if (counts[k]) entries.push([((k >> (bits * 2)) & mask) << shift | half, ((k >> bits) & mask) << shift | half, (k & mask) << shift | half, counts[k], k]);
+    }
+    let boxes = [entries];
+    while (boxes.length < cfg.colors) {
+      let target = -1, best = 0;
+      boxes.forEach((box, i) => {
+        if (box.length < 2) return;
+        const spread = this.boxSpread(box);
+        if (spread.range > best) { best = spread.range; target = i; }
+      });
+      if (target < 0) break;
+      const box = boxes[target];
+      const ch = this.boxSpread(box).channel;
+      box.sort((a, b) => a[ch] - b[ch]);
+      const total = box.reduce((sum, e) => sum + e[3], 0);
+      let acc = 0, cut = 1;
+      for (; cut < box.length - 1; cut++) { acc += box[cut - 1][3]; if (acc >= total / 2) break; }
+      boxes.splice(target, 1, box.slice(0, cut), box.slice(cut));
+    }
+    const palette = new Uint8Array(cfg.colors * 3);
+    const lookup = new Uint8Array(size);
+    boxes.forEach((box, i) => {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const e of box) { r += e[0] * e[3]; g += e[1] * e[3]; b += e[2] * e[3]; n += e[3]; }
+      palette[i * 3] = Math.round(r / n);
+      palette[i * 3 + 1] = Math.round(g / n);
+      palette[i * 3 + 2] = Math.round(b / n);
+      for (const e of box) lookup[e[4]] = i;
+    });
+    const indices = new Uint8Array(keys.length);
+    for (let p = 0; p < keys.length; p++) indices[p] = lookup[keys[p]];
+    return { palette, indices };
+  }
+
+  static boxSpread(box) {
+    const lo = [255, 255, 255], hi = [0, 0, 0];
+    for (const e of box) for (let c = 0; c < 3; c++) { if (e[c] < lo[c]) lo[c] = e[c]; if (e[c] > hi[c]) hi[c] = e[c]; }
+    const ranges = hi.map((h, c) => h - lo[c]);
+    const channel = ranges.indexOf(Math.max(...ranges));
+    return { channel, range: ranges[channel] };
+  }
+
+  addFrame(rgba, delayCs) {
+    const { palette, indices } = GifEncoder.quantize(rgba);
+    this.bytes.push(0x21, 0xf9, 0x04, 0x04);
+    this.writeU16(delayCs);
+    this.bytes.push(0, 0);
+    this.bytes.push(0x2c);
+    this.writeU16(0);
+    this.writeU16(0);
+    this.writeU16(this.width);
+    this.writeU16(this.height);
+    this.bytes.push(0x87);
+    for (const v of palette) this.bytes.push(v);
+    this.writeLzw(indices, 8);
+  }
+
+  writeLzw(indices, minCodeSize) {
+    const clear = 1 << minCodeSize;
+    const eoi = clear + 1;
+    const maxCode = 4096;
+    const out = [];
+    let cur = 0, curBits = 0;
+    let codeSize = minCodeSize + 1;
+    const emit = (code) => {
+      cur |= code << curBits;
+      curBits += codeSize;
+      while (curBits >= 8) { out.push(cur & 0xff); cur >>>= 8; curBits -= 8; }
+    };
+    let dict = new Map();
+    let next = eoi + 1;
+    emit(clear);
+    let prefix = indices[0];
+    for (let i = 1; i < indices.length; i++) {
+      const k = indices[i];
+      const key = (prefix << 8) | k;
+      const found = dict.get(key);
+      if (found !== undefined) { prefix = found; continue; }
+      emit(prefix);
+      if (next < maxCode) {
+        dict.set(key, next++);
+        if (next > (1 << codeSize) && codeSize < 12) codeSize++;
+      } else {
+        emit(clear);
+        dict = new Map();
+        next = eoi + 1;
+        codeSize = minCodeSize + 1;
+      }
+      prefix = k;
+    }
+    emit(prefix);
+    emit(eoi);
+    if (curBits > 0) out.push(cur & 0xff);
+    this.bytes.push(minCodeSize);
+    for (let i = 0; i < out.length; i += 255) {
+      const chunk = out.slice(i, i + 255);
+      this.bytes.push(chunk.length, ...chunk);
+    }
+    this.bytes.push(0);
+  }
+
+  finish() {
+    this.bytes.push(0x3b);
+    return new Blob([new Uint8Array(this.bytes)], { type: "image/gif" });
+  }
+}
+
+// ===== VIDEO TO GIF =====
+class VideoToGif {
+  static async convert(blob, onProgress = () => {}) {
+    const cfg = USER_SETTINGS.gif;
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    try {
+      video.src = url;
+      await this.waitFor(video, "loadeddata");
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+      if (!duration || !video.videoWidth) throw new Error(USER_SETTINGS.gif.messages.noVideo);
+      const scale = Math.min(1, cfg.maxSide / Math.max(video.videoWidth, video.videoHeight));
+      const width = Math.max(1, Math.round(video.videoWidth * scale));
+      const height = Math.max(1, Math.round(video.videoHeight * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const count = Math.max(1, Math.min(cfg.maxFrames, Math.floor(duration * cfg.fps)));
+      const step = duration / count;
+      const delayCs = Math.max(2, Math.round(step * 100));
+      const gif = new GifEncoder(width, height);
+      for (let i = 0; i < count; i++) {
+        video.currentTime = Math.min(i * step, duration - 0.001);
+        await this.waitFor(video, "seeked");
+        ctx.drawImage(video, 0, 0, width, height);
+        gif.addFrame(ctx.getImageData(0, 0, width, height).data, delayCs);
+        onProgress((i + 1) / count);
+      }
+      return gif.finish();
+    } finally {
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  static waitFor(video, type) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { cleanup(); reject(new Error(USER_SETTINGS.gif.messages.timeout)); }, USER_SETTINGS.gif.seekTimeoutMs);
+      const ok = () => { cleanup(); resolve(); };
+      const ng = () => { cleanup(); reject(new Error(USER_SETTINGS.gif.messages.noVideo)); };
+      const cleanup = () => { clearTimeout(timer); video.removeEventListener(type, ok); video.removeEventListener("error", ng); };
+      video.addEventListener(type, ok);
+      video.addEventListener("error", ng);
+    });
+  }
+}
+
 // ===== FRAME FITTER =====
 class FrameFitter {
   static ratioOf(aspect) {
@@ -6548,6 +6761,7 @@ class MainView {
       const job = this.selectedJob;
       if (job?.blob) downloadBlob(job.blob, this.videoFileName(job));
     });
+    this.on($("dl-gif"), "click", () => this.saveGif(this.selectedJob));
     this.on($("dl-prompt"), "click", () => this.selectedJob && this.downloadPrompt(this.selectedJob));
     this.on($("post-share"), "click", () => this.selectedJob && this.postToShareApp(this.selectedJob));
     this.on($("comfy-help-export"), "click", () => this.downloadHelpWorkflow());
@@ -10500,6 +10714,25 @@ class MainView {
     return `${name.replace(/\.\w+$/, "")}.json`;
   }
 
+  async saveGif(job) {
+    if (!job?.blob || this.gifBusy) return;
+    const m = USER_SETTINGS.gif.messages;
+    const button = $("dl-gif");
+    this.gifBusy = true;
+    button.disabled = true;
+    button.textContent = m.making.replace("{p}", 0);
+    try {
+      const gif = await VideoToGif.convert(job.blob, (ratio) => { button.textContent = m.making.replace("{p}", Math.round(ratio * 100)); });
+      downloadBlob(gif, this.videoFileName(job).replace(/\.[^.\/\\]+$/, "") + ".gif");
+    } catch (err) {
+      this.status(m.fail.replace("{reason}", err.message), true);
+    } finally {
+      this.gifBusy = false;
+      button.textContent = m.idle;
+      button.disabled = !this.selectedJob?.blob;
+    }
+  }
+
   videoFileName(job) {
     return `${USER_SETTINGS.fileNamePrefix}${job.stamp}_${job.id}${job.ext}`;
   }
@@ -10858,6 +11091,7 @@ class MainView {
       video.hidden = true;
     }
     $("dl-video").disabled = !job?.blob;
+    $("dl-gif").disabled = !job?.blob || !!this.gifBusy;
     $("dl-prompt").disabled = !job;
     $("post-share").disabled = !job?.blob;
     $("player-label").textContent = this.playlist
