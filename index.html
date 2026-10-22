@@ -1183,6 +1183,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="row"><button class="primary" id="cors-ext-comfy-download">web-app-cors（ComfyUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-comfy-msg"></span></div>
           <ol class="steps">
             <li>ZIP を ComfyUI の <code>custom_nodes</code> フォルダに展開し、<code>custom_nodes\web-app-cors\__init__.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\ComfyUI\custom_nodes</code></li>
+            <li>前の版の <code>novel_cors</code> を入れていた場合は、<code>custom_nodes\novel_cors</code> フォルダを削除します。</li>
             <li>起動オプション（Stability Matrix の「Extra Launch Arguments」など）に <code>--enable-cors-header</code> が入っていたら外します（付けたままだと、ほかのサイトからも接続できてしまいます）。起動オプションは空のままで使えます。</li>
             <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
             <li>ブラウザで <code id="cors-ext-comfy-ping"></code> を開き、<code>{"ok":true, …}</code> と出れば準備完了です。</li>
@@ -1194,7 +1195,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
           <div class="row"><button class="primary" id="cors-ext-a1111-download">web-app-cors（WebUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-a1111-msg"></span></div>
           <ol class="steps">
             <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
-            <li>起動オプションには、何も書く必要はありません。</li>
+            <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
+            <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
             <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
@@ -1488,10 +1490,11 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、�
 1. このフォルダ（web-app-cors）を WebUI の extensions フォルダに置きます。
    extensions\\web-app-cors\\scripts\\web_app_cors.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\（パッケージ名。例: forge-neo）\\extensions）
-2. 起動オプションには、何も書く必要はありません。
-3. WebUI を停止して、起動し直します。
-4. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
-5. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
+2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
+3. 起動オプションの --api と --cors-allow-origins=... は不要です（消して空にしてかまいません）。
+4. WebUI を停止して、起動し直します。
+5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
 
 ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
 ログに「Exception in thread ... (webui_worker)」が出ている場合は、起動の途中で止まっています。
@@ -1634,11 +1637,12 @@ ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かす
 1. このフォルダ（web-app-cors）を ComfyUI の custom_nodes フォルダに置きます。
    custom_nodes\\web-app-cors\\__init__.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\ComfyUI\\custom_nodes）
-2. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
+2. 前の版の novel_cors を入れていた場合は、custom_nodes\\novel_cors フォルダを削除します。
+3. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
    付けたままだと、ほかのサイトからも接続できてしまいます。
-3. ComfyUI を停止して、起動し直します。
-4. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
-5. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
+4. ComfyUI を停止して、起動し直します。
+5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+6. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
 
 外し方: custom_nodes\\web-app-cors フォルダを削除して、起動し直します。
 `,
@@ -2514,6 +2518,12 @@ install()
     loraClass: /lora/i,
     emptyLora: /^(none|)$/i,
     modelKeys: ["unet_name", "model_name", "ckpt_name"],
+    optionFolders: {
+      unet_name: "diffusion_models", model_name: "diffusion_models", ckpt_name: "checkpoints", vae_name: "vae",
+      clip_name: "text_encoders", clip_name1: "text_encoders", clip_name2: "text_encoders", clip_name3: "text_encoders",
+      lora_name: "loras",
+    },
+    optionNodes: { sampler_name: "KSampler", scheduler: "KSampler" },
   },
   editorLoaders: { llm: "loadLlm", video: "loadVideo", skill: "loadSkill", style: "loadStyle" },
   editorCollections: { llm: "llmProfiles", video: "videoProfiles", skill: "skills", style: "styles" },
@@ -3655,8 +3665,8 @@ Tips for better results:
     probeOk: "接続OK",
     probeCors: "起動していますが、このページからの接続が許可されていません（CORS）。「はじめに」の手順で許可し、設定後は停止→起動し直してください。",
     corsExtSaved: {
-      comfy: "web-app-cors_ComfyUI.zip を保存しました。ComfyUI の custom_nodes フォルダに展開し、起動オプションの --enable-cors-header を外し、停止→起動し直してください。",
-      a1111: "web-app-cors_WebUI.zip を保存しました。WebUI の extensions フォルダに展開して、停止→起動し直してください。",
+      comfy: "web-app-cors_ComfyUI.zip を保存しました。ComfyUI の custom_nodes フォルダに展開し、前の版の novel_cors を削除して、起動オプションの --enable-cors-header を外し、停止→起動し直してください。",
+      a1111: "web-app-cors_WebUI.zip を保存しました。WebUI の extensions フォルダに展開し、前の版の stillmange-cors を削除して、停止→起動し直してください。",
     },
     probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
     llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
@@ -5093,6 +5103,42 @@ class ComfyClient {
         .then((r) => r.json()).then((j) => j[classType]?.input || null).catch(() => { ComfyClient.infoCache.delete(key); return null; }));
     }
     return ComfyClient.infoCache.get(key);
+  }
+
+  static comboOptions(spec) {
+    if (!Array.isArray(spec)) return null;
+    if (Array.isArray(spec[0])) return spec[0];
+    if (spec[0] === "COMBO" && Array.isArray(spec[1]?.options)) return spec[1].options;
+    return null;
+  }
+
+  async folderFiles(folder) {
+    ComfyClient.folderCache ??= new Map();
+    const key = `${this.base}|${folder}`;
+    if (!ComfyClient.folderCache.has(key)) {
+      ComfyClient.folderCache.set(key, fetch(`${this.base}/models/${encodeURIComponent(folder)}`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) })
+        .then((r) => (r.ok ? r.json() : null)).then((j) => (Array.isArray(j) && j.length ? j : null))
+        .catch(() => { ComfyClient.folderCache.delete(key); return null; }));
+    }
+    return ComfyClient.folderCache.get(key);
+  }
+
+  async options(classType, key) {
+    const cfg = USER_SETTINGS.workflowParams;
+    const info = classType ? await this.nodeInfo(classType) : null;
+    const own = ComfyClient.comboOptions(info?.required?.[key] || info?.optional?.[key]);
+    if (own) return own;
+    const folder = cfg.optionFolders[key];
+    if (folder) {
+      const files = await this.folderFiles(folder);
+      if (files) return files;
+    }
+    const donor = cfg.optionNodes[key];
+    if (donor && donor !== classType) {
+      const d = await this.nodeInfo(donor);
+      return ComfyClient.comboOptions(d?.required?.[key] || d?.optional?.[key]);
+    }
+    return null;
   }
 
   async inputNames(classType) {
@@ -6658,12 +6704,12 @@ class MainView {
     this.updateSpecCheck();
   }
 
-  appendParamRows(wrap, g, specOf, loraList, control) {
+  appendParamRows(wrap, g, specOf, optionsOf, control) {
     const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
     let loraBox = null;
     for (const param of g.params) {
       const spec = param.key ? specOf(g, param.key) : null;
-      const options = param.kind === "lora-file" ? loraList : Array.isArray(spec?.[0]) ? spec[0] : null;
+      const options = optionsOf(param, spec);
       const row = control(param, spec, options);
       if (param.group) {
         if (param.kind === "lora-on") { loraBox = el("div", "wfp-lora"); wrap.append(loraBox); }
@@ -6691,9 +6737,13 @@ class MainView {
     const classes = [...new Set([...groups.map((g) => g.classType), cfg.loraListClass])];
     const infos = Object.fromEntries(await Promise.all(classes.map(async (c) => [c, await comfy.nodeInfo(c)])));
     if (token !== tokens.get(box)) return;
-    const loraSpec = infos[cfg.loraListClass]?.required?.lora_name;
-    const loraList = Array.isArray(loraSpec?.[0]) ? loraSpec[0] : null;
-    const reachable = classes.some((c) => infos[c]);
+    const loraList = await comfy.options(cfg.loraListClass, "lora_name");
+    const optionMap = new Map(await Promise.all(groups.flatMap((g) => g.params)
+      .filter((p) => p.key && p.kind === "string")
+      .map(async (p) => [p.path, await comfy.options(groups.find((g) => g.params.includes(p)).classType, p.key)])));
+    if (token !== tokens.get(box)) return;
+    const optionsOf = (param, spec) => (param.kind === "lora-file" ? loraList : optionMap.get(param.path) || ComfyClient.comboOptions(spec));
+    const reachable = classes.some((c) => infos[c]) || !!loraList;
     const overrides = this.overridesFor(id);
     const set = (param, val) => this.setOverride(param, val, id, reset);
     const specOf = (g, key) => { const info = infos[g.classType]; return info?.required?.[key] || info?.optional?.[key] || null; };
@@ -6762,7 +6812,7 @@ class MainView {
     const nodes = groups.map((group) => {
       const wrap = el("div", "wfp-group");
       wrap.append(el("div", "wfp-title", group.title));
-      for (const g of group.merged || [group]) this.appendParamRows(wrap, g, specOf, loraList, control);
+      for (const g of group.merged || [group]) this.appendParamRows(wrap, g, specOf, optionsOf, control);
       return wrap;
     });
     box.replaceChildren(...nodes);
@@ -6899,14 +6949,12 @@ class MainView {
     const models = WorkflowParams.models(v.workflow, v.mapping);
     const loras = WorkflowParams.loras(v.workflow, v.mapping);
     const comfy = new ComfyClient(v.comfyUrl);
-    const infos = Object.fromEntries(await Promise.all([...new Set(models.map((m) => m.group.classType))].map(async (c) => [c, await comfy.nodeInfo(c)])));
+    const lists = await Promise.all(models.map(({ group, param }) => comfy.options(group.classType, param.key)));
     if (token !== this.engineToken) return;
     const set = (param, value) => this.setOverride(param, value, id);
-    $("sel-models").replaceChildren(...models.map(({ group, param }) => {
-      const info = infos[group.classType];
-      const spec = info?.required?.[param.key] || info?.optional?.[param.key];
+    $("sel-models").replaceChildren(...models.map(({ group, param }, i) => {
       const value = String(current(param));
-      const list = Array.isArray(spec?.[0]) ? spec[0].map(String) : [];
+      const list = (lists[i] || []).map(String);
       const select = document.createElement("select");
       fillSelect(select, (list.includes(value) ? list : [value, ...list]).map((o) => [o, o]), value);
       select.title = `${group.title}: ${value}`;
