@@ -261,7 +261,7 @@ body.resizing-side iframe, body.resizing-side video { pointer-events: none; }
 .help-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-weight: 400; letter-spacing: 0; cursor: pointer; }
 /* 説明オフ: 左パネルの説明文を隠す（エラーや注意、生成する大きさなどの結果の表示は残す） */
 body.no-help #flow-info, body.no-help #long-info, body.no-help #long-end-info, body.no-help #long-sd-info, body.no-help #long-i2i-info,
-body.no-help #mode-info, body.no-help #skill-default-note, body.no-help #run-note, body.no-help .col-input .hint-help { display: none !important; }
+body.no-help #mode-info, body.no-help #loop-info, body.no-help #skill-default-note, body.no-help #run-note, body.no-help .col-input .hint-help { display: none !important; }
 body.no-help #frame-info .frame-help { display: none; }
 .psec-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
 .psec-body > .field, .psec-body > details, .psec-body .field { margin: 0; }
@@ -519,6 +519,8 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .help-items { margin: 2px 0 6px; padding-left: 1.3em; font-weight: 700; word-break: break-all; }
 .help-steps { margin: 4px 0 8px; padding-left: 1.5em; }
 .help-steps li { margin-bottom: 2px; }
+.help-steps ul { margin: 2px 0; padding-left: 1.2em; }
+#loop-guide .help-steps { word-break: break-word; }
 .help-box a.btn { color: var(--ink); }
 .help-detail { margin: 0 0 8px; }
 .help-detail summary { color: inherit; }
@@ -916,6 +918,22 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
               <span class="hint" id="last-hint"><strong>最後のフレームの画像（省略可）</strong>入れないときは最初の画像を使います</span>
             </div>
             <div class="row"><button id="last-clear" hidden>最後の画像を外す</button></div>
+            <div id="loop-box" hidden>
+              <div class="prop"><span class="prop-label" id="loop-label">自然なループ</span><div class="seg" id="loop-choice" role="group" aria-labelledby="loop-label"></div></div>
+              <p class="note" id="loop-info"></p>
+              <p class="note" id="loop-status" aria-live="polite"></p>
+              <div class="help-box" id="loop-guide" role="alert" hidden>
+                <strong id="loop-guide-title"></strong>
+                <p id="loop-guide-lead"></p>
+                <ul class="help-items" id="loop-guide-items" hidden></ul>
+                <ol class="help-steps" id="loop-guide-steps"></ol>
+                <p id="loop-guide-tip"></p>
+                <div class="row">
+                  <button class="primary" id="loop-recheck"></button>
+                  <a class="btn" id="loop-open" target="_blank" rel="noopener"></a>
+                </div>
+              </div>
+            </div>
           </div>
           <label class="field">狙いたい構図・シチュエーション（任意）<textarea id="direction" class="autogrow" rows="1" placeholder="例: 夕焼けの海辺で振り返って手を振り、最後は顔のアップで終わる"></textarea></label>
         </div>
@@ -3061,6 +3079,86 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     lastSameAsFirst: "Picture 2 is identical to Picture 1: the clip must return to the opening pose and composition at the end, so that it loops seamlessly.",
     notH3: "このワークフローは MiniMax H3 ではないため、モード・BGM・声・動きの音の指定は使いません（動きと自由入力だけ反映します）。",
   },
+  loop: {
+    label: "自然なループ",
+    choices: [["off", "しない"], ["on", "する"]],
+    defaultChoice: "off",
+    info: {
+      off: "最初の画像を最後のフレームにも使う FL2VA で、元の姿に戻る動画を作ります（これまでどおり）。",
+      on: "ComfyUI-MiniMaxH3-Loop のループ専用ワークフロー（MiniMax H3 Loop Turbo）で、終わりが始まりにそのままつながるループ動画を作ります。画像は最初のフレームには固定せず、見た目の参考（<Picture 1>）として使います。上で選んでいるワークフローと「詳しい設定」は使いません。",
+    },
+    lengthNote: "長さはループ用の長さにそろえます: {req} 秒 → ループ {sec} 秒（{frames} フレーム）。",
+    fps: 24,
+    tailFrames: 5,
+    lengths: [107, 158, 209, 260, 311],
+    workflowName: "MiniMax H3 Loop（Turbo）",
+    mapping: { prompt: "9|prompt", image: "7|image", seed: "10|noise_seed", frames: "9|length", aspect: "16|aspect_ratio", megapixels: "16|megapixels" },
+    workflow: {
+      "1": { "inputs": { "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors", "weight_dtype": "default" }, "class_type": "UNETLoader", "_meta": { "title": "拡散モデルを読み込む" } },
+      "2": { "inputs": { "lora_name": "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors", "strength_model": 1, "model": ["1", 0] }, "class_type": "LoraLoaderModelOnly", "_meta": { "title": "Turbo LoRA" } },
+      "3": { "inputs": { "pad_clips": 1, "views": 2, "model": ["2", 0] }, "class_type": "MiniMaxH3Loop", "_meta": { "title": "MiniMax H3 Loop" } },
+      "4": { "inputs": { "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", "type": "minimax", "device": "default" }, "class_type": "CLIPLoader", "_meta": { "title": "CLIPを読み込む" } },
+      "5": { "inputs": { "vae_name": "minimax_h3_video_vae_fp16.safetensors" }, "class_type": "VAELoader", "_meta": { "title": "Video VAE" } },
+      "6": { "inputs": { "vae_name": "minimax_h3_audio_vae_fp32.safetensors" }, "class_type": "VAELoader", "_meta": { "title": "Audio VAE" } },
+      "7": { "inputs": { "image": "" }, "class_type": "LoadImage", "_meta": { "title": "Reference image (<Picture 1>)" } },
+      "9": { "inputs": { "prompt": "", "width": ["16", 0], "height": ["16", 1], "length": 107, "ref_image_size": "match", "clip": ["4", 0], "vae": ["5", 0], "audio_vae": ["6", 0], "ref_images.ref_image_0": ["7", 0] }, "class_type": "MiniMaxH3ReferenceToVideo", "_meta": { "title": "MiniMax H3 リファレンスから動画へ" } },
+      "10": { "inputs": { "noise_seed": 42 }, "class_type": "RandomNoise", "_meta": { "title": "ランダムノイズ" } },
+      "11": { "inputs": { "sampler_name": "res_multistep" }, "class_type": "KSamplerSelect", "_meta": { "title": "Kサンプラー選択" } },
+      "12": { "inputs": { "scheduler": "simple", "steps": 8, "denoise": 1, "model": ["3", 0] }, "class_type": "BasicScheduler", "_meta": { "title": "基本スケジューラー" } },
+      "13": { "inputs": { "model": ["3", 0], "conditioning": ["9", 0] }, "class_type": "BasicGuider", "_meta": { "title": "基本ガイダー" } },
+      "14": { "inputs": { "noise": ["10", 0], "guider": ["13", 0], "sampler": ["11", 0], "sigmas": ["12", 0], "latent_image": ["9", 1] }, "class_type": "SamplerCustomAdvanced", "_meta": { "title": "カスタムサンプラー（高度）" } },
+      "15": { "inputs": { "pad_clips": 1, "samples": ["14", 0], "vae": ["5", 0], "audio_vae": ["6", 0] }, "class_type": "MiniMaxH3LoopDecode", "_meta": { "title": "MiniMax H3 Loop Decode" } },
+      "16": { "inputs": { "aspect_ratio": "1:1 (Square)", "megapixels": 0.4, "multiple": 32 }, "class_type": "ResolutionSelector", "_meta": { "title": "解像度セレクター" } },
+      "20": { "inputs": { "fps": ["23", 1], "bit_depth": 8, "color_space": "sRGB", "codec": "none", "images": ["23", 0], "audio": ["15", 1] }, "class_type": "CreateVideo", "_meta": { "title": "動画を作成" } },
+      "21": { "inputs": { "filename_prefix": "video/MiniMaxH3_Loop", "format": "auto", "format.codec": "auto", "codec": "auto", "video": ["20", 0] }, "class_type": "SaveVideo", "_meta": { "title": "ビデオを保存" } },
+      "23": { "inputs": { "method": "FILM", "multiplier": 2, "fps": 24, "images": ["15", 0] }, "class_type": "LoopInterpolate", "_meta": { "title": "Loop Interpolate" } },
+    },
+    packs: {
+      core: { name: "ComfyUI 本体（MiniMax H3 対応版）", url: "https://docs.comfy.org/installation/update_comfyui" },
+      loop: { name: "ComfyUI-MiniMaxH3-Loop", url: "https://github.com/pxl-pshr/ComfyUI-MiniMaxH3-Loop" },
+      interp: { name: "ComfyUI-Frame-Interpolation", url: "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation" },
+    },
+    nodes: [
+      { classType: "MiniMaxH3ReferenceToVideo", pack: "core" },
+      { classType: "MiniMaxH3Loop", pack: "loop" },
+      { classType: "MiniMaxH3LoopDecode", pack: "loop" },
+      { classType: "LoopInterpolate", pack: "loop" },
+      { classType: "FILM VFI", pack: "interp" },
+    ],
+    models: [
+      { file: "minimax_h3_ref2va_pruned_int8_convrot.safetensors", folder: "diffusion_models", url: "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors" },
+      { file: "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors", folder: "loras", url: "https://huggingface.co/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors" },
+      { file: "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors", folder: "text_encoders", url: "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors" },
+      { file: "minimax_h3_video_vae_fp16.safetensors", folder: "vae", url: "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors" },
+      { file: "minimax_h3_audio_vae_fp32.safetensors", folder: "vae", url: "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors" },
+    ],
+    guide: {
+      title: "ループ動画を作る準備ができていません",
+      lead: "ComfyUI に次のものが見つかりませんでした。下の手順で入れてから ComfyUI を再起動し、「もう一度確かめる」を押してください。",
+      unreachable: "ComfyUI に接続できないため、準備ができているか確かめられません。ComfyUI を起動してから「もう一度確かめる」を押してください。",
+      missingNode: "ノード「{name}」（{pack}）",
+      missingModel: "モデル「{file}」（入れる場所: ComfyUI/models/{folder}）",
+      missingMark: "（足りません）",
+      steps: [
+        { text: "ComfyUI を最新にします（MiniMax H3 に対応した版が必要です）。Stability Matrix ならパッケージの「Update」、ComfyUI Manager なら「Manager」→「Update ComfyUI」を押します。", pack: "core" },
+        { text: "ComfyUI-MiniMaxH3-Loop を入れます。「Manager」→「Install via Git URL」に下の URL を貼ってインストールします。手動で入れるときは ComfyUI/custom_nodes に置き、ZIP で入れた場合はフォルダのすぐ下に __init__.py があるか（フォルダが二重になっていないか）確かめます。", pack: "loop" },
+        { text: "ComfyUI-Frame-Interpolation を入れます。「Manager」→「Custom Nodes Manager」で「ComfyUI-Frame-Interpolation」を検索して「Install」を押します（ループを滑らかにする補間に使います。補間用のモデルは初回の実行で自動でダウンロードされます）。", pack: "interp" },
+        { text: "モデル（.safetensors）を入れます。Stability Matrix を使っている場合は、ほかのモデルが入っている共通フォルダ（Data/Models の中の同じ種類のフォルダ）に入れます。", models: true },
+        { text: "ComfyUI を再起動します（Stability Matrix なら「Stop」→「Launch」）。そのあとで下の「もう一度確かめる」を押します。" },
+      ],
+      tip: "ループは同じ長さのふつうの動画より 2〜3 倍時間がかかります。VRAM 12GB 程度なら、大きさ 0.4 MP・長さ 4 秒くらいから試すのがおすすめです。",
+      checking: "ComfyUI に必要なノードとモデルがあるか確かめています…",
+      ready: "準備OK: ループに必要なノードとモデルが ComfyUI に見つかりました。",
+      recheck: "もう一度確かめる",
+      open: "ComfyUI を開く ↗",
+    },
+    messages: {
+      notReady: "ループ動画の準備ができていません。左の「自然なループ」の案内に従って入れてから、もう一度実行してください。",
+      unreachable: "ComfyUI に接続できないため、ループ動画を作れません。ComfyUI を起動してから、もう一度実行してください。",
+    },
+    storyMode: "自然なループ動画。最後のフレームが最初のフレームにそのままつながるので、出来事の流れや変化ではなく「ずっと続いている状態」（呼吸・揺れ・脈打つ・回る・漂うなど、くり返す動き）を考える。カメラは固定。画像は最初のフレームではなく、見た目（人物・服・画風・場所）の参考。",
+    promptRule: "Mode: seamless LOOP. This overrides the mode, scene change, camera, timeline and facial-expression time-order rules and the prompt structure given above. The video is generated as a perfect loop: its last frame flows straight back into its first, so there is no first or last frame. <Picture 1> is a reference for the subject, outfit, style and place only; never describe it as the opening frame, and refer to the subject through it (for example \"The girl from <Picture 1> ...\"). Describe a state that keeps going, not a sequence of events: one large, clear main subject doing one continuous or cyclic action (breathing, swaying, pulsing, rotating, bobbing, drifting, hair and clothes stirring in a steady breeze), plus slow ambient secondary motion that never runs out. If the story contains one-way changes or single events, turn them into a continuous state. Never use timelines, timestamps, shot labels, cuts, or words such as then, begins, starts to, finally, gradually, transforms into, by the end; no one-way changes (appearing, entering, leaving, lights switching, growth, weather or time-of-day changes) and no single events (a jump, a hit, a spoken line). Keep the light, weather and time of day fixed. Faces stay alive with small repeating changes (natural blinks, gentle breathing, soft shifts of gaze) that return to the same expression, without a change of emotion. Begin the description with exactly \"Locked-off static camera, no pan, no zoom.\" and never move the camera. No speech, singing or lyrics, even if speech is allowed above. overall_soundscape is a steady ambient bed of sound without one-off sounds. Output exactly this structure and nothing else (no title, no first line, no field name before the description): the visual description as 4-8 present-tense sentences ending with \"Continuous, smooth, unbroken motion throughout.\", one blank line, overall_soundscape: ..., one blank line, non_diegetic_music: ...",
+  },
   customModelValue: "__custom__",
   metadataFormat: "stillmotion-metadata",
   metadataVersion: 1,
@@ -5087,6 +5185,61 @@ class WorkflowMapper {
   }
 }
 
+// ===== LOOP VIDEO =====
+class LoopVideo {
+  static lengthFor(seconds) {
+    const cfg = USER_SETTINGS.loop;
+    const target = Number(seconds) * cfg.fps;
+    return cfg.lengths.reduce((best, len) => (Math.abs(len - cfg.tailFrames - target) < Math.abs(best - cfg.tailFrames - target) ? len : best));
+  }
+
+  static secondsOf(length) {
+    const cfg = USER_SETTINGS.loop;
+    return (length - cfg.tailFrames) / cfg.fps;
+  }
+
+  static profileFrom(v) {
+    const cfg = USER_SETTINGS.loop;
+    return { ...clone(v), name: cfg.workflowName, workflowName: cfg.workflowName, workflow: clone(cfg.workflow), mapping: clone(cfg.mapping) };
+  }
+
+  static async hasNode(base, classType) {
+    try {
+      const res = await fetch(`${base}/object_info/${encodeURIComponent(classType)}`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+      if (!res.ok) return null;
+      return !!(await res.json())[classType];
+    } catch {
+      return null;
+    }
+  }
+
+  static async folderList(base, folder) {
+    try {
+      const res = await fetch(`${base}/models/${encodeURIComponent(folder)}`, { signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+      if (!res.ok) return null;
+      const list = await res.json();
+      return Array.isArray(list) ? list : null;
+    } catch {
+      return null;
+    }
+  }
+
+  static hasFile(list, file) {
+    return list.some((name) => String(name).split(/[\\/]/).pop() === file);
+  }
+
+  static async check(comfy) {
+    const cfg = USER_SETTINGS.loop;
+    try { await comfy.stats(); } catch { return { status: "unreachable", missingNodes: [], missingModels: [] }; }
+    const found = await Promise.all(cfg.nodes.map((n) => LoopVideo.hasNode(comfy.base, n.classType)));
+    const missingNodes = cfg.nodes.filter((n, i) => found[i] === false);
+    const folders = [...new Set(cfg.models.map((m) => m.folder))];
+    const lists = Object.fromEntries(await Promise.all(folders.map(async (f) => [f, await LoopVideo.folderList(comfy.base, f)])));
+    const missingModels = cfg.models.filter((m) => lists[m.folder] && !LoopVideo.hasFile(lists[m.folder], m.file));
+    return { status: missingNodes.length || missingModels.length ? "missing" : "ready", missingNodes, missingModels };
+  }
+}
+
 // ===== COMFYUI CLIENT =====
 class ComfyClient {
   constructor(url) {
@@ -6553,11 +6706,13 @@ class MainView {
     this.selectedJob = null;
     this.materialItems = [];
     this.materialNote = "";
+    this.loopState = { status: "idle" };
     this.initUiState();
     this.bind();
     this.bindMaterials();
     this.buildFrameControls();
     this.buildPromptOptions();
+    this.buildLoopControls();
     this.refresh();
   }
 
@@ -6583,6 +6738,7 @@ class MainView {
     for (const g of USER_SETTINGS.promptOptions.groups) {
       if (!g.choices.some(([v]) => v === ui.promptOptions[g.key])) ui.promptOptions[g.key] = g.default;
     }
+    if (!USER_SETTINGS.loop.choices.some(([v]) => v === ui.loop)) ui.loop = USER_SETTINGS.loop.defaultChoice;
     $("seed").value = ui.seed ?? "";
     $("negative").value = ui.negative ?? "";
     $("direction").value = ui.direction ?? "";
@@ -6670,6 +6826,7 @@ class MainView {
     this.linkPromptHeights();
     this.on($("run-count"), "change", (e) => { this.saveUi({ runCount: Number(e.target.value) }); this.updateRunLabels(); });
     this.on($("last-clear"), "click", () => this.clearLastImage());
+    this.on($("loop-recheck"), "click", () => this.checkLoop());
     this.on($("sel-video"), "change", (e) => {
       if (e.target.value === "__add__") {
         e.target.value = this.store.data.videoActive;
@@ -6687,7 +6844,7 @@ class MainView {
       this.updateSpecCheck();
       this.statusBar.refresh();
     });
-    this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); this.updateSpecCheck(); });
+    this.on($("seconds"), "input", (e) => { $("seconds-out").textContent = e.target.value; this.saveUi({ seconds: Number(e.target.value) }); this.updateSpecCheck(); this.updateLoopUi(); });
     this.on($("seed"), "input", (e) => { this.saveUi({ seed: e.target.value }); this.updateAdvancedBadge(); });
     this.on($("negative"), "input", (e) => this.saveUi({ negative: e.target.value }));
     this.on($("direction"), "input", (e) => this.saveUi({ direction: e.target.value }));
@@ -7554,6 +7711,7 @@ class MainView {
   withInstruction(text) {
     if (!this.isH3() || this.isRef() || !text.trim()) return text;
     const body = text.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trimStart();
+    if (this.loopActive()) return body;
     return `${this.instructionLine()}\n\n${body}`;
   }
 
@@ -7570,7 +7728,7 @@ class MainView {
     const ja = $("prompt-ja").value;
     if (!ja.trim() || !this.isH3() || this.isRef()) return;
     const body = ja.replace(USER_SETTINGS.promptOptions.instructionPattern, "").trimStart();
-    $("prompt-ja").value = `${this.instructionLine()}\n\n${body}`;
+    $("prompt-ja").value = this.loopActive() ? body : `${this.instructionLine()}\n\n${body}`;
   }
 
   // 「なし」にした音の指定を、プロンプトに必ず明記する（文章AIが書き忘れても動画モデルに伝わるように）。
@@ -7657,11 +7815,13 @@ class MainView {
     const cfg = USER_SETTINGS.promptOptions;
     const chosen = this.promptOptions();
     const ref = this.isRef();
-    const lines = cfg.groups.filter((g) => chosen[g.key] && (this.isH3() || !cfg.h3Only.includes(g.key)) && !(ref && g.key === "mode") && !(this.segCtx && g.key === "scene"))
+    const loop = this.loopActive();
+    const lines = cfg.groups.filter((g) => chosen[g.key] && (this.isH3() || !cfg.h3Only.includes(g.key)) && !(ref && g.key === "mode") && !(loop && g.key === "mode") && !(this.segCtx && g.key === "scene"))
       .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2].replace("{vocab}", cfg.cameraVocab))
       .map((line) => (ref ? line.replaceAll("integrated_multimodal_description", "detailed_description") : line));
-    if (this.isH3() && !ref) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
-    if (chosen.mode === "FL2VA" && !this.last && !this.segCtx) lines.push(cfg.lastSameAsFirst);
+    if (this.isH3() && !ref && !loop) lines.unshift(cfg.firstLineRule.replace("{line}", this.instructionLine()));
+    if (loop) lines.unshift(USER_SETTINGS.loop.promptRule);
+    if (chosen.mode === "FL2VA" && !this.last && !this.segCtx && !loop) lines.push(cfg.lastSameAsFirst);
     if (this.segCtx) lines.push(...this.segCtx.rules);
     if (ref) lines.push(cfg.refRolesWin);
     const direction = (this.store.ui.direction || "").trim();
@@ -7680,6 +7840,125 @@ class MainView {
     const mode = this.promptOptions().mode;
     $("mode-info").textContent = this.isRef() || this.isLong() ? "" : h3 ? cfg.modeInfo[mode] : cfg.notH3;
     $("last-box").hidden = mode !== "FL2VA" || this.isLong();
+    this.updateLoopUi();
+  }
+
+  // ===== 自然なループ =====
+  loopActive() {
+    return this.store.ui.loop === "on" && !this.isRef() && !this.isLong() && this.isH3() && this.promptOptions().mode === "FL2VA" && !this.last;
+  }
+
+  buildLoopControls() {
+    const cfg = USER_SETTINGS.loop;
+    $("loop-label").textContent = cfg.label;
+    $("loop-choice").replaceChildren(...cfg.choices.map(([value, label]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.dataset.value = value;
+      this.on(b, "click", () => {
+        this.saveUi({ loop: value });
+        this.updateLoopUi();
+        if (value === "on") this.checkLoop();
+      });
+      return b;
+    }));
+    $("loop-guide-title").textContent = cfg.guide.title;
+    $("loop-guide-tip").textContent = cfg.guide.tip;
+    $("loop-recheck").textContent = cfg.guide.recheck;
+    $("loop-open").textContent = cfg.guide.open;
+  }
+
+  loopComfyUrl() {
+    return (this.store.video?.comfyUrl || USER_SETTINGS.defaultComfyUrl).replace(/\/+$/, "");
+  }
+
+  updateLoopUi() {
+    const cfg = USER_SETTINGS.loop;
+    const visible = !this.isRef() && !this.isLong() && this.isH3() && this.promptOptions().mode === "FL2VA" && !this.last;
+    const on = this.store.ui.loop === "on";
+    $("loop-box").hidden = !visible;
+    document.querySelectorAll("#loop-choice button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.value === this.store.ui.loop));
+      b.disabled = !!this.running;
+    });
+    $("loop-recheck").disabled = !!this.running || this.loopState.status === "checking";
+    const seconds = Number($("seconds").value);
+    const frames = LoopVideo.lengthFor(seconds);
+    $("loop-info").textContent = on ? `${cfg.info.on}${cfg.lengthNote.replace("{req}", seconds).replace("{sec}", LoopVideo.secondsOf(frames).toFixed(2)).replace("{frames}", frames)}` : cfg.info.off;
+    if (visible && on && (this.loopState.status === "idle" || this.loopState.url !== this.loopComfyUrl()) && this.loopState.status !== "checking") this.checkLoop();
+    const status = on && visible ? this.loopState.status : "idle";
+    $("loop-status").textContent = { checking: cfg.guide.checking, ready: cfg.guide.ready }[status] || "";
+    $("loop-guide").hidden = !["missing", "unreachable"].includes(status);
+    if (!$("loop-guide").hidden) this.renderLoopGuide();
+  }
+
+  renderLoopGuide() {
+    const cfg = USER_SETTINGS.loop;
+    const g = cfg.guide;
+    const st = this.loopState;
+    const missingPacks = new Set(st.missingNodes.map((n) => n.pack));
+    $("loop-guide-lead").textContent = st.status === "unreachable" ? g.unreachable : g.lead;
+    const items = [
+      ...st.missingNodes.map((n) => g.missingNode.replace("{name}", n.classType).replace("{pack}", cfg.packs[n.pack].name)),
+      ...st.missingModels.map((m) => g.missingModel.replace("{file}", m.file).replace("{folder}", m.folder)),
+    ].map((text) => {
+      const li = document.createElement("li");
+      li.textContent = text;
+      return li;
+    });
+    $("loop-guide-items").replaceChildren(...items);
+    $("loop-guide-items").hidden = !items.length;
+    const link = (url, label = url) => {
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = label;
+      return a;
+    };
+    $("loop-guide-steps").replaceChildren(...g.steps.map((step) => {
+      const li = document.createElement("li");
+      const lead = document.createElement("span");
+      lead.textContent = step.text + (step.pack && missingPacks.has(step.pack) ? g.missingMark : "");
+      li.appendChild(lead);
+      if (step.pack) {
+        const p = document.createElement("div");
+        p.appendChild(link(cfg.packs[step.pack].url));
+        li.appendChild(p);
+      }
+      if (step.models) {
+        const ul = document.createElement("ul");
+        ul.replaceChildren(...cfg.models.map((m) => {
+          const item = document.createElement("li");
+          item.append(link(m.url, m.file), ` → ComfyUI/models/${m.folder}${st.missingModels.includes(m) ? g.missingMark : ""}`);
+          return item;
+        }));
+        li.appendChild(ul);
+      }
+      return li;
+    }));
+    $("loop-open").href = this.loopComfyUrl();
+  }
+
+  async checkLoop() {
+    const token = {};
+    const url = this.loopComfyUrl();
+    this.loopState = { status: "checking", token, url, missingNodes: [], missingModels: [] };
+    this.updateLoopUi();
+    const result = await LoopVideo.check(new ComfyClient(url));
+    if (this.loopState.token !== token) return this.loopState;
+    this.loopState = { ...result, url };
+    this.updateLoopUi();
+    return this.loopState;
+  }
+
+  async requireLoopReady() {
+    if (!this.loopActive()) return;
+    const m = USER_SETTINGS.loop.messages;
+    const st = await this.checkLoop();
+    if (st.status === "unreachable") throw new UserError(m.unreachable);
+    if (st.status !== "ready") throw new UserError(m.notReady);
   }
 
   async loadLastImage(file) {
@@ -7700,6 +7979,7 @@ class MainView {
       $("last-hint").hidden = true;
       $("last-clear").hidden = false;
       this.drawLastPreview();
+      this.updateLoopUi();
     } catch (err) {
       this.status(`画像を読み込めません: ${err.message}`, true);
     }
@@ -7712,6 +7992,7 @@ class MainView {
     $("last-canvas").hidden = true;
     $("last-hint").hidden = false;
     $("last-clear").hidden = true;
+    this.updateLoopUi();
   }
 
   lastFrame(size) {
@@ -7793,7 +8074,7 @@ class MainView {
     if (!busy) $("long-list").querySelectorAll(".long-key-pick input, .long-reseed").forEach((el) => { el.disabled = el.dataset.lock === "true"; });
     document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.updatePromptOptions();
-    else document.querySelectorAll("#prompt-options button").forEach((b) => { b.disabled = true; });
+    else document.querySelectorAll("#prompt-options button, #loop-choice button, #loop-recheck").forEach((b) => { b.disabled = true; });
     if (!busy) this.updateFrame();
     else {
       $("aspect").disabled = true;
@@ -8378,8 +8659,8 @@ class MainView {
     const lines = cfg.groups.filter((g) => chosen[g.key] && !(this.isRef() && g.key === "mode") && (this.isH3() || !cfg.h3Only.includes(g.key)))
       .map((g) => `${g.label}: ${(g.choices.find(([v]) => v === chosen[g.key]) || [])[1] || chosen[g.key]}`);
     if (this.isRef()) lines.push("作り方: 素材から動画（素材の使い方の指定を優先）");
-    else if (this.isH3()) lines.push(`モードの意味: ${cfg.modeInfo[chosen.mode]}`);
-    lines.push(`長さ: ${$("seconds").value}秒`);
+    else if (this.isH3()) lines.push(`モードの意味: ${this.loopActive() ? USER_SETTINGS.loop.storyMode : cfg.modeInfo[chosen.mode]}`);
+    lines.push(`長さ: ${this.loopActive() ? LoopVideo.secondsOf(LoopVideo.lengthFor($("seconds").value)).toFixed(2) : $("seconds").value}秒`);
     return lines.join("\n");
   }
 
@@ -8479,6 +8760,7 @@ class MainView {
     this.guard(async (signal) => {
       this.requireSource();
       this.requireVideo();
+      await this.requireLoopReady();
       this.planBusy(["story", "prompt-en", this.store.data.translate && "prompt-ja"]);
       await this.makeStory(signal);
       await this.makePrompt(signal);
@@ -8513,6 +8795,7 @@ class MainView {
       this.requireSource();
       this.requireVideo();
       if (!$("prompt-en").value.trim()) throw new UserError(USER_SETTINGS.messages.needPrompt);
+      await this.requireLoopReady();
       this.startJobs();
     });
   }
@@ -8581,13 +8864,14 @@ class MainView {
     const m = USER_SETTINGS.messages;
     const ui = this.store.ui;
     const options = this.promptOptions();
+    const loop = this.loopActive();
     const total = ui.runCount;
     const seedBase = $("seed").value.trim();
     $("prompt-en").value = this.applyAudioRules(this.withInstruction($("prompt-en").value));
     this.syncJaInstruction();
     if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
     const shared = {
-      profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()),
+      profile: loop ? LoopVideo.profileFrom(v) : { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()), loop,
       prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
       seconds: Number($("seconds").value), negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
@@ -8635,7 +8919,7 @@ class MainView {
       ui: clone({
         aspect: ui.aspect, megapixels: ui.megapixels, megapixelsAuto: !!ui.megapixelsAuto, fit: ui.fit, seconds: Number($("seconds").value),
         seed: ui.seed ?? "", negative: ui.negative ?? "", direction: ui.direction ?? "", promptOptions: ui.promptOptions,
-        flow: this.store.flow,
+        flow: this.store.flow, loop: ui.loop,
       }),
     };
   }
@@ -10936,9 +11220,10 @@ class MainView {
     const m = USER_SETTINGS.messages;
     const v = job.profile;
     const mode = job.options.mode;
+    const keyframed = mode !== "I2VA" && !job.loop;
 
-    const frameId = mode === "I2VA" ? null : WorkflowMapper.frameNode(workflow, v.mapping.image);
-    if (mode !== "I2VA") {
+    const frameId = keyframed ? WorkflowMapper.frameNode(workflow, v.mapping.image) : null;
+    if (keyframed) {
       const names = frameId ? await comfy.inputNames(workflow[frameId].class_type) : { required: [], optional: [] };
       if (names && ![...names.required, ...names.optional].includes("last_frame")) throw new UserError(m.modeUnsupported.replace("{mode}", mode));
       if (names && mode === "L2VA" && names.required.includes("first_frame")) throw new UserError(m.modeNeedsFirst);
@@ -10948,6 +11233,7 @@ class MainView {
     values.image = await comfy.upload(first ? await FrameFitter.toFile(first, baseName) : job.file);
     const [imageNode, imageKey] = v.mapping.image.split("|");
     workflow[imageNode].inputs[imageKey] = values.image;
+    if (job.loop) return;
     let lastName = null;
     if (mode === "FL2VA" && job.last) {
       const lastSize = size || { width: job.last.meta.width, height: job.last.meta.height };
@@ -11017,7 +11303,8 @@ class MainView {
     const { workflow: wf, mapping } = job.profile;
     const seed = job.seedInput === "" ? Math.floor(Math.random() * USER_SETTINGS.seedMax) : Number(job.seedInput);
     const values = { prompt: job.prompt, negative: job.negative || null, seed, seconds: job.seconds };
-    if (mapping.frames) {
+    if (job.loop) values.frames = LoopVideo.lengthFor(job.seconds);
+    else if (mapping.frames) {
       const spec = await comfy.inputSpec(WorkflowMapper.classOf(wf, mapping.frames), mapping.frames.split("|")[1]);
       values.frames = WorkflowMapper.snap(job.seconds * WorkflowMapper.fps(wf), spec);
     }
