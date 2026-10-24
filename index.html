@@ -2915,7 +2915,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
 
   transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 15,
+  defaultsRevision: 16,
   legacyDefaultHashes: {
     style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
     refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
@@ -3085,14 +3085,15 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     defaultChoice: "off",
     info: {
       off: "最初の画像を最後のフレームにも使う FL2VA で、元の姿に戻る動画を作ります（これまでどおり）。",
-      on: "ComfyUI-MiniMaxH3-Loop のループ専用ワークフロー（MiniMax H3 Loop Turbo）で、終わりが始まりにそのままつながるループ動画を作ります。画像は最初のフレームには固定せず、見た目の参考（<Picture 1>）として使います。上で選んでいるワークフローと「詳しい設定」は使いません。",
+      on: "ComfyUI-MiniMaxH3-Loop のループ専用ワークフロー（MiniMax H3 Loop Turbo）で、終わりが始まりにそのままつながるループ動画を作ります。画像は最初のフレームには固定せず、見た目の参考（<Picture 1>）として使います。「生成」のワークフロー・モデル・LoRA・「詳しい設定」はループ専用のものに切り替わり（変えた値はループ専用として別に保存します）、「しない」に戻すと元のワークフローに戻ります。",
     },
     lengthNote: "長さは、ループがきれいにつながる長さ（{list} 秒）から選びます。いまは {sec} 秒（{frames} フレーム）です。「しない」に戻すと、元の長さ（{prev} 秒）に戻ります。",
     fps: 24,
     tailFrames: 5,
     lengths: [107, 158, 209, 260, 311],
+    videoId: "h3loop",
     workflowName: "MiniMax H3 Loop（Turbo）",
-    mapping: { prompt: "9|prompt", image: "7|image", seed: "10|noise_seed", frames: "9|length", aspect: "16|aspect_ratio", megapixels: "16|megapixels" },
+    videoLocked: "自然なループを「する」にしている間は、ループ専用のワークフローを使います（ほかのワークフローを使うときは「しない」に戻します）",
     workflow: {
       "1": { "inputs": { "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors", "weight_dtype": "default" }, "class_type": "UNETLoader", "_meta": { "title": "拡散モデルを読み込む" } },
       "2": { "inputs": { "lora_name": "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors", "strength_model": 1, "model": ["1", 0] }, "class_type": "LoraLoaderModelOnly", "_meta": { "title": "Turbo LoRA" } },
@@ -4100,7 +4101,7 @@ class SettingsStore {
 
   static builtinVideoProfiles() {
     const out = { [USER_SETTINGS.defaultVideoId]: SettingsStore.defaultVideoProfile() };
-    for (const spec of USER_SETTINGS.extraVideoProfiles) out[spec.id] = SettingsStore.defaultVideoProfile(spec);
+    for (const spec of [...USER_SETTINGS.extraVideoProfiles, LoopVideo.spec()]) out[spec.id] = SettingsStore.defaultVideoProfile(spec);
     return out;
   }
 
@@ -4143,7 +4144,7 @@ class SettingsStore {
       builtin.workflowName = fresh.workflowName;
     }
     if (builtin && USER_SETTINGS.legacyDefaultVideoNames.includes(builtin.name)) builtin.name = USER_SETTINGS.defaultVideoName;
-    for (const spec of USER_SETTINGS.extraVideoProfiles) {
+    for (const spec of [...USER_SETTINGS.extraVideoProfiles, LoopVideo.spec()]) {
       const current = data.videoProfiles[spec.id];
       if (!current) data.videoProfiles[spec.id] = SettingsStore.defaultVideoProfile(spec);
       else if ([spec.workflowName, ...(spec.legacyWorkflowNames || [])].includes(current.workflowName)) {
@@ -5208,9 +5209,24 @@ class LoopVideo {
     return (cfg.lengths[1] - cfg.lengths[0]) / cfg.fps;
   }
 
-  static profileFrom(v) {
+  static spec() {
     const cfg = USER_SETTINGS.loop;
-    return { ...clone(v), name: cfg.workflowName, workflowName: cfg.workflowName, workflow: clone(cfg.workflow), mapping: clone(cfg.mapping) };
+    return { id: cfg.videoId, name: cfg.workflowName, workflowName: cfg.workflowName, workflow: cfg.workflow, styleId: "h3" };
+  }
+
+  static requiredModels(wf) {
+    const cfg = USER_SETTINGS.loop;
+    const folders = USER_SETTINGS.workflowParams.optionFolders;
+    const seen = new Set();
+    const out = [];
+    for (const node of Object.values(wf)) {
+      for (const [key, value] of Object.entries(node.inputs || {})) {
+        if (!folders[key] || typeof value !== "string" || !value || seen.has(value)) continue;
+        seen.add(value);
+        out.push({ file: value, folder: folders[key], url: cfg.models.find((m) => m.file === value)?.url || "" });
+      }
+    }
+    return out;
   }
 
   static async hasNode(base, classType) {
@@ -5238,15 +5254,16 @@ class LoopVideo {
     return list.some((name) => String(name).split(/[\\/]/).pop() === file);
   }
 
-  static async check(comfy) {
+  static async check(comfy, wf) {
     const cfg = USER_SETTINGS.loop;
+    const models = LoopVideo.requiredModels(wf);
     try { await comfy.stats(); } catch { return { status: "unreachable", missingNodes: [], missingModels: [] }; }
     const found = await Promise.all(cfg.nodes.map((n) => LoopVideo.hasNode(comfy.base, n.classType)));
     const missingNodes = cfg.nodes.filter((n, i) => found[i] === false);
-    const folders = [...new Set(cfg.models.map((m) => m.folder))];
+    const folders = [...new Set(models.map((m) => m.folder))];
     const lists = Object.fromEntries(await Promise.all(folders.map(async (f) => [f, await LoopVideo.folderList(comfy.base, f)])));
-    const missingModels = cfg.models.filter((m) => lists[m.folder] && !LoopVideo.hasFile(lists[m.folder], m.file));
-    return { status: missingNodes.length || missingModels.length ? "missing" : "ready", missingNodes, missingModels };
+    const missingModels = models.filter((m) => lists[m.folder] && !LoopVideo.hasFile(lists[m.folder], m.file));
+    return { status: missingNodes.length || missingModels.length ? "missing" : "ready", missingNodes, missingModels, models };
   }
 }
 
@@ -6945,8 +6962,7 @@ class MainView {
     fillSelect($("sel-llm"), llms, d.llmActive);
     $("sel-llm-field").hidden = llms.length <= 1;
     this.syncFlowWithVideo();
-    const videos = Object.entries(d.videoProfiles).filter(([id]) => this.profileFits(id)).map(([id, p]) => [id, p.name]);
-    fillSelect($("sel-video"), [...(videos.length ? videos : [["", "（この作り方のワークフローがありません）"]]), ["__add__", USER_SETTINGS.messages.addWorkflowOption]], d.videoActive);
+    this.fillVideoSelect();
     fillSelect($("run-count"), Array.from({ length: USER_SETTINGS.maxRunCount }, (_, i) => [String(i + 1), `${i + 1}本`]), String(this.store.ui.runCount));
     this.updateRunLabels();
     this.loadModels();
@@ -7898,6 +7914,7 @@ class MainView {
       b.disabled = !!this.running;
     });
     $("loop-recheck").disabled = !!this.running || this.loopState.status === "checking";
+    if (this.syncLoopProfile(visible && on)) this.refreshVideoUi();
     this.syncLoopSeconds(visible && on);
     const frames = LoopVideo.lengthFor($("seconds").value);
     const note = cfg.lengthNote.replace("{list}", cfg.lengths.map((l) => LoopVideo.secondsOf(l)).join(" / "))
@@ -7908,6 +7925,54 @@ class MainView {
     $("loop-status").textContent = { checking: cfg.guide.checking, ready: cfg.guide.ready }[status] || "";
     $("loop-guide").hidden = !["missing", "unreachable"].includes(status);
     if (!$("loop-guide").hidden) this.renderLoopGuide();
+  }
+
+  loopProfile() {
+    const d = this.store.data;
+    const id = USER_SETTINGS.loop.videoId;
+    d.videoProfiles[id] ??= SettingsStore.defaultVideoProfile(LoopVideo.spec());
+    return d.videoProfiles[id];
+  }
+
+  syncLoopProfile(active) {
+    const d = this.store.data;
+    const ui = this.store.ui;
+    const id = USER_SETTINGS.loop.videoId;
+    if (active === (d.videoActive === id)) return false;
+    if (active) {
+      const profile = this.loopProfile();
+      ui.loopPrevVideo = d.videoActive;
+      if (d.videoProfiles[d.videoActive]) profile.comfyUrl = d.videoProfiles[d.videoActive].comfyUrl;
+      d.videoActive = id;
+    } else {
+      const prev = ui.loopPrevVideo;
+      delete ui.loopPrevVideo;
+      d.videoActive = "";
+      d.videoActive = this.profileFits(prev) ? prev : this.pickVideoForFlow(this.store.flow);
+    }
+    (d.flowVideo ??= {})[this.store.flow] = d.videoActive;
+    this.store.save();
+    return true;
+  }
+
+  refreshVideoUi() {
+    this.fillVideoSelect();
+    this.applyVideoProfile();
+    this.updateSkillNote();
+    this.updateFrame();
+    this.updateSpecCheck();
+    this.statusBar.refresh();
+  }
+
+  fillVideoSelect() {
+    const d = this.store.data;
+    const loopId = USER_SETTINGS.loop.videoId;
+    const locked = d.videoActive === loopId;
+    const videos = Object.entries(d.videoProfiles).filter(([id]) => this.profileFits(id) && (locked || id !== loopId)).map(([id, p]) => [id, p.name]);
+    const entries = locked ? [[loopId, d.videoProfiles[loopId].name]] : [...(videos.length ? videos : [["", "（この作り方のワークフローがありません）"]]), ["__add__", USER_SETTINGS.messages.addWorkflowOption]];
+    fillSelect($("sel-video"), entries, d.videoActive);
+    $("sel-video").disabled = locked;
+    $("sel-video-field").title = locked ? USER_SETTINGS.loop.videoLocked : "";
   }
 
   syncLoopSeconds(active) {
@@ -7971,9 +8036,9 @@ class MainView {
       }
       if (step.models) {
         const ul = document.createElement("ul");
-        ul.replaceChildren(...cfg.models.map((m) => {
+        ul.replaceChildren(...(st.models || []).map((m) => {
           const item = document.createElement("li");
-          item.append(link(m.url, m.file), ` → ComfyUI/models/${m.folder}${st.missingModels.includes(m) ? g.missingMark : ""}`);
+          item.append(m.url ? link(m.url, m.file) : m.file, ` → ComfyUI/models/${m.folder}${st.missingModels.includes(m) ? g.missingMark : ""}`);
           return item;
         }));
         li.appendChild(ul);
@@ -7988,7 +8053,9 @@ class MainView {
     const url = this.loopComfyUrl();
     this.loopState = { status: "checking", token, url, missingNodes: [], missingModels: [] };
     this.updateLoopUi();
-    const result = await LoopVideo.check(new ComfyClient(url));
+    const id = USER_SETTINGS.loop.videoId;
+    const profile = this.loopProfile();
+    const result = await LoopVideo.check(new ComfyClient(url), WorkflowParams.apply(profile.workflow, this.overridesFor(id)));
     if (this.loopState.token !== token) return this.loopState;
     this.loopState = { ...result, url };
     this.updateLoopUi();
@@ -8202,6 +8269,7 @@ class MainView {
   // その作り方で使えるワークフローか
   profileFits(id, flow = this.store.flow) {
     const p = this.store.data.videoProfiles[id];
+    if (id === USER_SETTINGS.loop.videoId && this.store.data.videoActive !== id) return false;
     return !!p && WorkflowMapper.flowOf(p.mapping) === flow;
   }
 
@@ -8913,7 +8981,7 @@ class MainView {
     this.syncJaInstruction();
     if ($("prompt-ja").value.trim()) $("prompt-ja").value = this.applyAudioRules($("prompt-ja").value, "ja");
     const shared = {
-      profile: loop ? LoopVideo.profileFrom(v) : { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()), loop,
+      profile: { ...clone(v), workflow: this.effectiveWorkflow() }, overrides: clone(this.overridesFor()), loop,
       prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value,
       seconds: Number($("seconds").value), negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.focus },
