@@ -672,6 +672,8 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
 .job:not([aria-current="true"]) .job-now { display: none; }
 /* 長い動画（つないだ動画）は、幅を広げてオレンジの枠と帯で目立たせる。区間の動画には「区間N」の札を付ける */
+.job.job-draft { border-style: dashed; }
+.job.job-draft:not([aria-current="true"]) { border-color: var(--line-strong); }
 .job.job-long { flex-basis: 236px; border: 2px solid var(--lamp); box-shadow: 0 0 0 1px var(--lamp); }
 .job.job-long[aria-current="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 2px var(--accent-text); }
 .job.job-long .job-thumb { aspect-ratio: 16 / 8; }
@@ -3179,6 +3181,18 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   videoControlsHeight: 48,
   jobStates: { preparing: "準備中", queued: "順番待ち", running: "生成中", done: "完成", error: "エラー", canceled: "中止" },
   jobThumbMaxSide: 360,
+  draft: {
+    title: "編集中",
+    label: "まだ動画にしていない内容",
+    viewing: "表示中",
+    open: "編集中の内容に戻す",
+    discard: "破棄",
+    discardLabel: "編集中の内容を破棄",
+    noPrompt: "（プロンプトなし）",
+    step: "編集中",
+    restored: "編集中の内容（まだ動画にしていない内容）に戻しました。",
+    busy: "プロンプトを作っている間は、編集中の内容に戻せません。",
+  },
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
   // 操作パネル（左）の幅の範囲（px と、画面の幅に対する割合）
   sidePanel: { min: 260, max: 720, maxRatio: 0.6 },
@@ -9010,6 +9024,9 @@ class MainView {
       });
     }
     this.jobs.push(...batch);
+    this.draft = null;
+    this.viewingDraft = false;
+    this.viewSig = this.stateSignature();
     this.currentRun = new Set(batch.map((j) => j.id));
     this.renderJobs();
     const gallery = $("gallery");
@@ -9062,6 +9079,8 @@ class MainView {
     if (!r) return;
     if (job.segment || job.joined) { this.showLongJob(job); return; }
     if (this.running) { this.status(m.restoreBusy, true); return; }
+    if (!job.draft) this.captureDraft();
+    this.viewingDraft = !!job.draft;
     this.applyRestore(r);
 
     if (r.ui.flow === "ref") {
@@ -9092,11 +9111,104 @@ class MainView {
     $("prompt-ja").value = job.promptJa || "";
     $("story").value = job.story || "";
     this.growToFit($("story"));
-    this.setStep("story", job.story ? "done" : "idle", job.story ? `#${job.id}` : "");
+    const tag = job.draft ? USER_SETTINGS.draft.step : `#${job.id}`;
+    this.setStep("story", job.story ? "done" : "idle", job.story ? tag : "");
     this.currentRun = null;
     this.setStep("image", "done", job.meta ? `${job.meta.width}×${job.meta.height}` : Materials.shortSummary(job.refs || []));
-    this.setStep("prompt", "done", `#${job.id}`);
-    this.status(m.jobRestored.replace("{n}", job.id));
+    this.setStep("prompt", job.prompt ? "done" : "idle", job.prompt ? tag : "");
+    this.status(job.draft ? USER_SETTINGS.draft.restored : m.jobRestored.replace("{n}", job.id));
+    this.viewSig = this.stateSignature();
+    this.renderJobs();
+  }
+
+  // ===== 編集中の内容 =====
+  stateSignature() {
+    const fileKey = (f) => (f ? [f.name, f.size, f.lastModified] : null);
+    const plain = (key, value) => (value instanceof Blob || value instanceof Element ? undefined : value);
+    return JSON.stringify({
+      restore: this.restoreSnapshot(),
+      prompt: $("prompt-en").value.trim(), promptJa: $("prompt-ja").value.trim(), story: $("story").value.trim(),
+      file: fileKey(this.file), last: fileKey(this.last?.file), focus: this.focus, refs: this.materialItems,
+    }, plain);
+  }
+
+  captureDraft() {
+    if (this.isLong()) return;
+    const hasContent = !!(this.file || this.materialItems.length || $("prompt-en").value.trim() || $("story").value.trim());
+    if (!hasContent || this.stateSignature() === this.viewSig) return;
+    const ui = this.store.ui;
+    const draft = {
+      draft: true, restore: this.restoreSnapshot(),
+      prompt: $("prompt-en").value, promptJa: $("prompt-ja").value, story: $("story").value,
+      file: this.file, meta: this.meta, img: this.img, focus: { ...this.focus }, last: this.last ? { ...this.last } : null,
+      aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, refs: null,
+    };
+    if (this.store.flow === "ref") {
+      draft.refs = Materials.snapshot(this.materialItems);
+      draft.restore.refs = draft.refs;
+      const visual = Materials.ordered(draft.refs).find((i) => i.thumbImg);
+      draft.thumb = this.jobThumb({ ...draft, img: visual?.thumbImg || null, meta: null, fit: "blur", focus: { x: 0.5, y: 0.5, zoom: 1 } });
+    } else {
+      draft.thumb = this.jobThumb(draft);
+    }
+    this.draft = draft;
+  }
+
+  syncDraftCard(gallery) {
+    if (!this.draft) {
+      this.draftCard?.remove();
+      this.draftCard = null;
+      return;
+    }
+    if (this.draftCard?.draftOf !== this.draft) {
+      this.draftCard?.remove();
+      this.draftCard = this.createDraftCard(this.draft);
+    }
+    if (gallery.lastElementChild !== this.draftCard) gallery.append(this.draftCard);
+    this.draftCard.setAttribute("aria-current", String(!!this.viewingDraft && !this.selectedJob));
+  }
+
+  createDraftCard(draft) {
+    const cfg = USER_SETTINGS.draft;
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    };
+    const card = el("article", "job job-draft");
+    card.dataset.state = "draft";
+    card.draftOf = draft;
+    const thumb = el("button", "job-thumb");
+    thumb.type = "button";
+    thumb.setAttribute("aria-label", cfg.open);
+    const img = el("img");
+    img.alt = "";
+    if (draft.thumb) img.src = draft.thumb;
+    else img.hidden = true;
+    thumb.append(img, el("span", "job-badge", cfg.title), el("span", "job-now", cfg.viewing));
+    const act = el("button", "job-act", cfg.discard);
+    act.type = "button";
+    act.setAttribute("aria-label", cfg.discardLabel);
+    act.onclick = (e) => {
+      e.stopPropagation();
+      this.draft = null;
+      this.viewingDraft = false;
+      this.renderJobs();
+    };
+    const body = el("div", "job-body");
+    const prompt = draft.prompt.trim();
+    const line = el("div", "job-status", prompt ? `${prompt.slice(0, USER_SETTINGS.previewChars)}${prompt.length > USER_SETTINGS.previewChars ? "…" : ""}` : cfg.noPrompt);
+    line.title = prompt;
+    body.append(el("div", "job-title", cfg.label), line);
+    card.append(thumb, act, body);
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".job-act")) return;
+      if (this.running) { this.status(cfg.busy, true); return; }
+      this.selectJob(null);
+      this.restoreJob(draft);
+    });
+    return card;
   }
 
   // 長い動画のときは、プロンプト欄を「プレビュー中の動画のプロンプト」の表示に使う（画像から動画の入力は退避して戻す）
@@ -11534,7 +11646,7 @@ class MainView {
     this.updateCancel();
     const pending = this.jobs.filter((j) => this.isPending(j));
     const running = this.jobs.find((j) => j.state === "running");
-    $("gallery-empty").hidden = this.jobs.length > 0;
+    $("gallery-empty").hidden = this.jobs.length > 0 || !!this.draft;
     $("gallery-count").textContent = this.jobs.length
       ? `${this.jobs.length}件${pending.length ? `（うち生成待ち・生成中 ${pending.length}件）` : ""}` : "";
     if (running?.joining && pending.length === 1) {
@@ -11583,6 +11695,7 @@ class MainView {
       }
       this.updateCard(job, card);
     }
+    this.syncDraftCard(gallery);
   }
 
   createCard(job) {
