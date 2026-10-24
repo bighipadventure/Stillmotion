@@ -3087,7 +3087,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       off: "最初の画像を最後のフレームにも使う FL2VA で、元の姿に戻る動画を作ります（これまでどおり）。",
       on: "ComfyUI-MiniMaxH3-Loop のループ専用ワークフロー（MiniMax H3 Loop Turbo）で、終わりが始まりにそのままつながるループ動画を作ります。画像は最初のフレームには固定せず、見た目の参考（<Picture 1>）として使います。上で選んでいるワークフローと「詳しい設定」は使いません。",
     },
-    lengthNote: "長さはループ用の長さにそろえます: {req} 秒 → ループ {sec} 秒（{frames} フレーム）。",
+    lengthNote: "長さは、ループがきれいにつながる長さ（{list} 秒）から選びます。いまは {sec} 秒（{frames} フレーム）です。「しない」に戻すと、元の長さ（{prev} 秒）に戻ります。",
     fps: 24,
     tailFrames: 5,
     lengths: [107, 158, 209, 260, 311],
@@ -5198,6 +5198,11 @@ class LoopVideo {
     return (length - cfg.tailFrames) / cfg.fps;
   }
 
+  static secondsStep() {
+    const cfg = USER_SETTINGS.loop;
+    return (cfg.lengths[1] - cfg.lengths[0]) / cfg.fps;
+  }
+
   static profileFrom(v) {
     const cfg = USER_SETTINGS.loop;
     return { ...clone(v), name: cfg.workflowName, workflowName: cfg.workflowName, workflow: clone(cfg.workflow), mapping: clone(cfg.mapping) };
@@ -6707,6 +6712,7 @@ class MainView {
     this.materialItems = [];
     this.materialNote = "";
     this.loopState = { status: "idle" };
+    this.secondsStep = $("seconds").getAttribute("step");
     this.initUiState();
     this.bind();
     this.bindMaterials();
@@ -7358,7 +7364,7 @@ class MainView {
     this.renderWorkflowParams();
     const m = v?.mapping || {};
     const lengthOk = !!(m.frames || m.seconds);
-    const range = this.isH3() ? USER_SETTINGS.h3Seconds : { min: 0.5, max: 15 };
+    const range = this.profileSecondsRange();
     const seconds = Math.min(Math.max(this.store.ui.seconds ?? v?.seconds ?? USER_SETTINGS.defaultSeconds, range.min), range.max);
     $("seconds").min = range.min;
     $("seconds").max = range.max;
@@ -7370,6 +7376,10 @@ class MainView {
     const negOk = !!m.negative;
     $("negative").disabled = !negOk;
     $("neg-field").firstChild.textContent = negOk ? USER_SETTINGS.messages.negOpen : USER_SETTINGS.messages.negLocked;
+  }
+
+  profileSecondsRange() {
+    return this.isH3() ? USER_SETTINGS.h3Seconds : { min: 0.5, max: 15 };
   }
 
   // IMAGE
@@ -7883,14 +7893,41 @@ class MainView {
       b.disabled = !!this.running;
     });
     $("loop-recheck").disabled = !!this.running || this.loopState.status === "checking";
-    const seconds = Number($("seconds").value);
-    const frames = LoopVideo.lengthFor(seconds);
-    $("loop-info").textContent = on ? `${cfg.info.on}${cfg.lengthNote.replace("{req}", seconds).replace("{sec}", LoopVideo.secondsOf(frames).toFixed(2)).replace("{frames}", frames)}` : cfg.info.off;
+    this.syncLoopSeconds(visible && on);
+    const frames = LoopVideo.lengthFor($("seconds").value);
+    const note = cfg.lengthNote.replace("{list}", cfg.lengths.map((l) => LoopVideo.secondsOf(l)).join(" / "))
+      .replace("{sec}", LoopVideo.secondsOf(frames)).replace("{frames}", frames).replace("{prev}", this.store.ui.loopPrevSeconds ?? "");
+    $("loop-info").textContent = on ? `${cfg.info.on}${note}` : cfg.info.off;
     if (visible && on && (this.loopState.status === "idle" || this.loopState.url !== this.loopComfyUrl()) && this.loopState.status !== "checking") this.checkLoop();
     const status = on && visible ? this.loopState.status : "idle";
     $("loop-status").textContent = { checking: cfg.guide.checking, ready: cfg.guide.ready }[status] || "";
     $("loop-guide").hidden = !["missing", "unreachable"].includes(status);
     if (!$("loop-guide").hidden) this.renderLoopGuide();
+  }
+
+  syncLoopSeconds(active) {
+    const cfg = USER_SETTINGS.loop;
+    const el = $("seconds");
+    const ui = this.store.ui;
+    if (!active && ui.loopPrevSeconds === undefined) return;
+    let seconds;
+    let range;
+    if (active) {
+      const source = Number(ui.seconds ?? el.value);
+      seconds = LoopVideo.secondsOf(LoopVideo.lengthFor(source));
+      range = { min: LoopVideo.secondsOf(cfg.lengths[0]), max: LoopVideo.secondsOf(cfg.lengths[cfg.lengths.length - 1]), step: LoopVideo.secondsStep() };
+      if (ui.loopPrevSeconds !== undefined && Number(el.step) === range.step && Number(el.value) === seconds && ui.seconds === seconds) return;
+      ui.loopPrevSeconds ??= source;
+    } else {
+      seconds = ui.loopPrevSeconds;
+      delete ui.loopPrevSeconds;
+      range = { ...this.profileSecondsRange(), step: this.secondsStep };
+    }
+    Object.assign(el, { min: range.min, max: range.max, step: range.step });
+    el.value = seconds;
+    $("seconds-out").textContent = seconds;
+    this.saveUi({ seconds });
+    this.updateSpecCheck();
   }
 
   renderLoopGuide() {
