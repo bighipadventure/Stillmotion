@@ -1218,7 +1218,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
             <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
             <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
-            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
+            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v2 allowed origins: …</code> と出れば読み込まれています（v1 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
         </li>
@@ -1514,7 +1514,7 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、�
 2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
 3. 起動オプションの --api と --cors-allow-origins=... は不要です（消して空にしてかまいません）。
 4. WebUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
+5. ログに「[web-app-cors] v2 allowed origins: ...」と出れば読み込まれています（v1 が出るときは古い版です。入れ替えてください）。
 6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
 
 ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
@@ -1542,9 +1542,11 @@ ALLOW_ALL = False
 ENABLE_API = True
 
 NAME = "web-app-cors"
-VERSION = "1"
+VERSION = "2"
 PING_PATH = f"/{NAME}/ping"
 API_CHECK_PATH = "/sdapi/v1/txt2img"
+LORA_PATH = "/sdapi/v1/loras"
+LORA_LIST_PATH = f"/{NAME}/loras"
 ALLOWED_METHODS = b"GET, POST, PUT, DELETE, OPTIONS"
 PREFLIGHT_MAX_AGE = b"600"
 PATTERNS = [re.compile(p, re.IGNORECASE) for p in ALLOWED_ORIGIN_PATTERNS]
@@ -1615,12 +1617,42 @@ def enable_api(app):
     print(f"[{NAME}] API enabled without --api")
 
 
+def lora_module():
+    import sys
+    mod = sys.modules.get("networks")
+    if mod is None or not hasattr(mod, "available_networks"):
+        import networks as mod
+    return mod
+
+
+def lora_names():
+    nets = lora_module()
+    return [{"name": n.name, "alias": getattr(n, "alias", n.name), "path": getattr(n, "filename", "")} for n in nets.available_networks.values()]
+
+
+def lora_refresh():
+    lora_module().list_available_networks()
+    return {"ok": True}
+
+
+def has_route(app, path):
+    return any(getattr(route, "path", "") == path for route in app.routes)
+
+
+def enable_lora_api(app):
+    app.add_api_route(LORA_LIST_PATH, lora_names, methods=["GET"])
+    if not has_route(app, LORA_PATH):
+        app.add_api_route(LORA_PATH, lora_names, methods=["GET"])
+        app.add_api_route("/sdapi/v1/refresh-loras", lora_refresh, methods=["POST"])
+        print(f"[{NAME}] LoRA list API enabled without --api")
+
+
 def ping_for(app):
     def ping():
         return {
             "ok": True, "extension": NAME, "server": "webui", "version": VERSION,
             "allowed_origins": sorted(ALLOWED_ORIGINS), "allowed_origin_patterns": ALLOWED_ORIGIN_PATTERNS, "allow_all": ALLOW_ALL,
-            "api": api_registered(app),
+            "api": api_registered(app), "loras": has_route(app, LORA_LIST_PATH),
         }
     return ping
 
@@ -1634,6 +1666,10 @@ def on_app_started(demo, app):
         enable_api(app)
     except Exception as exc:
         print(f"[{NAME}] could not enable API: {exc}  (起動オプションに --api を付けてください)")
+    try:
+        enable_lora_api(app)
+    except Exception as exc:
+        print(f"[{NAME}] could not enable LoRA list: {exc}")
     build = app.build_middleware_stack
     app.build_middleware_stack = lambda: WebAppCORS(build())
     app.middleware_stack = None
