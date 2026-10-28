@@ -142,6 +142,10 @@ button.run:hover:not(:disabled) { background: var(--accent-hover); border-color:
 button.chip { border-radius: 999px; min-height: 24px; padding: 1px 10px; font-size: 12px; }
 button.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
 button.chip[aria-pressed="true"]::before { content: "✓"; }
+.llm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.chip-dot[data-state="ok"] { background: var(--ok); }
+button.chip[aria-pressed="true"] .chip-dot { box-shadow: 0 0 0 1.5px var(--on-accent); }
 button.link { border: none; background: none; padding: 0; min-height: 0; color: var(--accent-text); text-decoration: underline; font-weight: 700; }
 button.link:hover:not(:disabled) { background: none; }
 button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
@@ -230,6 +234,8 @@ code { background: var(--surface-2); border: 1px solid var(--line); color: var(-
 .pill[data-state="ok"]::before { background: var(--ok); }
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
+.pill-label { font-weight: 700; }
+.pill-app { color: var(--muted); }
 .banner { flex: none; background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: var(--side-w, 320px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1px; background: var(--line); }
 @media (max-width: 860px) {
@@ -816,9 +822,10 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 <header class="topbar">
   <h1>Stillmotion</h1>
   <div class="pills">
-    <button class="pill" id="pill-llm" data-state="idle">文章AI: 確認中</button>
-    <button class="pill" id="pill-comfy" data-state="idle">ComfyUI: 確認中</button>
-    <button class="pill" id="pill-sd" data-state="idle" hidden>Stable Diffusion: 確認中</button>
+    <button class="pill" id="pill-llm" data-state="idle"><span class="pill-label">文章AI</span><span class="pill-app">確認中</span></button>
+    <button class="pill" id="pill-comfy" data-state="idle"><span class="pill-label">動画AI</span><span class="pill-app">確認中</span></button>
+    <button class="pill" id="pill-sd" data-state="idle" hidden><span class="pill-label">画像AI</span><span class="pill-app">確認中</span></button>
+    <button class="quiet" id="refresh-conn" title="起動中の文章AIを探し直し、文章AI・動画AI・画像AIの接続状態を最新にします（あとからAIを起動したときに押します）">更新</button>
   </div>
   <button class="quiet" id="save-state" title="画像・素材・設定・ストーリー・プロンプトを1つの JSON ファイルに保存します。そのファイルを画面にドロップすると、この状態に戻せます">状態を保存</button>
   <button class="quiet" id="open-flow">動画ができるまで</button>
@@ -1296,12 +1303,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
 
     <section class="pane" data-pane="llm" hidden>
-      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。複数登録して、メイン画面で切り替えられます。ページを開いたときと、このページに戻ってきたときに起動中のものを探し、まだ登録していないものは自動で追加します。</p></header>
-      <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button><button id="llm-cancel" hidden>編集をやめて戻る</button></div>
+      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。サーバーURLの下の候補を押すと切り替わります（緑の点は起動中）。ページを開いたとき・このページに戻ってきたとき・上部の「更新」を押したときに起動中のものを探し、まだ候補にないものは自動で追加します。</p></header>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
         <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
-        <label class="field">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
+        <label class="field" style="margin-bottom:0">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
+        <div class="llm-chips" id="llm-chips" role="group" aria-label="接続先（押すと切り替わります）"></div>
         <label class="field" style="margin-bottom:0">名前（メイン画面に表示されます）<input type="text" id="llm-name"></label>
       </div>
       <div class="card">
@@ -4513,6 +4520,12 @@ class LlmClient {
 
   static norm(url) { return String(url || "").trim().replace(/\/+$/, ""); }
 
+  // URL から、つないでいるアプリの名前を出す（知らないURLなら接続先の名前）
+  static appName(url, fallback = "") {
+    const hit = USER_SETTINGS.knownLlmServers.find((s) => LlmClient.norm(s.url) === LlmClient.norm(url));
+    return hit ? hit.name : (fallback || LlmClient.norm(url));
+  }
+
   // 知っている文章AIのサーバー（と、登録してあるURL）を同時に調べ、起動しているものを返す
   static async detect(extraUrls = []) {
     const servers = USER_SETTINGS.knownLlmServers.map((s) => ({ ...s, url: LlmClient.norm(s.url) }));
@@ -6173,10 +6186,9 @@ class StatusBar {
     const d = s.data.sd || {};
     const backend = cfg.backends[d.backend] ? d.backend : cfg.defaultBackend;
     const client = SdClient.create({ backend, urls: { ...Object.fromEntries(Object.entries(cfg.backends).map(([k, b]) => [k, b.url])), ...(d.urls || {}) } });
-    this.set(this.sdPill, "idle", "Stable Diffusion: 確認中");
+    this.set(this.sdPill, "idle", "画像AI", "確認中");
     const state = await Net.probe(client.probeUrl);
-    this.set(this.sdPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
-      `Stable Diffusion: ${state === "ok" ? client.label : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
+    this.set(this.sdPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down", "画像AI", StatusBar.appText(client.label, state));
     this.sdPill.title = `${client.label}（${client.base}）: ${Net.probeMessage(state)}`;
   }
 
@@ -6184,23 +6196,22 @@ class StatusBar {
     const s = this.store;
     const llm = s.llm;
     if (!llm) {
-      this.set(this.llmPill, "down", "文章AI: 未設定");
+      this.set(this.llmPill, "down", "文章AI", "未設定");
     } else {
       const state = await Net.probe(`${llm.baseUrl.replace(/\/+$/, "")}/models`);
-      if (state === "ok" && !llm.model) this.set(this.llmPill, "warn", "文章AI: モデル未選択");
-      else this.set(this.llmPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
-        `文章AI: ${state === "ok" ? llm.name : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
-      this.llmPill.title = Net.probeMessage(state);
+      const app = LlmClient.appName(llm.baseUrl, llm.name);
+      if (state === "ok" && !llm.model) this.set(this.llmPill, "warn", "文章AI", `${app}（モデル未選択）`);
+      else this.set(this.llmPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down", "文章AI", StatusBar.appText(app, state));
+      this.llmPill.title = `${llm.baseUrl}${llm.model ? `\nモデル: ${llm.model}` : ""}\n${Net.probeMessage(state)}`;
     }
     const video = s.video;
     if (!video) {
-      this.set(this.comfyPill, "warn", "ComfyUI: 未設定");
+      this.set(this.comfyPill, "warn", "動画AI", "未設定");
     } else {
       const state = await Net.probe(`${video.comfyUrl.replace(/\/+$/, "")}/system_stats`);
       if (state === "ok") this.onComfyOk?.(video.comfyUrl);
-      this.set(this.comfyPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down",
-        `ComfyUI: ${state === "ok" ? video.name : state === "cors" ? "接続が許可されていません" : "接続できません"}`);
-      this.comfyPill.title = Net.probeMessage(state);
+      this.set(this.comfyPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down", "動画AI", StatusBar.appText("ComfyUI", state));
+      this.comfyPill.title = `${video.comfyUrl}\nワークフロー: ${video.name}\n${Net.probeMessage(state)}`;
     }
     this.refreshSd();
     const needsSetup = !llm || !llm.model || !video;
@@ -6208,9 +6219,16 @@ class StatusBar {
     $("setup-banner-text").textContent = USER_SETTINGS.messages.bannerSetup;
   }
 
-  set(el, state, text) {
+  // つながっていればアプリ名だけ、そうでなければアプリ名の後ろに状態を付ける
+  static appText(app, state) {
+    return state === "ok" ? app : `${app}（${state === "cors" ? "接続が許可されていません" : "接続できません"}）`;
+  }
+
+  // 左に種類（文章AI・画像AI・動画AI）、右に接続先のアプリ名
+  set(el, state, label, app) {
     el.dataset.state = state;
-    el.textContent = text;
+    const tag = (cls, text) => Object.assign(document.createElement("span"), { className: cls, textContent: text });
+    el.replaceChildren(tag("pill-label", label), tag("pill-app", app));
   }
 }
 
@@ -12110,6 +12128,7 @@ class SettingsView {
   }
 
   open(pane = null, opts = {}) {
+    this.fillLlmServers?.();
     // 動画AIのタブは、メイン画面の作り方と同じ種類のワークフローから開く
     if (!this.dialog.open || opts.videoFlow) this.videoFlow = opts.videoFlow || this.store.flow;
     this.loadAll();
@@ -12174,10 +12193,15 @@ class SettingsView {
       });
     }
 
-    this.on($("llm-pick"), "change", (e) => this.loadLlm(e.target.value));
-    this.on($("llm-new"), "click", () => this.startNew("llm"));
-    this.on($("llm-cancel"), "click", () => this.cancelNew("llm"));
     this.on($("llm-detect"), "click", () => this.detectLlm());
+    this.on($("llm-chips"), "click", (e) => {
+      const chip = e.target.closest("button");
+      if (!chip) return;
+      if (chip.id === "llm-new") this.startNew("llm");
+      else if (chip.id === "llm-cancel") this.cancelNew("llm");
+      else if (chip.dataset.llmId) this.useLlmProfile(chip.dataset.llmId);
+      else if (chip.dataset.llmUrl) this.useLlmServer(chip.dataset.llmUrl);
+    });
     this.on($("llm-fetch"), "click", () => this.fetchModels());
     this.on($("llm-model"), "change", () => this.updateModelCustom());
     this.on($("llm-vtest"), "click", () => this.testVision());
@@ -12312,7 +12336,7 @@ class SettingsView {
 
   loadAll() {
     const d = this.store.data;
-    this.loadLlm(d.llmProfiles[this.editing.llm] ? this.editing.llm : d.llmActive);
+    this.loadLlm(d.llmActive);
     this.videoFlow ??= this.store.flow;
     this.loadVideo(this.videoIdsInFlow().includes(this.editing.video) ? this.editing.video : this.preferredVideo());
     this.loadSkill(d.skills[this.editing.skill] ? this.editing.skill : Object.keys(d.skills)[0] || null);
@@ -12576,7 +12600,7 @@ class SettingsView {
     this.store.data.llmActive = id;
     this.store.data.seenGuide = true;
     this.store.save();
-    this.relabelPicker($("llm-pick"), id, p.name);
+    this.renderLlmChips();
     setMsg($("llm-msg"), USER_SETTINGS.messages.autoSaved, "ok");
     this.onChange();
   }
@@ -12612,7 +12636,6 @@ class SettingsView {
     this.flushAutosave("llm");
     const d = this.store.data;
     this.editing.llm = id && d.llmProfiles[id] ? id : null;
-    fillSelect($("llm-pick"), [...this.pickerEntries(d.llmProfiles), ...(this.editing.llm ? [] : [["", "（新しい設定）"]])], this.editing.llm || "");
     const p = d.llmProfiles[this.editing.llm] || { name: "", baseUrl: USER_SETTINGS.defaultLlmUrl, apiKey: "", model: "",
       vision: true, temperature: USER_SETTINGS.defaultTemperature, maxTokens: USER_SETTINGS.defaultMaxTokens };
     $("llm-name").value = p.name;
@@ -12626,7 +12649,7 @@ class SettingsView {
     $("llm-temp-out").textContent = p.temperature;
     $("llm-maxtok").value = p.maxTokens || USER_SETTINGS.defaultMaxTokens;
     setMsg($("llm-msg"), "");
-    this.syncNewMode("llm");
+    this.renderLlmChips();
   }
 
   llmFromForm() {
@@ -12655,22 +12678,92 @@ class SettingsView {
     $("llm-model-custom-field").hidden = !custom;
   }
 
+  // 起動中の文章AIを探し、見つかったサーバーの接続先を開く（名前・URL・モデルがずれないように、接続先ごと切り替える）
   async detectLlm() {
     const msg = $("llm-msg");
+    const m = USER_SETTINGS.messages;
     setMsg(msg, "探しています…");
-    const found = await LlmClient.detect();
+    this.flushAutosave("llm");
+    const found = (await this.onDetectLlm?.({ force: true })) || [];
     const ok = found.filter((f) => f.state === "ok");
-    if (ok.length) {
-      $("llm-url").value = ok[0].url;
-      if (!$("llm-name").value.trim()) $("llm-name").value = ok[0].name;
-      this.setModelList(ok[0].models, ok[0].models.includes(this.selectedModel()) ? this.selectedModel() : ok[0].models[0]);
-      setMsg(msg, `${ok[0].name}（${ok[0].url}）が見つかりました。モデル ${ok[0].models.length} 件。${this.editing.llm ? "モデルを確認してください（自動で保存されます）。" : "モデルを確認して「追加して使う」を押してください。"}`, "ok");
-      if (this.editing.llm) this.autosave("llm", 0);
+    const d = this.store.data;
+    this.loadLlm(d.llmActive);
+    this.fillLlmServers();
+    const active = d.llmProfiles[d.llmActive];
+    const here = active && ok.find((f) => f.url === LlmClient.norm(active.baseUrl));
+    if (here) {
+      setMsg(msg, `${here.name}（${here.url}）につながりました。モデル ${here.models.length} 件。${ok.length > 1 ? `ほかに ${ok.length - 1} 件起動しています（サーバーURLの下の候補を押すと切り替わります）。` : ""}`, "ok");
     } else if (found.length) {
-      setMsg(msg, `${found[0].name}（${found[0].url}）は起動していますが、${USER_SETTINGS.messages.probeCors}`, "err");
+      setMsg(msg, `${found[0].name}（${found[0].url}）は起動していますが、${m.probeCors}`, "err");
     } else {
-      setMsg(msg, USER_SETTINGS.messages.llmNotFound, "err");
+      setMsg(msg, m.llmNotFound, "err");
     }
+  }
+
+  // 接続先の候補（登録してある接続先と、起動中でまだ登録していないサーバー）。押すと切り替わる
+  renderLlmChips() {
+    const d = this.store.data;
+    const running = new Set((this.llmFound || []).filter((f) => f.state === "ok").map((f) => f.url));
+    const known = !!this.llmFound;
+    const make = (attrs, label, on, pressed, title) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      Object.assign(b.dataset, attrs);
+      b.setAttribute("aria-pressed", String(pressed));
+      b.title = title;
+      if (on !== null) b.append(Object.assign(document.createElement("span"), { className: "chip-dot" }));
+      if (on) b.lastChild.dataset.state = "ok";
+      b.append(label);
+      return b;
+    };
+    const chips = Object.entries(d.llmProfiles).map(([id, p]) => {
+      const on = running.has(LlmClient.norm(p.baseUrl));
+      return make({ llmId: id }, p.name, known ? on : null, id === this.editing.llm,
+        `${p.baseUrl}${p.model ? `\nモデル: ${p.model}` : ""}${known ? `\n${on ? "起動中" : "つながりません"}` : ""}`);
+    });
+    for (const f of (this.llmFound || []).filter((x) => x.state === "ok")) {
+      if (Object.values(d.llmProfiles).some((p) => LlmClient.norm(p.baseUrl) === f.url)) continue;
+      chips.push(make({ llmUrl: f.url }, f.name, true, false, `${f.url}\n起動中（押すと接続先に追加して使います）`));
+    }
+    const isNew = !this.editing.llm;
+    const add = make({}, "＋ 手入力で追加", null, isNew, "一覧にないサーバーのURLを入れて追加します");
+    add.id = "llm-new";
+    chips.push(add);
+    if (isNew && Object.keys(d.llmProfiles).length) {
+      const back = make({}, "やめて戻る", null, false, "追加をやめて、使っている接続先に戻ります");
+      back.id = "llm-cancel";
+      chips.push(back);
+    }
+    $("llm-chips").replaceChildren(...chips);
+    $("llm-save").hidden = !isNew;
+    $("llm-del").hidden = isNew;
+  }
+
+  fillLlmServers() { this.renderLlmChips(); }
+
+  useLlmProfile(id) {
+    const d = this.store.data;
+    if (!d.llmProfiles[id]) return;
+    this.flushAutosave("llm");
+    d.llmActive = id;
+    this.store.save();
+    this.loadLlm(id);
+    this.onChange();
+    const p = d.llmProfiles[id];
+    const on = (this.llmFound || []).some((f) => f.state === "ok" && f.url === LlmClient.norm(p.baseUrl));
+    setMsg($("llm-msg"), `「${p.name}」に切り替えました。${on ? "メイン画面でもこの接続先を使います。" : "いまはつながらないので、サーバーを起動してから「自動で探す」か上部の「更新」を押してください。"}`, on ? "ok" : "err");
+  }
+
+  useLlmServer(url) {
+    const server = (this.llmFound || []).find((f) => f.url === url && f.state === "ok");
+    if (!server) return;
+    this.flushAutosave("llm");
+    const id = this.onUseLlmServer?.(server);
+    if (!id) return;
+    this.loadLlm(id);
+    this.onChange();
+    setMsg($("llm-msg"), `${server.name}（${server.url}）に切り替えました。メイン画面でもこの接続先を使います。`, "ok");
   }
 
   async fetchModels(quiet = false) {
@@ -12973,8 +13066,11 @@ class App {
     $("pill-llm").addEventListener("click", () => this.settings.open("llm"), { signal });
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
     $("pill-sd").addEventListener("click", () => this.settings.open("sd"), { signal });
+    $("refresh-conn").addEventListener("click", () => this.refreshAll(), { signal });
+    this.settings.onDetectLlm = (opts) => this.detectLlm(opts);
+    this.settings.onUseLlmServer = (server) => this.useLlmServer(server);
     this.statusBar.refresh();
-    this.detectLlm();
+    this.detectLlm({ force: true }); // ページを開いた直後は、設定画面が開いていても（まだ何も編集していないので）切り替える
     window.addEventListener("focus", () => {
       if (Date.now() - (this.llmDetectedAt || 0) > USER_SETTINGS.llmRedetectMs) this.detectLlm();
     }, { signal });
@@ -12993,10 +13089,53 @@ class App {
     this.statusBar.refresh();
   }
 
+  // 「更新」ボタン: 起動中の文章AIを探し直し、すべてのAIの接続状態とモデルの一覧を最新にする
+  async refreshAll() {
+    const btn = $("refresh-conn");
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = "更新中…";
+    try {
+      this.llmDetectedAt = 0;
+      await this.detectLlm({ force: true });
+      await Promise.all([this.statusBar.refresh(), this.main.loadModels()]);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "更新";
+    }
+  }
+
   // 起動中の文章AIを探す。まだ登録していないものは接続先に追加し、いまの接続先が止まっていて
   // 別の登録先が起動していれば、そちらに切り替える（生成中・設定画面を開いている間は登録・切り替えをしない）
-  async detectLlm() {
-    if (this.llmDetecting) return;
+  // そのサーバーの接続先（なければ作る）を、使う接続先にする
+  useLlmServer(server) {
+    const d = this.store.data;
+    const id = this.profileForServer(server);
+    d.llmActive = id;
+    this.store.save();
+    this.main.refresh();
+    this.statusBar.refresh();
+    return id;
+  }
+
+  profileForServer(f) {
+    const d = this.store.data;
+    const found = Object.keys(d.llmProfiles).find((id) => LlmClient.norm(d.llmProfiles[id].baseUrl) === f.url);
+    if (found) return found;
+    const base = d.llmProfiles[d.llmActive] || Object.values(d.llmProfiles)[0] || {};
+    const running = this.main.llmRunning || new Set();
+    // 初めの状態のまま（モデル未選択で、つながらない）接続先は、見つかったサーバーに置き換える
+    const blankId = Object.keys(d.llmProfiles).find((id) => !d.llmProfiles[id].model && !running.has(LlmClient.norm(d.llmProfiles[id].baseUrl)));
+    const id = blankId || uid();
+    d.llmProfiles[id] = {
+      name: f.name, baseUrl: f.url, apiKey: "", model: f.models[0] || "",
+      vision: base.vision ?? true, temperature: base.temperature ?? USER_SETTINGS.defaultTemperature, maxTokens: base.maxTokens ?? USER_SETTINGS.defaultMaxTokens,
+    };
+    return id;
+  }
+
+  async detectLlm({ force = false } = {}) {
+    if (this.llmDetecting) return this.llmFound || [];
     this.llmDetecting = true;
     this.llmDetectedAt = Date.now();
     try {
@@ -13005,20 +13144,16 @@ class App {
       const found = await LlmClient.detect(Object.values(d.llmProfiles).map((p) => p.baseUrl));
       const ok = found.filter((f) => f.state === "ok");
       this.main.llmRunning = new Set(ok.map((f) => f.url));
-      const locked = !!this.main.running || this.settings.dialog.open;
+      this.llmFound = found;
+      this.settings.llmFound = found;
+      // 設定画面を開いている間は、「自動で探す」を押したとき（force）だけ接続先を足す・切り替える
+      const locked = !!this.main.running || (this.settings.dialog.open && !force);
       let changed = false;
       if (!locked) {
         const urlOf = (p) => LlmClient.norm(p.baseUrl);
-        const base = d.llmProfiles[d.llmActive] || Object.values(d.llmProfiles)[0] || {};
         for (const f of ok) {
           if (Object.values(d.llmProfiles).some((p) => urlOf(p) === f.url)) continue;
-          // 初めの状態のまま（モデル未選択で、つながらない）接続先は、見つかったサーバーに置き換える
-          const blankId = Object.keys(d.llmProfiles).find((id) => !d.llmProfiles[id].model && !this.main.llmRunning.has(urlOf(d.llmProfiles[id])));
-          const id = blankId || uid();
-          d.llmProfiles[id] = {
-            name: f.name, baseUrl: f.url, apiKey: "", model: f.models[0] || "",
-            vision: base.vision ?? true, temperature: base.temperature ?? USER_SETTINGS.defaultTemperature, maxTokens: base.maxTokens ?? USER_SETTINGS.defaultMaxTokens,
-          };
+          this.profileForServer(f);
           this.main.status(m.llmAutoAdded.replace("{name}", f.name).replace("{url}", f.url));
           changed = true;
         }
@@ -13039,6 +13174,11 @@ class App {
       } else {
         this.main.fillLlmSelect();
       }
+      if (this.settings.dialog.open) {
+        if (changed) this.settings.loadLlm(d.llmActive);
+        this.settings.fillLlmServers();
+      }
+      return found;
     } finally {
       this.llmDetecting = false;
     }
