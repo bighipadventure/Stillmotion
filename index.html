@@ -1296,7 +1296,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
     </section>
 
     <section class="pane" data-pane="llm" hidden>
-      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、Ollama など）の接続先です。複数登録して、メイン画面で切り替えられます。</p></header>
+      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。複数登録して、メイン画面で切り替えられます。ページを開いたときと、このページに戻ってきたときに起動中のものを探し、まだ登録していないものは自動で追加します。</p></header>
       <div class="picker"><label class="field">編集する設定<select id="llm-pick"></select></label><button id="llm-new">＋ 新しく追加</button><button id="llm-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
@@ -3010,6 +3010,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   ],
   defaultComfyUrl: "http://127.0.0.1:8188",
   defaultLlmUrl: "http://localhost:1234/v1",
+  llmRedetectMs: 15000, // このページに戻ってきたとき、前回からこの時間がたっていれば文章AIを探し直す
   defaultSeconds: 5,
   defaultFps: 24,
   defaultTemperature: 0.7,
@@ -3841,6 +3842,10 @@ Tips for better results:
     },
     probeDown: "接続できません。起動しているか、URLが正しいか確認してください。ブラウザの「ローカルネットワークへのアクセス」の許可も確認してください。",
     llmNotFound: "文章AIのサーバーが見つかりません。サーバーを起動し、CORSを有効にしてから、もう一度押してください。",
+    llmAutoAdded: "起動中の文章AI「{name}」（{url}）を見つけたので、接続先に追加しました。",
+    llmAutoSwitched: "「{from}」につながらないため、起動中の「{name}」に切り替えました。",
+    llmRunning: "（起動中）",
+    llmStopped: "（停止中）",
     readingImage: "画像を読み込んでいます…",
     noMetadata: "メタデータが見つかりません（画像の見た目だけでプロンプトを作ります）",
     generatingPrompt: "文章AIがプロンプトを考えています…",
@@ -4498,24 +4503,27 @@ class LlmClient {
   }
 
   async listModels() {
-    const res = await fetch(`${this.base}/models`, { headers: this.headers(), signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
+    // GET に Content-Type を付けると事前確認（OPTIONS）が要るため付けない（サーバーによって一覧を読めなくなるのを防ぐ）
+    const headers = this.profile.apiKey ? { Authorization: `Bearer ${this.profile.apiKey}` } : {};
+    const res = await fetch(`${this.base}/models`, { headers, signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     return (json.data || []).map((m) => m.id);
   }
 
-  static async detect() {
-    const found = [];
-    for (const server of USER_SETTINGS.knownLlmServers) {
+  static norm(url) { return String(url || "").trim().replace(/\/+$/, ""); }
+
+  // 知っている文章AIのサーバー（と、登録してあるURL）を同時に調べ、起動しているものを返す
+  static async detect(extraUrls = []) {
+    const servers = USER_SETTINGS.knownLlmServers.map((s) => ({ ...s, url: LlmClient.norm(s.url) }));
+    for (const url of extraUrls.map(LlmClient.norm)) if (url && !servers.some((s) => s.url === url)) servers.push({ name: url, url, custom: true });
+    const results = await Promise.all(servers.map(async (server) => {
       const state = await Net.probe(`${server.url}/models`);
-      if (state === "ok") {
-        const models = await new LlmClient({ baseUrl: server.url }).listModels().catch(() => []);
-        found.push({ ...server, state, models });
-      } else if (state === "cors") {
-        found.push({ ...server, state, models: [] });
-      }
-    }
-    return found;
+      if (state !== "ok" && state !== "cors") return null;
+      const models = state === "ok" ? await new LlmClient({ baseUrl: server.url }).listModels().catch(() => []) : [];
+      return { ...server, state, models };
+    }));
+    return results.filter(Boolean);
   }
 
   // 文章AIに頼む。うまくいかなかったときは、原因ごとに直せることをしてから頼み直す:
@@ -7008,9 +7016,7 @@ class MainView {
     const d = this.store.data;
     this.updateTranslateUi();
     this.initUiState();
-    const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, p.name]);
-    fillSelect($("sel-llm"), llms, d.llmActive);
-    $("sel-llm-field").hidden = llms.length <= 1;
+    this.fillLlmSelect();
     this.syncFlowWithVideo();
     this.fillVideoSelect();
     fillSelect($("run-count"), Array.from({ length: USER_SETTINGS.maxRunCount }, (_, i) => [String(i + 1), `${i + 1}本`]), String(this.store.ui.runCount));
@@ -7039,6 +7045,17 @@ class MainView {
     this.updatePromptOptions();
     this.applyFlowUi();
     this.updateSpecCheck();
+  }
+
+  // 文章AIの接続先。起動中かどうかがわかっていれば、名前の後ろに付ける
+  fillLlmSelect() {
+    const d = this.store.data;
+    const m = USER_SETTINGS.messages;
+    const running = this.llmRunning;
+    const mark = (p) => (running ? (running.has(LlmClient.norm(p.baseUrl)) ? m.llmRunning : m.llmStopped) : "");
+    const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, `${p.name}${mark(p)}`]);
+    fillSelect($("sel-llm"), llms, d.llmActive);
+    $("sel-llm-field").hidden = llms.length <= 1;
   }
 
   async loadModels() {
@@ -12957,6 +12974,12 @@ class App {
     $("pill-comfy").addEventListener("click", () => this.settings.open("video"), { signal });
     $("pill-sd").addEventListener("click", () => this.settings.open("sd"), { signal });
     this.statusBar.refresh();
+    this.detectLlm();
+    window.addEventListener("focus", () => {
+      if (Date.now() - (this.llmDetectedAt || 0) > USER_SETTINGS.llmRedetectMs) this.detectLlm();
+    }, { signal });
+    // 設定画面を開いている間は接続先を足さないので、閉じたときに探し直す
+    this.settings.dialog.addEventListener("close", () => this.detectLlm(), { signal });
     // 設定画面を自動で開くのは、このブラウザに設定がまだないとき（初めて開いたとき）だけ
     if (this.store.fresh) {
       this.store.data.seenGuide = true;
@@ -12968,6 +12991,57 @@ class App {
   onSettingsChanged() {
     this.main.refresh();
     this.statusBar.refresh();
+  }
+
+  // 起動中の文章AIを探す。まだ登録していないものは接続先に追加し、いまの接続先が止まっていて
+  // 別の登録先が起動していれば、そちらに切り替える（生成中・設定画面を開いている間は登録・切り替えをしない）
+  async detectLlm() {
+    if (this.llmDetecting) return;
+    this.llmDetecting = true;
+    this.llmDetectedAt = Date.now();
+    try {
+      const d = this.store.data;
+      const m = USER_SETTINGS.messages;
+      const found = await LlmClient.detect(Object.values(d.llmProfiles).map((p) => p.baseUrl));
+      const ok = found.filter((f) => f.state === "ok");
+      this.main.llmRunning = new Set(ok.map((f) => f.url));
+      const locked = !!this.main.running || this.settings.dialog.open;
+      let changed = false;
+      if (!locked) {
+        const urlOf = (p) => LlmClient.norm(p.baseUrl);
+        const base = d.llmProfiles[d.llmActive] || Object.values(d.llmProfiles)[0] || {};
+        for (const f of ok) {
+          if (Object.values(d.llmProfiles).some((p) => urlOf(p) === f.url)) continue;
+          // 初めの状態のまま（モデル未選択で、つながらない）接続先は、見つかったサーバーに置き換える
+          const blankId = Object.keys(d.llmProfiles).find((id) => !d.llmProfiles[id].model && !this.main.llmRunning.has(urlOf(d.llmProfiles[id])));
+          const id = blankId || uid();
+          d.llmProfiles[id] = {
+            name: f.name, baseUrl: f.url, apiKey: "", model: f.models[0] || "",
+            vision: base.vision ?? true, temperature: base.temperature ?? USER_SETTINGS.defaultTemperature, maxTokens: base.maxTokens ?? USER_SETTINGS.defaultMaxTokens,
+          };
+          this.main.status(m.llmAutoAdded.replace("{name}", f.name).replace("{url}", f.url));
+          changed = true;
+        }
+        const active = d.llmProfiles[d.llmActive];
+        if (!active || !this.main.llmRunning.has(urlOf(active))) {
+          const next = Object.keys(d.llmProfiles).find((id) => this.main.llmRunning.has(urlOf(d.llmProfiles[id])));
+          if (next && next !== d.llmActive) {
+            if (active) this.main.status(m.llmAutoSwitched.replace("{from}", active.name).replace("{name}", d.llmProfiles[next].name));
+            d.llmActive = next;
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        this.store.save();
+        this.main.refresh();
+        this.statusBar.refresh();
+      } else {
+        this.main.fillLlmSelect();
+      }
+    } finally {
+      this.llmDetecting = false;
+    }
   }
 
   // ComfyUI とつながったら、PC のスペックを読み取って反映する（ページを開いてから接続先ごとに1回）
