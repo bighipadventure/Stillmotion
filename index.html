@@ -1213,7 +1213,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <li>ZIP を ComfyUI の <code>custom_nodes</code> フォルダに展開し、<code>custom_nodes\web-app-cors\__init__.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\ComfyUI\custom_nodes</code></li>
             <li>前の版の <code>novel_cors</code> を入れていた場合は、<code>custom_nodes\novel_cors</code> フォルダを削除します。</li>
             <li>起動オプション（Stability Matrix の「Extra Launch Arguments」など）に <code>--enable-cors-header</code> が入っていたら外します（付けたままだと、ほかのサイトからも接続できてしまいます）。起動オプションは空のままで使えます。</li>
-            <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v3 allowed origins: …</code> と出れば読み込まれています（v1 と出る場合は古い版です）。</li>
+            <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v4 allowed origins: …</code> と出れば読み込まれています（v1〜v3 と出る場合は古い版です）。</li>
             <li>ブラウザで <code id="cors-ext-comfy-ping"></code> を開き、<code>{"ok":true, …}</code> と出れば準備完了です。</li>
           </ol>
         </li>
@@ -1225,7 +1225,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
             <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
             <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
             <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
-            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v3 allowed origins: …</code> と出れば読み込まれています（v1・v2 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
+            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v4 allowed origins: …</code> と出れば読み込まれています（v1〜v3 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
         </li>
@@ -1523,7 +1523,7 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）から�
 2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
 3. 起動オプションには、何も書く必要はありません。
 4. WebUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v3 allowed origins: ...」と出れば読み込まれています（v1・v2 と出るときは古い版です。入れ替えてください）。
+5. ログに「[web-app-cors] v4 allowed origins: ...」と出れば読み込まれています（v1〜v3 と出るときは古い版です。入れ替えてください）。
 6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
 
 ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
@@ -1582,7 +1582,7 @@ ALLOWED_PATHS = {
 }
 
 NAME = "web-app-cors"
-VERSION = "3"
+VERSION = "4"
 PING_PATH = f"/{NAME}/ping"
 API_CHECK_PATH = "/sdapi/v1/txt2img"
 LORA_PATH = "/sdapi/v1/loras"
@@ -1777,7 +1777,7 @@ ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）からの接続を許可�
 2. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
    付けたままだと、ほかのサイトからも接続できてしまいます。
 3. ComfyUI を停止して、起動し直します。
-4. ログに「[web-app-cors] v3 allowed origins: ...」と出れば読み込まれています（v1 と出るときは古い版です。入れ替えてください）。
+4. ログに「[web-app-cors] v4 allowed origins: ...」と出れば読み込まれています（v1〜v3 と出るときは古い版です。入れ替えてください）。
 5. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
 
 自分のPCで動かしているページ（http://localhost など）から使いたいとき:
@@ -1806,11 +1806,12 @@ LOCALHOST_PATTERN = r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$"
 ALLOW_ALL = False
 
 # ===== 許可したサイトから使える窓口 =====
-# Stillmange / Stillmotion が使うものだけを並べています（先頭に /api が付いた形も同じ扱い）。
+# Stillmange / Stillmotion が使うものだけを並べています（先頭に /api が付いた形も同じ扱い。/ws は生成の進み具合の受け取り）。
 # ここに無い窓口（ComfyUI Manager によるカスタムノードの追加、設定やユーザーデータの書き換えなど）は、
 # 許可したサイトからでも 403 で断ります。ComfyUI 自身の画面（同じアドレスから開いたページ）には影響しません。
 ALLOWED_PATHS = {
     "/web-app-cors/ping",
+    "/ws",
     "/prompt",
     "/queue",
     "/interrupt",
@@ -1827,7 +1828,7 @@ ALLOWED_PATHS = {
 ALLOWED_PATH_PREFIXES = ("/history/", "/object_info/", "/models/")
 
 NAME = "web-app-cors"
-VERSION = "3"
+VERSION = "4"
 PING_PATH = f"/{NAME}/ping"
 ALLOWED_METHODS = "GET, POST, OPTIONS"
 PREFLIGHT_MAX_AGE = "600"
@@ -7815,12 +7816,12 @@ class MainViewAutoSize {
   }
 
   recommendedMegapixels() {
-    const spec = this.view.machineSpec();
+    const spec = new MachineSpec(this.view.store.data.machine);
     const options = USER_SETTINGS.frame.megapixels.filter((x) => x > 0).sort((a, b) => a - b);
     const seconds = Number($("seconds").value) || Number(this.view.store.ui.seconds) || 0;
     const items = this.view.isRef() ? this.view.materialItems : [];
     const limit = spec.budget * USER_SETTINGS.machine.warnRatio;
-    const fits = (mp) => mp <= spec.maxMp + 1e-9 && spec.loadFor(mp, seconds, this.view.store.flow, items) <= limit + 1e-9;
+    const fits = (mp) => mp <= spec.tier.maxMp + 1e-9 && spec.loadFor(mp, seconds, this.view.store.flow, items) <= limit + 1e-9;
     return [...options].reverse().find(fits) || options[0];
   }
 
