@@ -420,6 +420,8 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec-issues li.info::marker { content: "i "; color: var(--accent-text); font-weight: 700; }
 .spec-issues li.info { color: var(--muted); }
 .spec-issues button { align-self: flex-end; min-height: 24px; font-size: 12px; }
+.spec-changes { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 11px; }
+.spec-changes ul li::marker { content: "✓ "; color: var(--ok); font-weight: 700; }
 
 textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、右下の角で高さを変えられる */
 
@@ -970,6 +972,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <div class="spec" id="spec-check" data-level="ok" hidden>
         <button type="button" class="spec-meter" id="spec-meter"><span class="spec-bar" aria-hidden="true"><span id="spec-bar-fill"></span></span><span id="spec-text"></span></button>
         <div class="spec-issues" id="spec-issues" hidden>
+          <div class="spec-changes" id="spec-changes" hidden><strong id="spec-changes-title"></strong><ul id="spec-changes-list"></ul></div>
           <ul id="spec-list"></ul>
           <button type="button" class="primary" id="spec-optimize">このPCに合わせて最適化</button>
         </div>
@@ -3089,6 +3092,14 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     ],
     fps: 24,
     warnRatio: 0.85,             // 負荷がこれを超えたら黄色
+    messages: {
+      proof: "このPCでは {mp} MP×{sec} 秒の動画を作れた実績（{took}）があるので、目安はその実績を基準にしています。{eta}",
+      proofEta: "いまの設定なら約{eta}の見込みです。",
+      overProof: "このPCで作れた実績より重いので、メモリ不足で止まるか、とても遅くなるおそれがあります。",
+      overGuess: "VRAM の量からの控えめな見積もりなので、実際には時間がかかるだけで作れることもあります。一度作れると、その実績を基準に目安を直します。",
+      meterProof: "実績から・",
+      meterEta: "・約{eta}",
+    },
   },
 
   transientUiKeys: ["direction", "negative"],
@@ -3950,6 +3961,7 @@ Tips for better results:
     engineModel: "モデル",
     engineLoraExt: /\.(safetensors|ckpt|pt|bin|gguf)$/i,
     specNothing: "最適化で変えるところはありませんでした。",
+    specChangesTitle: "最適化で変えた項目",
     specStillHeavy: "それでも目安を超えます（長さは3秒より短くしません）。大きさか長さを手で下げてください",
     specStillHeavyRef: "それでも目安を超えます（長さは3秒より短くしません）。参照動画を「使う範囲」で短くするか外してください",
     specReadOk: "ComfyUI から読み取って反映しました。",
@@ -4657,6 +4669,16 @@ class LlmClient {
   static appName(url, fallback = "") {
     const hit = USER_SETTINGS.knownLlmServers.find((s) => LlmClient.norm(s.url) === LlmClient.norm(url));
     return hit ? hit.name : (fallback || LlmClient.norm(url));
+  }
+
+  static isAutoName(name) {
+    const n = String(name || "").trim();
+    return !n || USER_SETTINGS.knownLlmServers.some((s) => s.name === n);
+  }
+
+  static displayName(profile) {
+    const name = String(profile?.name || "").trim();
+    return LlmClient.isAutoName(name) ? LlmClient.appName(profile?.baseUrl || "") : name;
   }
 
   // 知っている文章AIのサーバー（と、登録してあるURL）を同時に調べ、起動しているものを返す
@@ -6332,7 +6354,7 @@ class StatusBar {
       this.set(this.llmPill, "down", "文章AI", "未設定");
     } else {
       const state = await Net.probe(`${llm.baseUrl.replace(/\/+$/, "")}/models`);
-      const app = LlmClient.appName(llm.baseUrl, llm.name);
+      const app = LlmClient.displayName(llm);
       if (state === "ok" && !llm.model) this.set(this.llmPill, "warn", "文章AI", `${app}（モデル未選択）`);
       else this.set(this.llmPill, state === "ok" ? "ok" : state === "cors" ? "warn" : "down", "文章AI", StatusBar.appText(app, state));
       this.llmPill.title = `${llm.baseUrl}${llm.model ? `\nモデル: ${llm.model}` : ""}\n${Net.probeMessage(state)}`;
@@ -6709,8 +6731,28 @@ class Materials {
 // ===== マシンスペック（生成の重さの目安） =====
 // 設定の「マシンスペック」の値から、いまの大きさ・長さ・素材・ワークフローがこのPCに重すぎないかを見積もる
 class MachineSpec {
-  constructor(machine) {
+  constructor(machine, proof = null) {
     this.m = { ...USER_SETTINGS.machine.defaults, ...(machine || {}) };
+    this.proofRecord = proof;
+  }
+
+  get signature() {
+    const m = this.m;
+    return [m.vram, m.reserve, m.ram, m.gpuModel || m.gpuName || ""].join("|");
+  }
+
+  get proof() {
+    const p = this.proofRecord;
+    return p && p.sig === this.signature && p.load > 0 ? p : null;
+  }
+
+  get maxMp() {
+    return Math.max(this.tier.maxMp, this.proof?.mp || 0);
+  }
+
+  estimateSeconds(load) {
+    const p = this.proof;
+    return p && p.took && load ? Math.round(p.took * (load / p.load)) : null;
   }
 
   get usable() {
@@ -6726,10 +6768,14 @@ class MachineSpec {
     return tiers.find((t) => this.usable >= t.min) || tiers[tiers.length - 1];
   }
 
-  get budget() {
+  get baseBudget() {
     const c = USER_SETTINGS.machine;
     const lowRam = this.ram && this.ram < c.lowRamGb - 1.5 && this.usable < c.clipOnGpuMinVram; // 31.x GB は 32GB 扱い
     return this.tier.budget * (lowRam ? c.lowRamFactor : 1);
+  }
+
+  get budget() {
+    return Math.max(this.baseBudget, this.proof?.load || 0);
   }
 
   get gpuLabel() {
@@ -6827,11 +6873,16 @@ class MachineSpec {
     const gb = (x) => (Math.round(x * 10) / 10).toString();
     const load = ctx.mp ? this.loadFor(ctx.mp, ctx.seconds, ctx.flow, ctx.items) : null;
     const ratio = load === null ? null : load / budget;
-    if (ctx.mp && ctx.mp > tier.maxMp + 1e-9) {
-      issues.push({ level: "over", fix: "size", text: `大きさ ${ctx.mp} MP は、使える VRAM ${gb(usable)} GB の目安（${tier.maxMp} MP まで）を超えています。` });
+    if (ctx.mp && ctx.mp > this.maxMp + 1e-9) {
+      issues.push({ level: "over", fix: "size", text: `大きさ ${ctx.mp} MP は、使える VRAM ${gb(usable)} GB の目安（${this.maxMp} MP まで）を超えています。` });
+    }
+    const proof = this.proof;
+    if (proof) {
+      const eta = this.estimateSeconds(load);
+      issues.push({ level: "info", text: c.messages.proof.replace("{mp}", proof.mp).replace("{sec}", proof.seconds).replace("{took}", MachineSpec.duration(proof.took)).replace("{eta}", eta ? c.messages.proofEta.replace("{eta}", MachineSpec.duration(eta)) : "") });
     }
     if (ratio !== null && ratio > 1) {
-      issues.push({ level: "over", fix: "size", text: `大きさ×長さ${ctx.flow === "ref" ? "（＋参照素材）" : ""}の負荷が目安の ${Math.round(ratio * 100)}% です。メモリ不足で止まるか、とても遅くなるおそれがあります。` });
+      issues.push({ level: "over", fix: "size", text: `大きさ×長さ${ctx.flow === "ref" ? "（＋参照素材）" : ""}の負荷が目安の ${Math.round(ratio * 100)}% です。${proof ? c.messages.overProof : c.messages.overGuess}` });
     }
     if (this.ram && this.ram < c.veryLowRamGb) {
       issues.push({ level: "warn", text: `メインメモリ ${this.ram} GB は少なめです。MiniMax H3 はモデルの一部をメインメモリに逃がすため、${c.lowRamGb} GB 以上をおすすめします。` });
@@ -6905,7 +6956,13 @@ class MachineSpec {
           text: `参照動画を読み込むのにメインメモリを約 ${gb(used)} GB 使います（目安 ${gb(limit)} GB まで）。${ids.length ? `長辺 ${c.refVideoCapPx}px に縮めて読み込むと軽くなります。` : "「使う範囲」で短くしてください。"}` });
       }
     }
-    return { usable, tier, budget, load, ratio, issues };
+    return { usable, tier, budget, load, ratio, issues, proof, eta: this.estimateSeconds(load) };
+  }
+
+  static duration(sec) {
+    if (!sec) return "";
+    const min = Math.floor(sec / 60);
+    return min ? `${min}分${sec % 60 ? `${sec % 60}秒` : ""}` : `${sec}秒`;
   }
 }
 
@@ -7204,7 +7261,7 @@ class MainView {
     const m = USER_SETTINGS.messages;
     const running = this.llmRunning;
     const mark = (p) => (running ? (running.has(LlmClient.norm(p.baseUrl)) ? m.llmRunning : m.llmStopped) : "");
-    const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, `${p.name}${mark(p)}`]);
+    const llms = Object.entries(d.llmProfiles).map(([id, p]) => [id, `${LlmClient.displayName(p)}${mark(p)}`]);
     fillSelect($("sel-llm"), llms, d.llmActive);
     $("sel-llm-field").hidden = llms.length <= 1;
   }
@@ -7452,7 +7509,7 @@ class MainViewWorkflowParams {
     const m = USER_SETTINGS.messages;
     const llm = this.view.store.llm;
     if (!llm) { box.replaceChildren(); $("adv-llm-note").textContent = m.advLlmNone; return; }
-    $("adv-llm-note").textContent = m.advLlmNote.replace("{name}", llm.name || "");
+    $("adv-llm-note").textContent = m.advLlmNote.replace("{name}", LlmClient.displayName(llm));
     const row = (label, input) => {
       const r = document.createElement("label");
       r.className = "wfp-row";
@@ -7467,7 +7524,7 @@ class MainViewWorkflowParams {
     group.className = "wfp-group";
     const title = document.createElement("div");
     title.className = "wfp-title";
-    title.textContent = llm.name || "文章AI";
+    title.textContent = LlmClient.displayName(llm) || "文章AI";
     const model = document.createElement("select");
     // モデルの一覧は、メイン画面の「文章AI」のプルダウンと同じもの
     fillSelect(model, [...$("sel-model").options].map((o) => [o.value, o.textContent]), llm.model || "");
@@ -7758,12 +7815,12 @@ class MainViewAutoSize {
   }
 
   recommendedMegapixels() {
-    const spec = new MachineSpec(this.view.store.data.machine);
+    const spec = this.view.machineSpec();
     const options = USER_SETTINGS.frame.megapixels.filter((x) => x > 0).sort((a, b) => a - b);
     const seconds = Number($("seconds").value) || Number(this.view.store.ui.seconds) || 0;
     const items = this.view.isRef() ? this.view.materialItems : [];
     const limit = spec.budget * USER_SETTINGS.machine.warnRatio;
-    const fits = (mp) => mp <= spec.tier.maxMp + 1e-9 && spec.loadFor(mp, seconds, this.view.store.flow, items) <= limit + 1e-9;
+    const fits = (mp) => mp <= spec.maxMp + 1e-9 && spec.loadFor(mp, seconds, this.view.store.flow, items) <= limit + 1e-9;
     return [...options].reverse().find(fits) || options[0];
   }
 
@@ -8875,8 +8932,34 @@ class MainViewMachineSpec {
     return w && h ? Math.round((w * h) / USER_SETTINGS.frame.megapixelUnit * 100) / 100 : null;
   }
 
+  machineSpec() {
+    const d = this.view.store.data;
+    return new MachineSpec(d.machine, this.view.store.flow === "ref" ? null : d.machineProof?.image || null);
+  }
+
+  recordProof(job) {
+    if (job.flow === "ref" || job.state !== "done") return;
+    const unit = USER_SETTINGS.frame.megapixelUnit;
+    const mp = job.size ? Math.round((job.size.width * job.size.height) / unit * 100) / 100 : this.currentMegapixels();
+    const seconds = Number(job.seconds);
+    const took = this.view.jobTiming(job)?.sec || null;
+    if (!mp || !seconds) return;
+    const d = this.view.store.data;
+    const spec = new MachineSpec(d.machine);
+    const load = mp * seconds;
+    const prev = d.machineProof?.image;
+    if (prev && prev.sig === spec.signature && prev.load >= load - 1e-9) {
+      if (Math.abs(prev.load - load) < 1e-9 && took) prev.took = took;
+      this.view.store.save();
+      return;
+    }
+    d.machineProof = { ...(d.machineProof || {}), image: { sig: spec.signature, load, mp, seconds, took, at: Date.now() } };
+    this.view.store.save();
+    this.updateSpecCheck();
+  }
+
   specEvaluation() {
-    const spec = new MachineSpec(this.view.store.data.machine);
+    const spec = this.machineSpec();
     const ctx = {
       wf: this.view.effectiveWorkflow() || {}, mp: this.currentMegapixels(), seconds: Number($("seconds").value),
       flow: this.view.store.flow, items: this.view.isRef() ? this.view.materialItems : [],
@@ -8899,10 +8982,15 @@ class MainViewMachineSpec {
     const level = result.issues.some((i) => i.level === "over") ? "over" : (result.issues.some((i) => i.level === "warn") || (ratio ?? 0) > c.warnRatio) ? "warn" : "ok";
     box.dataset.level = level;
     $("spec-bar-fill").style.width = `${Math.min(100, Math.round((ratio ?? 0) * 100))}%`;
-    $("spec-text").textContent = `負荷の目安 ${ratio === null ? "—" : `${Math.round(ratio * 100)}%`}（${spec.gpuLabel}）`;
-    $("spec-meter").title = `使える VRAM ${result.usable} GB・大きさ ${result.tier.maxMp} MP まで・負荷 ${result.budget.toFixed(1)}（メガピクセル×秒）まで。押すとマシンスペックの設定を開きます。`;
+    const pm = c.messages;
+    $("spec-text").textContent = `負荷の目安 ${ratio === null ? "—" : `${Math.round(ratio * 100)}%`}（${result.proof ? pm.meterProof : ""}${spec.gpuLabel}${result.eta ? pm.meterEta.replace("{eta}", MachineSpec.duration(result.eta)) : ""}）`;
+    $("spec-meter").title = `使える VRAM ${result.usable} GB・大きさ ${spec.maxMp} MP まで・負荷 ${result.budget.toFixed(1)}（メガピクセル×秒）まで。押すとマシンスペックの設定を開きます。`;
     const fixable = result.issues.some((i) => i.fix);
-    $("spec-issues").hidden = !result.issues.length;
+    const changes = this.optimizeUndo ? this.optimizeChanges || [] : [];
+    $("spec-changes").hidden = !changes.length;
+    $("spec-changes-title").textContent = USER_SETTINGS.messages.specChangesTitle;
+    $("spec-changes-list").replaceChildren(...changes.map((text) => Object.assign(document.createElement("li"), { textContent: text })));
+    $("spec-issues").hidden = !result.issues.length && !changes.length;
     $("spec-list").replaceChildren(...result.issues.map((i) => {
       const li = document.createElement("li");
       li.className = i.level;
@@ -8945,13 +9033,12 @@ class MainViewMachineSpec {
     }
     if (result.issues.some((i) => i.fix === "size") && ctx.mp) {
       const options = USER_SETTINGS.frame.megapixels.filter((x) => x > 0).sort((a, b) => a - b);
-      const tier = spec.tier;
       const budget = spec.budget;
-      const fits = (mp, sec) => mp <= tier.maxMp + 1e-9 && spec.loadFor(mp, sec, ctx.flow, ctx.items) <= budget + 1e-9;
+      const fits = (mp, sec) => mp <= spec.maxMp + 1e-9 && spec.loadFor(mp, sec, ctx.flow, ctx.items) <= budget + 1e-9;
       const lower = (mp) => [...options].reverse().find((x) => x < mp - 1e-9);
-      let mp = [...options].reverse().find((x) => x <= Math.min(ctx.mp, tier.maxMp) + 1e-9) || options[0];
+      let mp = [...options].reverse().find((x) => x <= Math.min(ctx.mp, spec.maxMp) + 1e-9) || options[0];
       let seconds = ctx.seconds;
-      const floor = Math.min(c.minOptimizeMp, tier.maxMp);
+      const floor = Math.min(c.minOptimizeMp, spec.maxMp);
       while (!fits(mp, seconds) && lower(mp) && lower(mp) >= floor - 1e-9) mp = lower(mp);
       // 長さは「最低限の長さ」までしか縮めない（それより短い動画は意味がないため）。足りなければ大きさをさらに下げる
       const min = Math.min(ctx.seconds, c.minOptimizeSeconds);
@@ -8969,6 +9056,7 @@ class MainViewMachineSpec {
         $("seconds-out").textContent = seconds;
       }
     }
+    const applied = [...changes];
     if (stillHeavy) changes.push(ctx.flow === "ref" ? m.specStillHeavyRef : m.specStillHeavy);
     this.view.store.save();
     if (changes.length) {
@@ -8977,7 +9065,10 @@ class MainViewMachineSpec {
       this.view.updateFrame();
       if (this.view.isRef()) this.view.materialsChanged();
     }
-    if (changes.length) this.optimizeUndo = before;
+    if (applied.length) {
+      this.optimizeUndo = before;
+      this.optimizeChanges = applied;
+    }
     this.updateSpecCheck();
     this.view.status(changes.length ? m.specOptimized + changes.join("、") : m.specNothing);
   }
@@ -8993,6 +9084,7 @@ class MainViewMachineSpec {
     $("seconds-out").textContent = u.seconds;
     for (const [id, resize] of Object.entries(u.resize)) if (this.view.materialItems.some((i) => i.id === id)) this.view.updateMaterial(id, { resize: resize ?? undefined });
     this.optimizeUndo = null;
+    this.optimizeChanges = null;
     this.view.store.save();
     this.view.renderWorkflowParams();
     this.view.updateAdvancedBadge();
@@ -11657,6 +11749,7 @@ class MainViewState {
     try {
       await this.executeJob(job);
       this.setJob(job, { state: "done", note: "", progress: 1 });
+      this.view.recordProof(job);
       this.view.status(job.warningLong || m.jobDone.replace("{n}", job.id), !!job.warning);
       const newest = Math.max(...this.view.jobs.filter((j) => j.state === "done").map((j) => j.id));
       // 完成した動画を自動でプレビューする: 選んでいた生成中の動画が完成したとき、
@@ -12490,6 +12583,7 @@ class SettingsView {
     this.on($("llm-temp"), "input", (e) => { $("llm-temp-out").textContent = e.target.value; });
     this.on($("llm-save"), "click", () => this.saveLlm());
     // 文章AI・動画AI・マシンスペックは、変えたらすぐ自動で保存する（新しく追加するときだけ「追加して使う」）
+    this.on($("llm-url"), "input", () => this.syncLlmName());
     for (const id of ["llm-name", "llm-url", "llm-key", "llm-model-custom", "llm-temp", "llm-maxtok"]) this.on($(id), "input", () => this.autosave("llm"));
     for (const id of ["llm-model", "llm-vision"]) this.on($(id), "change", () => this.autosave("llm"));
     for (const id of ["vid-name", "vid-url", "vid-seconds"]) this.on($(id), "input", () => this.autosave("video"));
@@ -12934,6 +13028,13 @@ class SettingsView {
     this.renderLlmChips();
   }
 
+  syncLlmName() {
+    if (!LlmClient.isAutoName($("llm-name").value)) return;
+    const url = $("llm-url").value.trim();
+    const hit = USER_SETTINGS.knownLlmServers.find((s) => LlmClient.norm(s.url) === LlmClient.norm(url));
+    $("llm-name").value = hit ? hit.name : "";
+  }
+
   llmFromForm() {
     return { name: $("llm-name").value.trim(), baseUrl: $("llm-url").value.trim(), apiKey: $("llm-key").value,
       model: this.selectedModel(), vision: $("llm-vision").checked, temperature: Number($("llm-temp").value),
@@ -13001,7 +13102,7 @@ class SettingsView {
     };
     const chips = Object.entries(d.llmProfiles).map(([id, p]) => {
       const on = running.has(LlmClient.norm(p.baseUrl));
-      return make({ llmId: id }, p.name, known ? on : null, id === this.editing.llm,
+      return make({ llmId: id }, LlmClient.displayName(p), known ? on : null, id === this.editing.llm,
         `${p.baseUrl}${p.model ? `\nモデル: ${p.model}` : ""}${known ? `\n${on ? "起動中" : "つながりません"}` : ""}`);
     });
     for (const f of (this.llmFound || []).filter((x) => x.state === "ok")) {
@@ -13034,7 +13135,7 @@ class SettingsView {
     this.onChange();
     const p = d.llmProfiles[id];
     const on = (this.llmFound || []).some((f) => f.state === "ok" && f.url === LlmClient.norm(p.baseUrl));
-    setMsg($("llm-msg"), `「${p.name}」に切り替えました。${on ? "メイン画面でもこの接続先を使います。" : "いまはつながらないので、サーバーを起動してから「自動で探す」か上部の「更新」を押してください。"}`, on ? "ok" : "err");
+    setMsg($("llm-msg"), `「${LlmClient.displayName(p)}」に切り替えました。${on ? "メイン画面でもこの接続先を使います。" : "いまはつながらないので、サーバーを起動してから「自動で探す」か上部の「更新」を押してください。"}`, on ? "ok" : "err");
   }
 
   useLlmServer(url) {
@@ -13084,7 +13185,7 @@ class SettingsView {
     this.store.data.seenGuide = true;
     this.store.save();
     this.loadLlm(id);
-    setMsg($("llm-msg"), `「${p.name}」を${USER_SETTINGS.messages.saved}メイン画面でこの設定を使います。`, "ok");
+    setMsg($("llm-msg"), `「${LlmClient.displayName(p)}」を${USER_SETTINGS.messages.saved}メイン画面でこの設定を使います。`, "ok");
   }
 
   // VIDEO
