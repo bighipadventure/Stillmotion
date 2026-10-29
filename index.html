@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stillmotion</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 /* ===== TOKENS =====
    Adobe（Spectrum）系の配色。濃いグレーのパネルに、青のアクセントを1色だけ使う */
@@ -1207,25 +1204,25 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
         </li>
         <li class="card">
           <h4 class="card-title">ComfyUI に接続を許可する（カスタムノード web-app-cors を入れる）</h4>
-          <p class="note">接続を許可する小さなカスタムノードを入れます（このページのアドレス <code id="cors-ext-comfy-origins"></code> と、このPCで動かすアプリ（localhost / 127.0.0.1）だけを許可します）。</p>
+          <p class="note">接続を許可する小さなカスタムノードを入れます（このページのアドレス <code id="cors-ext-comfy-origins"></code> だけを許可し、カスタムノードの追加などの窓口は断ります）。</p>
           <div class="row"><button class="primary" id="cors-ext-comfy-download">web-app-cors（ComfyUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-comfy-msg"></span></div>
           <ol class="steps">
             <li>ZIP を ComfyUI の <code>custom_nodes</code> フォルダに展開し、<code>custom_nodes\web-app-cors\__init__.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\ComfyUI\custom_nodes</code></li>
             <li>前の版の <code>novel_cors</code> を入れていた場合は、<code>custom_nodes\novel_cors</code> フォルダを削除します。</li>
             <li>起動オプション（Stability Matrix の「Extra Launch Arguments」など）に <code>--enable-cors-header</code> が入っていたら外します（付けたままだと、ほかのサイトからも接続できてしまいます）。起動オプションは空のままで使えます。</li>
-            <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v1 allowed origins: …</code> と出れば読み込まれています。</li>
+            <li>ComfyUI を一度「停止」してから起動し直します。ログに <code>[web-app-cors] v3 allowed origins: …</code> と出れば読み込まれています（v1 と出る場合は古い版です）。</li>
             <li>ブラウザで <code id="cors-ext-comfy-ping"></code> を開き、<code>{"ok":true, …}</code> と出れば準備完了です。</li>
           </ol>
         </li>
         <li class="card">
           <h4 class="card-title">（長い動画のつなぎの画像を SD WebUI で作るときだけ）SD WebUI に接続を許可する（拡張機能 web-app-cors を入れる）</h4>
-          <p class="note">A1111 / Forge / Forge Neo に、接続を許可する小さな拡張機能を入れます（許可するのは ComfyUI と同じく <code id="cors-ext-a1111-origins"></code> と localhost / 127.0.0.1 だけ）。画像生成用のAPIもこの拡張機能が有効にするので、起動オプションは空のままで使えます。</p>
+          <p class="note">A1111 / Forge / Forge Neo に、接続を許可する小さな拡張機能を入れます（許可するのは ComfyUI と同じく <code id="cors-ext-a1111-origins"></code> だけで、使えるのも画像生成などこのアプリが使う窓口だけ）。画像生成用のAPIもこの拡張機能が有効にするので、起動オプションは空のままで使えます。</p>
           <div class="row"><button class="primary" id="cors-ext-a1111-download">web-app-cors（WebUI 用）をダウンロード（ZIP）</button><span class="msg" id="cors-ext-a1111-msg"></span></div>
           <ol class="steps">
             <li>ZIP を WebUI の <code>extensions</code> フォルダに展開し、<code>extensions\web-app-cors\scripts\web_app_cors.py</code> となるようにします（<code>web-app-cors</code> フォルダが二重にならないよう注意）。<br>Stability Matrix の場合: <code>Data\Packages\（パッケージ名。例: forge-neo）\extensions</code></li>
             <li>前の版の <code>stillmange-cors</code> を入れていた場合は、<code>extensions\stillmange-cors</code> フォルダを削除します。</li>
             <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
-            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v2 allowed origins: …</code> と出れば読み込まれています（v1 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
+            <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v3 allowed origins: …</code> と出れば読み込まれています（v1・v2 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
         </li>
@@ -1510,8 +1507,10 @@ const USER_SETTINGS = {
       pingPath: "/web-app-cors/ping",
       readme: `web-app-cors（Stable Diffusion WebUI 用の接続許可拡張機能）
 
-A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かすアプリ（http://localhost / http://127.0.0.1）からの接続を許可します。
+A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）からの接続を許可します。
 ほかのサイトからの接続は許可しません。
+許可したサイトから使えるのは、画像生成・モデル一覧など Stillmange / Stillmotion が使う窓口だけです
+（設定画面・拡張機能の管理などの窓口は断ります）。
 起動オプションに --api を書かなくても、画像生成用のAPIを有効にします。
 
 入れ方
@@ -1519,14 +1518,17 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、�
    extensions\\web-app-cors\\scripts\\web_app_cors.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\（パッケージ名。例: forge-neo）\\extensions）
 2. 前の版の stillmange-cors を入れていた場合は、extensions\\stillmange-cors フォルダを削除します。
-3. 起動オプションの --api と --cors-allow-origins=... は不要です（消して空にしてかまいません）。
+3. 起動オプションには、何も書く必要はありません。
 4. WebUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v2 allowed origins: ...」と出れば読み込まれています（v1 が出るときは古い版です。入れ替えてください）。
+5. ログに「[web-app-cors] v3 allowed origins: ...」と出れば読み込まれています（v1・v2 と出るときは古い版です。入れ替えてください）。
 6. ブラウザで http://127.0.0.1:7860/web-app-cors/ping を開き、{"ok": true, ..., "api": true} と出れば準備完了です。
 
 ログに「could not enable API」と出た場合は、起動オプションに --api を足してください。
 ログに「Exception in thread ... (webui_worker)」が出ている場合は、起動の途中で止まっています。
 エラーに名前が出ている拡張機能を外してから、起動し直してください。
+
+自分のPCで動かしているページ（http://localhost など）から使いたいとき:
+  web_app_cors.py の ALLOW_LOCALHOST を True にして、起動し直します。
 
 外し方: extensions\\web-app-cors フォルダを削除して、起動し直します。
 `,
@@ -1534,29 +1536,57 @@ A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）と、�
 import re
 
 # ===== 許可するアクセス元 =====
-# このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）と、下に書いたサイトからの接続を許可します。
+# 下に書いたサイトからの接続だけを許可します。
 # サイトを増やすときは ALLOWED_ORIGINS に "https://〇〇" の形で1行ずつ足してください。
 # 起動オプションの --api と --cors-allow-origins は不要です（入っていても動きます）。
 ALLOWED_ORIGINS = {
 __ORIGINS__
 }
-ALLOWED_ORIGIN_PATTERNS = [
-    r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$",
-]
+# True にすると、このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）からの接続も許可します。
+# PCの中で動いているほかのアプリやWebページからも操作できるようになるので、ふだんは False のまま
+ALLOW_LOCALHOST = False
+LOCALHOST_PATTERN = r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$"
 # True にすると、どのサイトからでも接続できます（開いたWebページから勝手に画像生成される危険があるため、ふだんは False のまま）
 ALLOW_ALL = False
 # True にすると、起動オプションに --api を書かなくても画像生成用のAPI（/sdapi/v1/...）を有効にします
+# （許可したサイトから使えるのは、下の ALLOWED_PATHS に書いた窓口だけです）
 ENABLE_API = True
 
+# ===== 許可したサイトから使える窓口 =====
+# Stillmange / Stillmotion が使うものだけを並べています。ここに無い窓口（設定画面・拡張機能の管理など）は、
+# 許可したサイトからでも 403 で断ります。WebUI 自身の画面（同じアドレスから開いたページ）には影響しません。
+ALLOWED_PATHS = {
+    "/web-app-cors/ping",
+    "/web-app-cors/loras",
+    "/sdapi/v1/txt2img",
+    "/sdapi/v1/img2img",
+    "/sdapi/v1/progress",
+    "/sdapi/v1/interrupt",
+    "/sdapi/v1/options",
+    "/sdapi/v1/sd-models",
+    "/sdapi/v1/sd-vae",
+    "/sdapi/v1/sd-modules",
+    "/sdapi/v1/samplers",
+    "/sdapi/v1/schedulers",
+    "/sdapi/v1/upscalers",
+    "/sdapi/v1/latent-upscale-modes",
+    "/sdapi/v1/loras",
+    "/sdapi/v1/refresh-loras",
+    "/sdapi/v1/refresh-vae",
+    "/sdapi/v1/refresh-checkpoints",
+    "/sdapi/v1/unload-checkpoint",
+    "/sdapi/v1/reload-checkpoint",
+}
+
 NAME = "web-app-cors"
-VERSION = "2"
+VERSION = "3"
 PING_PATH = f"/{NAME}/ping"
 API_CHECK_PATH = "/sdapi/v1/txt2img"
 LORA_PATH = "/sdapi/v1/loras"
 LORA_LIST_PATH = f"/{NAME}/loras"
-ALLOWED_METHODS = b"GET, POST, PUT, DELETE, OPTIONS"
+ALLOWED_METHODS = b"GET, POST, OPTIONS"
 PREFLIGHT_MAX_AGE = b"600"
-PATTERNS = [re.compile(p, re.IGNORECASE) for p in ALLOWED_ORIGIN_PATTERNS]
+LOCALHOST_RE = re.compile(LOCALHOST_PATTERN, re.IGNORECASE)
 
 
 def is_allowed(origin):
@@ -1564,7 +1594,35 @@ def is_allowed(origin):
         return False
     if ALLOW_ALL or origin in ALLOWED_ORIGINS:
         return True
-    return any(p.match(origin) for p in PATTERNS)
+    return ALLOW_LOCALHOST and bool(LOCALHOST_RE.match(origin))
+
+
+def path_allowed(path):
+    return ALLOW_ALL or path.rstrip("/") in ALLOWED_PATHS
+
+
+def is_same_origin(origin, host):
+    # WebUI 自身の画面からの通信（Origin のホストが接続先と同じ）は、何もせずそのまま通す
+    if not origin or not host:
+        return False
+    return origin.split("://", 1)[-1].lower() == host.lower()
+
+
+def classify(origin, host, path):
+    """通信をどう扱うかを返す: "pass"=何もしない / "deny"=403 / "cors"=許可ヘッダを付ける"""
+    if is_same_origin(origin, host) or not is_allowed(origin):
+        return "pass"
+    if not path_allowed(path):
+        return "deny"
+    return "cors"
+
+
+def cors_headers(origin):
+    return [
+        (b"access-control-allow-origin", origin.encode("latin-1")),
+        (b"access-control-allow-private-network", b"true"),
+        (b"vary", b"Origin"),
+    ]
 
 
 class WebAppCORS:
@@ -1577,17 +1635,22 @@ class WebAppCORS:
             return
         headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
         origin = headers.get("origin")
-        if not is_allowed(origin):
+        action = classify(origin, headers.get("host", ""), scope.get("path", ""))
+        if action == "pass":
             await self.app(scope, receive, send)
             return
-        cors = [
-            (b"access-control-allow-origin", origin.encode("latin-1")),
-            (b"access-control-allow-credentials", b"true"),
-            (b"access-control-allow-private-network", b"true"),
-            (b"vary", b"Origin"),
-        ]
+        cors = cors_headers(origin)
+        if action == "deny":
+            body = b'{"error": "web-app-cors: this endpoint is not allowed from other sites"}'
+            await send({
+                "type": "http.response.start",
+                "status": 403,
+                "headers": cors + [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())],
+            })
+            await send({"type": "http.response.body", "body": body})
+            return
         if scope["method"] == "OPTIONS" and "access-control-request-method" in headers:
-            requested = headers.get("access-control-request-headers", "*").encode("latin-1")
+            requested = headers.get("access-control-request-headers", "content-type").encode("latin-1")
             await send({
                 "type": "http.response.start",
                 "status": 200,
@@ -1600,7 +1663,7 @@ class WebAppCORS:
             })
             await send({"type": "http.response.body", "body": b""})
             return
-        names = {name for name, _ in cors}
+        names = {name for name, _ in cors} | {b"access-control-allow-credentials"}
 
         async def send_with_cors(message):
             if message["type"] == "http.response.start":
@@ -1658,10 +1721,16 @@ def ping_for(app):
     def ping():
         return {
             "ok": True, "extension": NAME, "server": "webui", "version": VERSION,
-            "allowed_origins": sorted(ALLOWED_ORIGINS), "allowed_origin_patterns": ALLOWED_ORIGIN_PATTERNS, "allow_all": ALLOW_ALL,
+            "allowed_origins": sorted(ALLOWED_ORIGINS), "allow_localhost": ALLOW_LOCALHOST, "allow_all": ALLOW_ALL,
             "api": api_registered(app), "loras": has_route(app, LORA_LIST_PATH),
         }
     return ping
+
+
+def describe_allowed():
+    if ALLOW_ALL:
+        return "ALL"
+    return ", ".join(sorted(ALLOWED_ORIGINS) + (["localhost"] if ALLOW_LOCALHOST else []))
 
 
 def on_app_started(demo, app):
@@ -1680,8 +1749,7 @@ def on_app_started(demo, app):
     build = app.build_middleware_stack
     app.build_middleware_stack = lambda: WebAppCORS(build())
     app.middleware_stack = None
-    allowed = "ALL" if ALLOW_ALL else ", ".join(sorted(ALLOWED_ORIGINS) + ALLOWED_ORIGIN_PATTERNS)
-    print(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
+    print(f"[{NAME}] v{VERSION} allowed origins: {describe_allowed()}  check: {PING_PATH}")
 
 
 script_callbacks.on_app_started(on_app_started)
@@ -1694,19 +1762,23 @@ script_callbacks.on_app_started(on_app_started)
       pingPath: "/web-app-cors/ping",
       readme: `web-app-cors（ComfyUI 用の接続許可カスタムノード）
 
-ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）と、このPCで動かすアプリ（http://localhost / http://127.0.0.1）からの接続を許可します。
+ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）からの接続を許可します。
 ほかのサイトからの接続は許可しません。
+許可したサイトから使えるのは、ワークフローの実行・画像の受け渡し・モデル一覧など Stillmange / Stillmotion が使う窓口だけです
+（ComfyUI Manager によるカスタムノードの追加や、設定の書き換えなどの窓口は断ります）。
 
 入れ方
 1. このフォルダ（web-app-cors）を ComfyUI の custom_nodes フォルダに置きます。
    custom_nodes\\web-app-cors\\__init__.py となれば正しい場所です。
    （Stability Matrix の場合: Data\\Packages\\ComfyUI\\custom_nodes）
-2. 前の版の novel_cors を入れていた場合は、custom_nodes\\novel_cors フォルダを削除します。
-3. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
+2. 起動オプションに --enable-cors-header が入っていたら外します（起動オプションは空のままで使えます）。
    付けたままだと、ほかのサイトからも接続できてしまいます。
-4. ComfyUI を停止して、起動し直します。
-5. ログに「[web-app-cors] v1 allowed origins: ...」と出れば読み込まれています。
-6. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
+3. ComfyUI を停止して、起動し直します。
+4. ログに「[web-app-cors] v3 allowed origins: ...」と出れば読み込まれています（v1 と出るときは古い版です。入れ替えてください）。
+5. ブラウザで http://127.0.0.1:8188/web-app-cors/ping を開き、{"ok": true, ...} と出れば準備完了です。
+
+自分のPCで動かしているページ（http://localhost など）から使いたいとき:
+  __init__.py の ALLOW_LOCALHOST を True にして、起動し直します。
 
 外し方: custom_nodes\\web-app-cors フォルダを削除して、起動し直します。
 `,
@@ -1717,25 +1789,47 @@ from multidict import CIMultiDict
 from server import PromptServer
 
 # ===== 許可するアクセス元 =====
-# このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）と、下に書いたサイトからの接続を許可します。
+# 下に書いたサイトからの接続だけを許可します。
 # サイトを増やすときは ALLOWED_ORIGINS に "https://〇〇" の形で1行ずつ足してください。
 # 起動オプションの --enable-cors-header は外してください（付けたままだと、ここで許可していないサイトからも接続できてしまいます）。
 ALLOWED_ORIGINS = {
 __ORIGINS__
 }
-ALLOWED_ORIGIN_PATTERNS = [
-    r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$",
-]
+# True にすると、このPCで動かすアプリ（http://localhost / http://127.0.0.1 の全ポート）からの接続も許可します。
+# PCの中で動いているほかのアプリやWebページからも操作できるようになるので、ふだんは False のまま
+ALLOW_LOCALHOST = False
+LOCALHOST_PATTERN = r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$"
 # True にすると、どのサイトからでも接続できます（開いたWebページからワークフローやカスタムノードを勝手に操作される危険があるため、ふだんは False のまま）
 ALLOW_ALL = False
 
+# ===== 許可したサイトから使える窓口 =====
+# Stillmange / Stillmotion が使うものだけを並べています（先頭に /api が付いた形も同じ扱い）。
+# ここに無い窓口（ComfyUI Manager によるカスタムノードの追加、設定やユーザーデータの書き換えなど）は、
+# 許可したサイトからでも 403 で断ります。ComfyUI 自身の画面（同じアドレスから開いたページ）には影響しません。
+ALLOWED_PATHS = {
+    "/web-app-cors/ping",
+    "/prompt",
+    "/queue",
+    "/interrupt",
+    "/free",
+    "/history",
+    "/view",
+    "/upload/image",
+    "/object_info",
+    "/models",
+    "/system_stats",
+    "/internal/logs/raw",
+}
+# 後ろに1段だけ続きが付いてよい窓口（/history/<id>、/object_info/<ノード名>、/models/<フォルダ名>）
+ALLOWED_PATH_PREFIXES = ("/history/", "/object_info/", "/models/")
+
 NAME = "web-app-cors"
-VERSION = "1"
+VERSION = "3"
 PING_PATH = f"/{NAME}/ping"
-ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+ALLOWED_METHODS = "GET, POST, OPTIONS"
 PREFLIGHT_MAX_AGE = "600"
 STRIP_HEADERS = {"origin", "sec-fetch-site"}
-PATTERNS = [re.compile(p, re.IGNORECASE) for p in ALLOWED_ORIGIN_PATTERNS]
+LOCALHOST_RE = re.compile(LOCALHOST_PATTERN, re.IGNORECASE)
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
@@ -1745,13 +1839,43 @@ def is_allowed(origin):
         return False
     if ALLOW_ALL or origin in ALLOWED_ORIGINS:
         return True
-    return any(p.match(origin) for p in PATTERNS)
+    return ALLOW_LOCALHOST and bool(LOCALHOST_RE.match(origin))
+
+
+def path_allowed(path):
+    if ALLOW_ALL:
+        return True
+    p = path.rstrip("/") or "/"
+    if p.startswith("/api/"):
+        p = p[4:]
+    if p in ALLOWED_PATHS:
+        return True
+    for prefix in ALLOWED_PATH_PREFIXES:
+        rest = p[len(prefix):] if p.startswith(prefix) else None
+        if rest and "/" not in rest:
+            return True
+    return False
+
+
+def is_same_origin(origin, host):
+    # ComfyUI 自身の画面からの通信（Origin のホストが接続先と同じ）は、何もせずそのまま通す
+    if not origin or not host:
+        return False
+    return origin.split("://", 1)[-1].lower() == host.lower()
+
+
+def classify(origin, host, path):
+    """通信をどう扱うかを返す: "pass"=何もしない / "deny"=403 / "cors"=許可ヘッダを付ける"""
+    if is_same_origin(origin, host) or not is_allowed(origin):
+        return "pass"
+    if not path_allowed(path):
+        return "deny"
+    return "cors"
 
 
 def cors_headers(origin):
     return {
         "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Private-Network": "true",
         "Vary": "Origin",
     }
@@ -1760,15 +1884,19 @@ def cors_headers(origin):
 @web.middleware
 async def web_app_cors_middleware(request, handler):
     origin = request.headers.get("Origin")
-    if not is_allowed(origin):
+    action = classify(origin, request.headers.get("Host", ""), request.path)
+    if action == "pass":
         return await handler(request)
+    if action == "deny":
+        return web.json_response({"error": "web-app-cors: this endpoint is not allowed from other sites"}, status=403, headers=cors_headers(origin))
     if request.method == "OPTIONS" and "Access-Control-Request-Method" in request.headers:
         return web.Response(status=200, headers={
             **cors_headers(origin),
             "Access-Control-Allow-Methods": ALLOWED_METHODS,
-            "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers", "*"),
+            "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers", "content-type"),
             "Access-Control-Max-Age": PREFLIGHT_MAX_AGE,
         })
+    # ComfyUI は「よそのサイトからの操作」を Origin で見分けて断るので、許可したサイトの通信に限り外して渡す
     forwarded = CIMultiDict((k, v) for k, v in request.headers.items() if k.lower() not in STRIP_HEADERS)
     try:
         response = await handler(request.clone(headers=forwarded))
@@ -1783,8 +1911,14 @@ async def web_app_cors_middleware(request, handler):
 async def ping(request):
     return web.json_response({
         "ok": True, "extension": NAME, "server": "comfyui", "version": VERSION,
-        "allowed_origins": sorted(ALLOWED_ORIGINS), "allowed_origin_patterns": ALLOWED_ORIGIN_PATTERNS, "allow_all": ALLOW_ALL,
+        "allowed_origins": sorted(ALLOWED_ORIGINS), "allow_localhost": ALLOW_LOCALHOST, "allow_all": ALLOW_ALL,
     })
+
+
+def describe_allowed():
+    if ALLOW_ALL:
+        return "ALL"
+    return ", ".join(sorted(ALLOWED_ORIGINS) + (["localhost"] if ALLOW_LOCALHOST else []))
 
 
 INSTALLED = {"done": False}
@@ -1802,9 +1936,8 @@ def install():
         return
     server.routes.get(PING_PATH)(ping)
     INSTALLED["done"] = True
-    allowed = "ALL" if ALLOW_ALL else ", ".join(sorted(ALLOWED_ORIGINS) + ALLOWED_ORIGIN_PATTERNS)
-    logging.info(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
-    print(f"[{NAME}] v{VERSION} allowed origins: {allowed}  check: {PING_PATH}")
+    logging.info(f"[{NAME}] v{VERSION} allowed origins: {describe_allowed()}  check: {PING_PATH}")
+    print(f"[{NAME}] v{VERSION} allowed origins: {describe_allowed()}  check: {PING_PATH}")
 
 
 install()
