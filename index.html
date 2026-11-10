@@ -25,7 +25,7 @@
   --accent-text: #1b1b1b;
   --accent-soft: #e2e2e2;
   --on-accent-soft: #1b1b1b;
-  --link: #0067ce;
+  --link: #000000;
   --focus: #1b1b1b;
   --knob: #ffffff;
   --lamp: #e68619;
@@ -58,8 +58,8 @@
   --radius-s: 10px;
   --radius-m: 10px;
   --radius-l: 12px;
-  --shadow-low: 0 2px 4px rgba(0, 0, 0, .05), 0 4px 8px rgba(0, 0, 0, .10), inset 0 0 0 1px rgba(0, 0, 0, .05);
-  --shadow-high: 0 4px 6px rgba(0, 0, 0, .10), 0 12px 24px rgba(0, 0, 0, .15), inset 0 0 0 1px rgba(0, 0, 0, .05);
+  --shadow-low: 0 0 0 1px var(--line-strong);
+  --shadow-high: 0 0 0 1px var(--line-strong);
   --backdrop: rgba(0, 0, 0, .5);
   --h-control: 32px;
   --run-height: 36px;
@@ -94,7 +94,7 @@
     --accent-text: #f1f1f1;
     --accent-soft: #303030;
     --on-accent-soft: #f1f1f1;
-    --link: #a1caff;
+    --link: #ffffff;
     --focus: #f1f1f1;
     --knob: #262626;
     --lamp: #f0a63a;
@@ -103,9 +103,9 @@
     --section-head: #2e2e2e;
     --danger: #ffaea7;
     --danger-soft: #5b2b28;
-    --danger-fill: #ff705d;
-    --danger-fill-hover: #ff8f80;
-    --on-danger: #111111;
+    --danger-fill: #e5484d;
+    --danger-fill-hover: #f05d62;
+    --on-danger: #ffffff;
     --ok: #90ca90;
     --warn-soft: #453a1c;
     --on-warn-soft: #eec448;
@@ -123,8 +123,8 @@
     --on-tag-comfy: #eec448;
     --film: #0d0d0d;
     --film-cell: #333333;
-    --shadow-low: 0 2px 4px rgba(0, 0, 0, .25), 0 4px 8px rgba(0, 0, 0, .40), inset 0 0 0 1px rgba(255, 255, 255, .08);
-    --shadow-high: 0 4px 6px rgba(0, 0, 0, .50), 0 12px 24px rgba(0, 0, 0, .70), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    --shadow-low: 0 0 0 1px var(--line-strong);
+    --shadow-high: 0 0 0 1px var(--line-strong);
     --backdrop: rgba(0, 0, 0, .8);
     color-scheme: dark;
   }
@@ -196,7 +196,7 @@ input[type="checkbox"] {
 }
 input[type="checkbox"]::before {
   content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: var(--knob); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .175s cubic-bezier(.24, 1, .4, 1);
+  background: var(--knob); box-shadow: none; transition: transform .175s cubic-bezier(.24, 1, .4, 1);
 }
 input[type="checkbox"]:checked { background: var(--accent); }
 input[type="checkbox"]:checked::before { transform: translateX(16px); }
@@ -252,7 +252,6 @@ code { background: var(--control); border: 1px solid transparent; color: var(--i
   background: var(--surface); border-bottom: 1px solid var(--line);
 }
 .topbar h1 { font-size: 16px; margin: 0 10px 0 4px; font-weight: 600; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
-.topbar h1::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--lamp); }
 .pills { display: flex; gap: 4px; margin-left: auto; flex-wrap: nowrap; overflow: hidden; }
 .pill { min-height: 28px; font-size: 12px; border-radius: 999px; padding: 1px 12px; background: var(--control); border-color: transparent; white-space: nowrap; }
 .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -904,6 +903,23 @@ body.panel-window-body { display: flex; flex-direction: column; overflow: hidden
 .help-sec ul { margin: 0; padding-left: 52px; font-size: 13px; line-height: 1.75; max-width: 90ch; }
 .help-sec li + li { margin-top: 3px; }
 @media (max-width: 700px) { .help-sec ul { padding-left: 20px; } }
+
+/* ===== DESIGN RULES (NO SHADOW / MONOCHROME / CORNERS) ===== */
+.wfp-group, .mat-drop, .mat-card, .mat-thumb, .spec-issues, .dropzone, .help-box, .job, .long-keycard, .long-keythumb,
+.long-key img, .long-row, .long-thumb, dialog.zoom img, .busy-mask, .screen, .screen.is-still .empty, .card, pre { border-radius: 0; }
+.lead a, .note a, .help-sec a, a.inline-link { color: var(--link); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ===== DRAG SORT ===== */
+.drag-grip { flex: none; display: inline-block; width: 18px; height: 24px; cursor: grab; touch-action: none; color: var(--muted); background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='9' cy='5' r='1.6'/%3E%3Ccircle cx='9' cy='12' r='1.6'/%3E%3Ccircle cx='9' cy='19' r='1.6'/%3E%3Ccircle cx='15' cy='5' r='1.6'/%3E%3Ccircle cx='15' cy='12' r='1.6'/%3E%3Ccircle cx='15' cy='19' r='1.6'/%3E%3C/svg%3E") center / 16px no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='9' cy='5' r='1.6'/%3E%3Ccircle cx='9' cy='12' r='1.6'/%3E%3Ccircle cx='9' cy='19' r='1.6'/%3E%3Ccircle cx='15' cy='5' r='1.6'/%3E%3Ccircle cx='15' cy='12' r='1.6'/%3E%3Ccircle cx='15' cy='19' r='1.6'/%3E%3C/svg%3E") center / 16px no-repeat; }
+.drag-grip:hover { color: var(--ink); }
+.drag-sorting { position: relative; }
+.drag-lifted { position: relative; z-index: 5; outline: 2px solid var(--accent); outline-offset: -1px; }
+.drag-lifted .drag-grip { color: var(--ink); }
+body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user-select: none; user-select: none; }
+
+/* ===== DESIGN RULES 2 (RED FILL = WHITE TEXT / NO GRADIENT) ===== */
 </style>
 </head>
 <body>
@@ -1399,7 +1415,7 @@ body.panel-window-body { display: flex; flex-direction: column; overflow: hidden
       <header class="pane-head"><h3>ツールの使い方</h3><p class="lead">Stillmotion でできることと、操作の流れをまとめました。</p></header>
       <section class="help-sec"><h4><span class="no">1</span>最初に接続する</h4><ul><li>「設定」→「はじめに」の手順で、ComfyUI に web-app-cors を入れ、文章AIのサーバーで CORS をオンにします。</li><li>右上の「文章AI」「動画AI」の点が緑になればつながっています。あとからAIを起動したときは「更新」を押します。</li><li>「設定」→「マシンスペック」で GPU と VRAM を読み取っておくと、このPCに重すぎる大きさや長さのときに警告が出ます。</li></ul></section>
       <section class="help-sec"><h4><span class="no">2</span>1枚の画像から動画を作る</h4><ul><li>左の「作り方」で「画像から動画」を選び、「画像」に PNG をドロップします。Stable Diffusion で作った画像なら、埋め込まれたプロンプトやモデル名も読み取ります。</li><li>「動画のサイズ」で縦横比・大きさ・合わせ方（切り抜く・ぼかし余白・黒い余白）を選びます。切り抜くときは、画像をドラッグして位置を変えられます。</li><li>「プロンプトの指定」でモードを選びます。I2VA は画像を最初のフレームに、L2VA は最後のフレームにします。FL2VA は最初と最後の画像のあいだをつなぎます。</li><li>左下の「最初から実行」を押すと、文章AIがストーリーとプロンプトを書き、ComfyUI が動画を作ります。本数を選ぶと、同じ画像とプロンプトで続けて作ります。</li></ul></section>
-      <section class="help-sec"><h4><span class="no">3</span>素材から動画を作る</h4><ul><li>「作り方」で「素材から動画」を選び、画像・動画・音声をまとめてドロップします。</li><li>素材の画面で、それぞれにタグ・使い方・メモを付けると、それらを参照した動画を作ります。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">3</span>素材から動画を作る</h4><ul><li>「作り方」で「素材から動画」を選び、画像・動画・音声をまとめてドロップします。</li><li>素材の画面で、それぞれにタグ・使い方・メモを付けると、それらを参照した動画を作ります。</li><li>素材の順番（&lt;Picture 1&gt; などのタグの番号）は、素材の画面で各素材の左上の点々（取っ手）をドラッグして入れ替えます。</li></ul></section>
       <section class="help-sec"><h4><span class="no">4</span>長い動画を作る</h4><ul><li>「作り方」で「長い動画」を選び、全体の長さと区間の数を決めます。</li><li>文章AIが全体のストーリーを区間に分け、区間ごとに動画を作ります。区間の一覧で文を直したり、「区間を追加」「まだの区間を作る」で続きを作れます。</li><li>区間のつなぎ目の画像は、SD WebUI で作ることもできます。最後に「つないで1本にする」で1本の動画にします。</li></ul></section>
       <section class="help-sec"><h4><span class="no">5</span>ストーリーとプロンプトを直す</h4><ul><li>右の「ストーリー」を書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。</li><li>プロンプトの下の欄に直したい内容を書いて「AIで修正」（Ctrl+Enter）を押すと、文章AIが英語のプロンプトを書き直します。</li><li>「このプロンプトで動画を作り直す」で、同じ画像からもう一度作ります。「自然なループ」をオンにすると、終わりと始まりがつながるループ動画になります。</li></ul></section>
       <section class="help-sec"><h4><span class="no">6</span>残す・共有する</h4><ul><li>動画の下の「動画を保存」「GIFで保存」「プロンプトを保存」で残します。</li><li>上の「状態を保存」で、画像・素材・設定・ストーリー・プロンプトを JSON に保存します。その JSON を画面にドロップすると、そのときの状態に戻ります。</li><li>「Prompt Reel に投稿」で、動画と生成情報を Prompt Reel の投稿画面に渡します。</li></ul></section>
@@ -7087,6 +7103,130 @@ class MachineSpec {
   }
 }
 
+// ===== DRAG SORT (REORDER BY DRAGGING, OTHERS MOVE LIVE) =====
+class DragSort {
+  constructor({ container, item, handle, id, onEnd, threshold = 5 }) {
+    this.o = { container, item, handle, id, onEnd, threshold };
+    this.down = (e) => this.start(e);
+    container.addEventListener("pointerdown", this.down);
+  }
+
+  destroy() {
+    this.o.container.removeEventListener("pointerdown", this.down);
+    this.stop?.();
+  }
+
+  items() {
+    return [...this.o.container.children].filter((el) => el.matches(this.o.item));
+  }
+
+  start(e) {
+    if (e.button !== 0) return;
+    const grip = e.target.closest(this.o.handle);
+    const el = grip?.closest(this.o.item);
+    if (!el || el.parentElement !== this.o.container) return;
+    e.preventDefault();
+    const c = this.o.container;
+    const doc = c.ownerDocument;
+    const win = doc.defaultView;
+    const before = this.items().map(this.o.id);
+    const s = { x: e.clientX, y: e.clientY, on: false, last: e, raf: 0 };
+    const local = (ev) => {
+      const r = c.getBoundingClientRect();
+      return { x: ev.clientX - r.left - c.clientLeft, y: ev.clientY - r.top - c.clientTop };
+    };
+    const flip = (els, first) => {
+      for (const sib of els) {
+        const f = first.get(sib);
+        const dx = f.x - sib.offsetLeft, dy = f.y - sib.offsetTop;
+        if (!dx && !dy) continue;
+        sib.style.transition = "none";
+        sib.style.transform = `translate(${dx}px, ${dy}px)`;
+        sib.getBoundingClientRect();
+        sib.style.transition = "transform .2s ease";
+        sib.style.transform = "";
+      }
+    };
+    const follow = () => {
+      const p = local(s.last);
+      el.style.transform = `translate(${s.ox + p.x - s.px - el.offsetLeft}px, ${s.oy + p.y - s.py - el.offsetTop}px)`;
+    };
+    const place = () => {
+      const p = local(s.last);
+      const cx = s.ox + p.x - s.px + el.offsetWidth / 2;
+      const cy = s.oy + p.y - s.py + el.offsetHeight / 2;
+      const sibs = this.items().filter((x) => x !== el);
+      const at = sibs.filter((x) => {
+        const sy = x.offsetTop + x.offsetHeight / 2;
+        if (Math.abs(sy - cy) < Math.min(x.offsetHeight, el.offsetHeight) / 2) return x.offsetLeft + x.offsetWidth / 2 < cx;
+        return sy < cy;
+      }).length;
+      const now = this.items().indexOf(el);
+      if (at !== now) {
+        const first = new Map(sibs.map((x) => [x, { x: x.offsetLeft, y: x.offsetTop }]));
+        const ref = sibs[at];
+        c.insertBefore(el, ref || sibs[sibs.length - 1].nextSibling);
+        flip(sibs, first);
+      }
+      follow();
+    };
+    const scroll = () => {
+      s.raf = 0;
+      if (!s.on) return;
+      const edge = 60, y = s.last.clientY, vh = win.innerHeight;
+      const dy = y < edge ? -(edge - y) / 3 : y > vh - edge ? (y - (vh - edge)) / 3 : 0;
+      if (!dy) return;
+      let box = c.parentElement;
+      while (box && box !== doc.body && !(box.scrollHeight > box.clientHeight && /(auto|scroll)/.test(win.getComputedStyle(box).overflowY))) box = box.parentElement;
+      if (box && box !== doc.body) box.scrollTop += dy; else win.scrollBy(0, dy);
+      place();
+      s.raf = win.requestAnimationFrame(scroll);
+    };
+    const move = (ev) => {
+      s.last = ev;
+      if (!s.on) {
+        if (Math.hypot(ev.clientX - s.x, ev.clientY - s.y) < this.o.threshold) return;
+        s.on = true;
+        c.classList.add("drag-sorting");
+        const p = local(e);
+        Object.assign(s, { px: p.x, py: p.y, ox: el.offsetLeft, oy: el.offsetTop });
+        el.classList.add("drag-lifted");
+        doc.body.classList.add("drag-active");
+      }
+      place();
+      if (!s.raf) s.raf = win.requestAnimationFrame(scroll);
+    };
+    const end = () => {
+      this.stop();
+      if (!s.on) return;
+      el.style.transition = "transform .2s ease";
+      el.style.transform = "";
+      const after = this.items().map(this.o.id);
+      win.setTimeout(() => {
+        el.classList.remove("drag-lifted");
+        c.classList.remove("drag-sorting");
+        for (const x of this.items()) { x.style.transition = ""; x.style.transform = ""; }
+        if (after.join("\n") !== before.join("\n")) this.o.onEnd(after);
+      }, 210);
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      doc.addEventListener("click", swallow, { capture: true, once: true });
+      win.setTimeout(() => doc.removeEventListener("click", swallow, { capture: true }), 0);
+    };
+    this.stop = () => {
+      doc.removeEventListener("pointermove", move);
+      doc.removeEventListener("pointerup", end);
+      doc.removeEventListener("pointercancel", end);
+      if (s.raf) win.cancelAnimationFrame(s.raf);
+      s.raf = 0;
+      doc.body.classList.remove("drag-active");
+      this.stop = null;
+    };
+    doc.addEventListener("pointermove", move);
+    doc.addEventListener("pointerup", end);
+    doc.addEventListener("pointercancel", end);
+  }
+}
+
 // ===== MAIN VIEW =====
 class MainView {
   constructor(store, statusBar, openSettings) {
@@ -8802,6 +8942,9 @@ class MainViewModeAndMaterials {
     }
     this.view.on($("mat-input"), "change", (e) => { this.addMaterials([...e.target.files]); e.target.value = ""; });
     this.view.on($("close-materials"), "click", () => dlg.close());
+    this.materialSorts = [...dlg.querySelectorAll(".mat-list")].map((list) => new DragSort({
+      container: list, item: ".mat-card", handle: ".drag-grip", id: (card) => card.dataset.id, onEnd: (ids) => this.sortMaterials(ids),
+    }));
     this.view.on(dlg, "click", (e) => { if (e.target === dlg) dlg.close(); });
     this.view.on($("mat-clear"), "click", () => {
       if (this.view.materialItems.length && confirm(USER_SETTINGS.messages.materialsClearConfirm)) this.setMaterials([]);
@@ -8863,16 +9006,11 @@ class MainViewModeAndMaterials {
     if (rerender) this.materialsChanged();
   }
 
-  moveMaterial(id, dir) {
-    const item = this.view.materialItems.find((i) => i.id === id);
-    const same = this.view.materialItems.filter((i) => i.kind === item.kind);
-    const at = same.indexOf(item);
-    const other = same[at + dir];
-    if (!other) return;
-    const list = [...this.view.materialItems];
-    const a = list.indexOf(item), b = list.indexOf(other);
-    [list[a], list[b]] = [list[b], list[a]];
-    this.setMaterials(list);
+  sortMaterials(ids) {
+    const byId = new Map(this.view.materialItems.map((i) => [i.id, i]));
+    const queue = ids.map((id) => byId.get(id)).filter(Boolean);
+    const moved = new Set(queue);
+    this.setMaterials(this.view.materialItems.map((i) => (moved.has(i) ? queue.shift() : i)));
   }
 
   removeMaterial(id) {
@@ -8947,11 +9085,14 @@ class MainViewModeAndMaterials {
       return s;
     };
     const card = el("article", "mat-card");
+    card.dataset.id = item.id;
     const thumb = el("div", "mat-thumb");
     if (item.thumb) { const img = el("img"); img.src = item.thumb; img.alt = ""; thumb.append(img); } else thumb.append(el("span", "mat-icon", item.kind === "audio" ? "♪\uFE0E" : "▶\uFE0E"));
     const main = el("div", "mat-main");
     const head = el("div", "mat-head");
-    head.append(el("span", "mat-tagbadge", tag.tag));
+    const grip = el("span", "drag-grip");
+    grip.title = "ドラッグして順番を入れ替えます（タグの番号が変わります）";
+    head.append(grip, el("span", "mat-tagbadge", tag.tag));
     if (tag.sound) head.append(el("span", "mat-tagbadge sound", tag.sound));
     const name = el("span", "mat-name", item.name);
     name.title = item.name;
@@ -8967,8 +9108,6 @@ class MainViewModeAndMaterials {
       return b;
     };
     tools.append(
-      button("↑", "前へ（タグの番号が1つ前になります）", () => this.moveMaterial(item.id, -1), index === 0),
-      button("↓", "後ろへ", () => this.moveMaterial(item.id, 1), index === count - 1),
       button("外す", "この素材を外す", () => this.removeMaterial(item.id)),
     );
     head.append(tools);
