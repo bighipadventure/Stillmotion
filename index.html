@@ -4,196 +4,224 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stillmotion</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><filter id='mono'><feColorMatrix type='saturate' values='0'/></filter><text y='.9em' font-size='90' filter='url(%23mono)'>🎞</text></svg>">
 <style>
 /* ===== TOKENS =====
-   Adobe（Spectrum）系の配色。濃いグレーのパネルに、青のアクセントを1色だけ使う */
+   Astryx（Meta）neutral テーマの配色・角丸・影。モノクロ基調で、黒（ダークでは白）を主ボタンに使う */
 :root {
-  --bg: #e9e9e9;
-  --surface: #f5f5f5;
+  --bg: #f1f1f1;
+  --surface: #ffffff;
   --surface-2: #ffffff;
-  --head: #e1e1e1;
-  --ink: #2c2c2c;
-  --muted: #5a5a5a;
-  --line: #d0d0d0;
-  --line-strong: #a8a8a8;
-  --control: #ffffff;
-  --control-hover: #ececec;
-  --accent: #0d66d0;
-  --accent-hover: #0a58b5;
+  --head: #ffffff;
+  --ink: #000000;
+  --muted: #474747;
+  --line: rgba(0, 0, 0, .08);
+  --line-strong: #d4d4d4;
+  --control: rgba(0, 0, 0, .06);
+  --control-hover: rgba(0, 0, 0, .11);
+  --accent: #1b1b1b;
+  --accent-hover: #3a3a3a;
   --on-accent: #ffffff;
-  --accent-text: #0d66d0;
-  --accent-soft: #dde9f8;
-  --on-accent-soft: #0a4a99;
+  --accent-text: #1b1b1b;
+  --accent-soft: #e2e2e2;
+  --on-accent-soft: #1b1b1b;
+  --link: #0067ce;
+  --focus: #1b1b1b;
+  --knob: #ffffff;
   --lamp: #e68619;
   --lamp-glow: rgba(230, 134, 25, .3);
   --on-lamp: #1b1204;
-  --danger: #c9252d;
-  --danger-soft: #fbe6e6;
-  --ok: #268e6c;
-  --warn-soft: #fdf0dc;
-  --on-warn-soft: #5c3a00;
-  --tag-browser: #dde9f8;
-  --on-tag-browser: #0a4a99;
-  --tag-llm: #ece4f8;
-  --on-tag-llm: #4b2a7a;
-  --tag-comfy: #fdf0dc;
-  --on-tag-comfy: #5c3a00;
-  --film: #1b1b1b;
-  --film-cell: #3a3a3a;
-  --film-ink: #d6d6d6;
+  --disabled-ink: #919191;
+  --section-head: #f7f7f7;
+  --danger: #c0262c;
+  --danger-soft: #ffe1dd;
+  --danger-fill: #c9303a;
+  --danger-fill-hover: #a8222b;
+  --on-danger: #ffffff;
+  --ok: #2f7d33;
+  --warn-soft: #fae19e;
+  --on-warn-soft: #4b3900;
+  --tag-browser: #b9d7ff;
+  --on-tag-browser: #003978;
+  --tag-llm: #f7d5ff;
+  --on-tag-llm: #5c0e6c;
+  --tag-comfy: #fae19e;
+  --on-tag-comfy: #4b3900;
+  --film: #111111;
+  --film-cell: #333333;
+  --film-ink: #d4d4d4;
   --film-active: #4a3a1a;
   --film-active-ink: #ffd9a0;
-  --film-error: #5c2521;
-  --film-error-ink: #ffd8d4;
-  --radius-s: 4px;
-  --radius-m: 4px;
-  --radius-l: 6px;
-  --h-control: 28px;
+  --film-error: #5b2b28;
+  --film-error-ink: #ffaea7;
+  --radius-xs: 6px;
+  --radius-s: 10px;
+  --radius-m: 10px;
+  --radius-l: 12px;
+  --shadow-low: 0 2px 4px rgba(0, 0, 0, .05), 0 4px 8px rgba(0, 0, 0, .10), inset 0 0 0 1px rgba(0, 0, 0, .05);
+  --shadow-high: 0 4px 6px rgba(0, 0, 0, .10), 0 12px 24px rgba(0, 0, 0, .15), inset 0 0 0 1px rgba(0, 0, 0, .05);
+  --backdrop: rgba(0, 0, 0, .5);
+  --h-control: 32px;
   --run-height: 36px;
-  --topbar-h: 40px;
+  --topbar-h: 48px;
   /* 進み具合の段階ごとの色（画像・ストーリー・プロンプト・動画・1本につなぐ） */
   --st-image: #0f8f80;
-  --st-story: #7b4fd6;
-  --st-prompt: #1a6fd8;
+  --st-story: #9b3db5;
+  --st-prompt: #0074e2;
   --st-video: #d9780b;
-  --st-join: #2a9548;
+  --st-join: #198100;
   /* 白い文字を載せる塗り（作業中の段階・札）は、段階の色を黒に寄せて暗くする（数値が小さいほど暗い） */
   --st-fill: 80%;
-  --font: "Source Han Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --font: "Figtree", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   color-scheme: light;
   box-sizing: border-box;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1b1b1b;
-    --surface: #2c2c2c;
-    --surface-2: #232323;
-    --head: #252525;
-    --ink: #e8e8e8;
-    --muted: #ababab;
-    --line: #3e3e3e;
-    --line-strong: #5a5a5a;
-    --control: #383838;
-    --control-hover: #454545;
-    --accent: #0d66d0;
-    --accent-hover: #1473e6;
-    --on-accent: #ffffff;
-    --accent-text: #5aa9fa;
-    --accent-soft: #1d3554;
-    --on-accent-soft: #cfe3fb;
+    --surface: #262626;
+    --surface-2: #1b1b1b;
+    --head: #262626;
+    --ink: #ffffff;
+    --muted: #c6c6c6;
+    --line: rgba(255, 255, 255, .10);
+    --line-strong: #525252;
+    --control: rgba(255, 255, 255, .10);
+    --control-hover: rgba(255, 255, 255, .16);
+    --accent: #f1f1f1;
+    --accent-hover: #ffffff;
+    --on-accent: #111111;
+    --accent-text: #f1f1f1;
+    --accent-soft: #303030;
+    --on-accent-soft: #f1f1f1;
+    --link: #a1caff;
+    --focus: #f1f1f1;
+    --knob: #262626;
     --lamp: #f0a63a;
     --lamp-glow: rgba(240, 166, 58, .28);
-    --danger: #ff8a8a;
-    --danger-soft: #3d1c1c;
-    --ok: #6fd6a8;
-    --warn-soft: #3a2c10;
-    --on-warn-soft: #ffe0a8;
-    --st-image: #3fc9b5;
-    --st-story: #a98bff;
-    --st-prompt: #5aa9fa;
-    --st-video: #f0a63a;
-    --st-join: #5fd38a;
+    --disabled-ink: #7a7a7a;
+    --section-head: #2e2e2e;
+    --danger: #ffaea7;
+    --danger-soft: #5b2b28;
+    --danger-fill: #ff705d;
+    --danger-fill-hover: #ff8f80;
+    --on-danger: #111111;
+    --ok: #90ca90;
+    --warn-soft: #453a1c;
+    --on-warn-soft: #eec448;
+    --st-image: #4fb1a0;
+    --st-story: #d885eb;
+    --st-prompt: #6d9cfe;
+    --st-video: #df843f;
+    --st-join: #64af4c;
     --st-fill: 52%;
-    --tag-browser: #1d3554;
-    --on-tag-browser: #cfe3fb;
-    --tag-llm: #2e2444;
-    --on-tag-llm: #dcc9ff;
-    --tag-comfy: #3a2c10;
-    --on-tag-comfy: #ffe0a8;
-    --film: #121212;
+    --tag-browser: #253c5a;
+    --on-tag-browser: #a1caff;
+    --tag-llm: #4a2f51;
+    --on-tag-llm: #eaacf8;
+    --tag-comfy: #453a1c;
+    --on-tag-comfy: #eec448;
+    --film: #0d0d0d;
     --film-cell: #333333;
+    --shadow-low: 0 2px 4px rgba(0, 0, 0, .25), 0 4px 8px rgba(0, 0, 0, .40), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    --shadow-high: 0 4px 6px rgba(0, 0, 0, .50), 0 12px 24px rgba(0, 0, 0, .70), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    --backdrop: rgba(0, 0, 0, .8);
     color-scheme: dark;
   }
 }
 *, *::before, *::after { box-sizing: inherit; }
 html, body { height: 100%; }
 body { display: flex; flex-direction: column; overflow: hidden; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 13px; line-height: 1.5; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
 /* アプリの画面として、見出し・ボタン・説明文などは文字選択できないようにする（キャレットブラウジングでも縦線が出ない）。
    入力欄と、コピーしたい文字（エラー内容・メタデータ・貼り付け用の文字列）だけ選択できる */
 body { -webkit-user-select: none; user-select: none; caret-color: transparent; }
 input, textarea, select, [contenteditable="true"] { -webkit-user-select: text; user-select: text; caret-color: auto; }
 pre, code, .help-box, .copyline, #meta-text, .msg { -webkit-user-select: text; user-select: text; }
+.icon { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); vertical-align: middle; }
+.status-dot[data-state="ok"] { background: var(--ok); }
+.status-dot[data-state="warn"] { background: var(--lamp); }
+.status-dot[data-state="down"] { background: var(--danger-fill); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ===== CONTROLS ===== */
 button, .filebtn, a.btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--h-control);
-  border: 1px solid var(--line-strong); background: var(--control); color: var(--ink); text-decoration: none;
-  border-radius: var(--radius-s); padding: 3px 12px; cursor: pointer; font-size: 12px; font-weight: 500; line-height: 1.3;
-  transition: background-color .12s, border-color .12s, color .12s;
+  border: 1px solid transparent; background: var(--control); color: var(--ink); text-decoration: none;
+  border-radius: var(--radius-s); padding: 3px 12px; cursor: pointer; font-size: 13px; font-weight: 500; line-height: 1.3; white-space: nowrap;
+  transition: background-color .175s, border-color .175s, color .175s;
 }
-button:hover:not(:disabled), .filebtn:hover, a.btn:hover { background: var(--control-hover); border-color: var(--muted); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button:hover:not(:disabled), .filebtn:hover, a.btn:hover { background: var(--control-hover); border-color: transparent; }
+button:active:not(:disabled) { transform: scale(.98); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
 button.quiet { border-color: transparent; background: transparent; }
 button.quiet:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
-button.big { width: 100%; font-size: 14px; letter-spacing: .06em; }
-button.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button.big { width: 100%; font-size: 14px; letter-spacing: .02em; }
+button.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 button.run:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
-button.chip { border-radius: 999px; min-height: 24px; padding: 1px 10px; font-size: 12px; }
-button.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
-button.chip[aria-pressed="true"]::before { content: "✓"; }
+button.chip { border-radius: 999px; min-height: 28px; padding: 1px 12px; font-size: 12px; }
+button.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
 .llm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
 .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
 .chip-dot[data-state="ok"] { background: var(--ok); }
 button.chip[aria-pressed="true"] .chip-dot { box-shadow: 0 0 0 1.5px var(--on-accent); }
-button.link { border: none; background: none; padding: 0; min-height: 0; color: var(--accent-text); text-decoration: underline; font-weight: 700; }
+button.link { border: none; background: none; padding: 0; min-height: 0; color: var(--link); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
 button.link:hover:not(:disabled) { background: none; }
-button.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
-button.danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+button.danger { color: var(--on-danger); border-color: var(--danger-fill); background: var(--danger-fill); font-weight: 600; }
+button.danger:hover:not(:disabled) { background: var(--danger-fill-hover); border-color: var(--danger-fill-hover); color: var(--on-danger); }
 .filebtn { position: relative; overflow: hidden; }
 .filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.filebtn:focus-within { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+.filebtn:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 input[type="text"], input[type="url"], input[type="password"], input[type="number"], select, textarea {
   width: 100%; min-height: var(--h-control); background: var(--surface-2); border: 1px solid var(--line-strong);
-  border-radius: var(--radius-s); padding: 3px 8px; font-size: 13px; transition: border-color .12s;
+  border-radius: var(--radius-s); padding: 4px 10px; font-size: 13px; transition: border-color .175s, box-shadow .175s;
 }
-select { padding-right: 4px; }
-input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--muted); }
-input:focus, select:focus, textarea:focus { border-color: var(--accent-text); outline: none; box-shadow: 0 0 0 1px var(--accent-text); }
+select { padding-right: 6px; }
+input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: #919191; }
+input:focus, select:focus, textarea:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 1px var(--focus); }
 input:disabled, select:disabled, textarea:disabled { opacity: .5; cursor: not-allowed; }
-textarea { resize: vertical; line-height: 1.55; padding: 6px 8px; }
+textarea { resize: vertical; line-height: 1.55; padding: 6px 10px; }
 input[type="range"] { accent-color: var(--accent); }
 
 /* ===== トグルスイッチ（チェックボックスはすべてこの見た目。Stillmange と同じ） ===== */
 input[type="checkbox"] {
-  appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 34px; height: 20px; margin: 0;
-  border-radius: 999px; background: var(--line-strong); cursor: pointer; transition: background .15s;
+  appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 36px; height: 20px; margin: 0;
+  border-radius: 999px; background: var(--line-strong); cursor: pointer; transition: background .175s;
 }
 input[type="checkbox"]::before {
   content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-  background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, .35); transition: transform .15s;
+  background: var(--knob); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .175s cubic-bezier(.24, 1, .4, 1);
 }
 input[type="checkbox"]:checked { background: var(--accent); }
-input[type="checkbox"]:checked::before { transform: translateX(14px); }
-input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+input[type="checkbox"]:checked::before { transform: translateX(16px); }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 input[type="checkbox"]:disabled { opacity: .45; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
 
 /* ===== 数値（スライダー＋ステッパー。数値を押すと手入力。Stillmange と同じ） ===== */
-.numctl { display: grid; grid-template-columns: 24px minmax(40px, 1fr) 24px minmax(52px, auto); align-items: center; gap: 4px; width: 100%; min-width: 0; }
-.numctl.no-slider { grid-template-columns: 24px minmax(52px, 1fr) 24px; }
+.numctl { display: grid; grid-template-columns: 26px minmax(40px, 1fr) 26px minmax(52px, auto); align-items: center; gap: 6px; width: 100%; min-width: 0; }
+.numctl.no-slider { grid-template-columns: 26px minmax(52px, 1fr) 26px; }
 .numctl.no-slider .dec { order: 1; }
 .numctl.no-slider .numctl-val, .numctl.no-slider .numctl-edit { order: 2; }
 .numctl.no-slider .inc { order: 3; }
 .numctl > input.numctl-src { display: none; }
-.numctl-step { width: 24px; height: 24px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 700; line-height: 1; }
+.numctl-step { width: 26px; height: 26px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 700; line-height: 1; }
 .numctl-range { min-width: 0; margin: 0; }
-.numctl-val, .numctl-edit { height: 26px; min-height: 0; padding: 0 6px; border-radius: var(--radius-s); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
-.numctl-val { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: text; white-space: nowrap; }
-.numctl-val:hover:not(:disabled) { border-color: var(--accent-text); background: var(--surface-2); }
+.numctl-val, .numctl-edit { height: 28px; min-height: 0; padding: 0 8px; border-radius: var(--radius-xs); font-size: 12px; font-variant-numeric: tabular-nums; text-align: center; }
+.numctl-val { border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); cursor: text; white-space: nowrap; }
+.numctl-val:hover:not(:disabled) { border-color: #919191; background: var(--surface-2); }
 .numctl-val.empty { color: var(--muted); }
 .numctl-edit { width: 100%; }
 .numctl.disabled { opacity: .5; pointer-events: none; }
 label.field > .numctl { margin-top: 3px; }
 input[type="range"] { width: 100%; }
-label.field { display: block; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+label.field { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 500; color: var(--muted); }
 label.field > input, label.field > select, label.field > textarea { margin-top: 3px; color: var(--ink); }
 label.check { display: flex; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 6px; }
 label.check input { margin: 0; }
@@ -206,7 +234,7 @@ label.check input { margin: 0; }
 .msg.err { color: var(--danger); }
 details > summary {
   list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 0;
-  font-size: 12px; font-weight: 700; color: var(--muted);
+  font-size: 12px; font-weight: 600; color: var(--muted);
 }
 details > summary::-webkit-details-marker { display: none; }
 details > summary::before {
@@ -216,24 +244,24 @@ details > summary::before {
 details[open] > summary::before { transform: rotate(90deg); }
 details > summary:hover { color: var(--ink); }
 details[open] > summary { margin-bottom: 4px; }
-code { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); padding: 0 5px; border-radius: 3px; word-break: break-all; font-size: 12px; }
+code { background: var(--control); border: 1px solid transparent; color: var(--ink); padding: 0 6px; border-radius: var(--radius-xs); word-break: break-all; font-size: 12px; font-family: ui-monospace, "SF Mono", Monaco, Consolas, monospace; }
 
 /* ===== APP SHELL ===== */
 .topbar {
   flex: none; position: sticky; top: 0; z-index: 10; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 10px;
-  background: var(--head); border-bottom: 1px solid var(--line);
+  background: var(--surface); border-bottom: 1px solid var(--line);
 }
-.topbar h1 { font-size: 14px; margin: 0 6px 0 2px; font-weight: 700; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+.topbar h1 { font-size: 16px; margin: 0 10px 0 4px; font-weight: 600; letter-spacing: 0; display: flex; align-items: center; gap: 8px; }
 .topbar h1::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: var(--lamp); }
 .pills { display: flex; gap: 4px; margin-left: auto; flex-wrap: nowrap; overflow: hidden; }
-.pill { min-height: 24px; font-size: 12px; border-radius: 999px; padding: 1px 10px; background: transparent; border-color: var(--line); white-space: nowrap; }
+.pill { min-height: 28px; font-size: 12px; border-radius: 999px; padding: 1px 12px; background: var(--control); border-color: transparent; white-space: nowrap; }
 .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
 .pill[data-state="ok"]::before { background: var(--ok); }
 .pill[data-state="warn"]::before { background: var(--lamp); }
 .pill[data-state="down"]::before { background: var(--danger); }
-.pill-label { font-weight: 700; }
+.pill-label { font-weight: 600; }
 .pill-app { color: var(--muted); }
-.banner { flex: none; background: var(--warn-soft); color: var(--on-warn-soft); padding: 6px 12px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.banner { flex: none; background: var(--warn-soft); color: var(--on-warn-soft); padding: 8px 16px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .layout { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: var(--side-w, 320px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 1px; background: var(--line); }
 @media (max-width: 860px) {
   html, body { height: auto; }
@@ -257,62 +285,62 @@ body.resizing-side iframe, body.resizing-side video { pointer-events: none; }
 .side-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
 .psec { border-bottom: 1px solid var(--line); }
 .psec-title {
-  margin: 0; padding: 5px 10px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted);
-  background: var(--head); border-bottom: 1px solid var(--line);
+  margin: 0; padding: 8px 14px; font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink);
+  background: var(--section-head); border-bottom: 1px solid var(--line);
 }
 .psec-title-tools { display: flex; align-items: center; gap: 8px; }
-.help-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-weight: 400; letter-spacing: 0; cursor: pointer; }
+.help-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--muted); cursor: pointer; }
 /* 説明オフ: 左パネルの説明文を隠す（エラーや注意、生成する大きさなどの結果の表示は残す） */
 body.no-help #flow-info, body.no-help #long-info, body.no-help #long-end-info, body.no-help #long-sd-info, body.no-help #long-i2i-info,
 body.no-help #mode-info, body.no-help #loop-info, body.no-help #loop-status, body.no-help #skill-default-note, body.no-help #run-note, body.no-help .col-input .hint-help { display: none !important; }
 body.no-help #frame-info .frame-help { display: none; }
-.psec-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.psec-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
 .psec-body > .field, .psec-body > details, .psec-body .field { margin: 0; }
 .prop { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; margin: 0; }
 .prop-top { align-items: start; }
 .prop-top .prop-label { padding-top: 3px; }
 .prop-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.prop-label output { color: var(--ink); font-weight: 700; }
+.prop-label output { color: var(--ink); font-weight: 600; }
 /* 詳しい設定（モーダル） */
-.adv-open { width: 100%; justify-content: flex-start; gap: 8px; background: var(--surface-2); }
-.adv-badge { font-size: 11px; color: var(--accent-text); font-weight: 700; }
+.adv-open { width: 100%; justify-content: flex-start; gap: 8px; background: var(--control); }
+.adv-badge { font-size: 11px; color: var(--on-accent); background: var(--accent); border-radius: 999px; padding: 0 7px; font-weight: 600; }
 .adv-badge:empty { display: none; }
 .adv-arrow { margin-left: auto; font-size: 16px; color: var(--muted); }
 dialog#advanced {
   width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
-  padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  box-shadow: var(--shadow-high);
 }
 dialog#advanced[open] { display: flex; flex-direction: column; }
-dialog.leave { width: min(560px, 94vw); padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: 0 12px 40px rgba(0, 0, 0, .45); }
-dialog.leave::backdrop { background: rgba(0, 0, 0, .55); }
-dialog.leave h2 { margin: 0 0 8px; font-size: 16px; }
+dialog.leave { width: min(560px, 94vw); padding: 20px 24px; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-high); }
+dialog.leave::backdrop { background: var(--backdrop); }
+dialog.leave h2 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
 dialog.leave p { margin: 0 0 12px; line-height: 1.6; }
 .leave-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .leave-actions .primary { order: 9; }
-dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
+dialog#advanced::backdrop { background: var(--backdrop); }
 .adv-sub { margin-left: 10px; font-size: 12px; color: var(--muted); }
-.adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.adv-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .adv-gen { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 10px; align-items: start; }
 .adv-gen .field { margin: 0; }
 @media (max-width: 640px) { .adv-gen { grid-template-columns: 1fr; } }
-.adv-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--head); border-top: 1px solid var(--line); }
+.adv-foot { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--surface); border-top: 1px solid var(--line); }
 .adv-foot .note { margin: 0; }
 .adv-foot .primary { margin-left: auto; min-width: 96px; }
 /* ワークフローの設定などは、重要な順に上から1つずつ並べる（横には並べない） */
 .wfp-grid { display: flex; flex-direction: column; gap: 8px; }
-.wfp-group { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); padding: 6px 8px 4px; }
-.wfp-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.wfp-group { border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-2); padding: 10px 12px 6px; }
+.wfp-title { font-size: 13px; font-weight: 600; margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .wfp-row { display: grid; grid-template-columns: 220px minmax(0, 720px); gap: 8px; align-items: center; margin-bottom: 4px; }
 @media (max-width: 640px) { .wfp-row { grid-template-columns: 1fr; } }
 .wfp-row .prop-label { white-space: normal; line-height: 1.25; }
-.wfp-row.changed .prop-label { color: var(--accent-text); font-weight: 700; }
+.wfp-row.changed .prop-label { color: var(--ink); font-weight: 600; }
 .wfp-row.changed .prop-label::after { content: " ●"; }
 .wfp-row input[type="checkbox"] { justify-self: start; margin: 0; }
-.wfp-row select, .wfp-row input:not([type="checkbox"]) { min-height: 26px; padding: 1px 6px; font-size: 12px; }
+.wfp-row select, .wfp-row input:not([type="checkbox"]) { min-height: 28px; padding: 1px 8px; font-size: 12px; }
 .wfp-lora { border-left: 2px solid var(--line-strong); padding-left: 6px; margin-bottom: 4px; }
 #seconds-field, #crop-zoom-field { grid-template-columns: 76px minmax(0, 1fr); }
-.side-foot { flex: none; padding: 8px 10px; background: var(--head); border-top: 1px solid var(--line); }
+.side-foot { flex: none; padding: 12px 14px; background: var(--surface); border-top: 1px solid var(--line); }
 
 /* 右: 作業エリア */
 .col-output { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; background: var(--bg); }
@@ -320,66 +348,66 @@ dialog#advanced::backdrop { background: rgba(0, 0, 0, .55); }
 .col-output > .video-panel { flex: none; display: flex; flex-direction: column; }
 .panel { background: var(--surface); border-bottom: 1px solid var(--line); }
 .panel-head {
-  display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 2px 10px;
-  background: var(--head); border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px;
+  background: var(--section-head); border-bottom: 1px solid var(--line);
 }
-.panel-head h2 { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
-.head-count { font-weight: 500; letter-spacing: 0; margin-left: 4px; }
+.panel-head h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0; color: var(--ink); }
+.head-count { font-weight: 400; letter-spacing: 0; margin-left: 4px; color: var(--muted); }
 .head-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-.panel-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.panel-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .field-label { font-size: 12px; color: var(--muted); margin: 0; }
-.box-title { font-size: 12px; font-weight: 700; margin: 0 0 6px; }
+.box-title { font-size: 13px; font-weight: 600; margin: 0 0 6px; }
 
 /* ===== 素材（素材から動画・Ref2VA） ===== */
 .mat-drop {
   display: grid; place-items: center; min-height: 64px; padding: 6px; text-align: center; cursor: pointer;
-  border: 1px dashed var(--line-strong); border-radius: var(--radius-s); background: var(--surface-2);
+  border: 1px dashed var(--line-strong); border-radius: var(--radius-l); background: var(--surface-2);
 }
-.mat-drop:hover { border-color: var(--muted); }
-.mat-drop.over { border-color: var(--accent-text); background: var(--accent-soft); }
+.mat-drop:hover { border-color: #919191; background: var(--control); }
+.mat-drop.over { border-color: var(--accent); background: var(--accent-soft); }
 .mat-drop.has-items { place-items: stretch; text-align: left; border-style: solid; border-color: var(--line); }
 .mat-drop .hint { color: var(--muted); font-size: 12px; }
 .mat-drop .hint strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
 .mat-strip { display: flex; flex-wrap: wrap; gap: 4px; }
 .mat-strip:empty { display: none; }
-.mat-chip { position: relative; width: 66px; height: 50px; border-radius: 3px; overflow: hidden; background: var(--film); color: var(--film-ink); display: grid; place-items: center; }
+.mat-chip { position: relative; width: 66px; height: 50px; border-radius: var(--radius-xs); overflow: hidden; background: var(--film); color: var(--film-ink); display: grid; place-items: center; }
 .mat-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mat-icon { font-size: 18px; line-height: 1; }
 .mat-tag { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1.5; background: rgba(0, 0, 0, .7); color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 dialog#materials {
   width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
-  padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  box-shadow: var(--shadow-high);
 }
 dialog#materials[open] { display: flex; flex-direction: column; }
-dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
+dialog#materials::backdrop { background: var(--backdrop); }
 .dropzone.mat-dropzone { min-height: 64px; flex: none; }
 #mat-limits { margin: 0; }
 .mat-notes { display: flex; flex-direction: column; gap: 4px; }
 .mat-notes:empty { display: none; }
-.mat-problem, .mat-warn { margin: 0; font-size: 12px; padding: 4px 8px; border-radius: var(--radius-s); white-space: pre-wrap; -webkit-user-select: text; user-select: text; }
+.mat-problem, .mat-warn { margin: 0; font-size: 12px; padding: 6px 10px; border-radius: var(--radius-s); white-space: pre-wrap; -webkit-user-select: text; user-select: text; }
 .mat-problem { color: var(--danger); background: var(--danger-soft); }
 .mat-warn { color: var(--on-warn-soft); background: var(--warn-soft); }
 .mat-kind { display: flex; flex-direction: column; gap: 6px; }
-.mat-kind-title { margin: 4px 0 0; font-size: 12px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+.mat-kind-title { margin: 4px 0 0; font-size: 13px; font-weight: 600; display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
 .mat-kind-title .note { margin: 0 0 0 auto; font-weight: 400; }
 .mat-count { font-weight: 500; color: var(--muted); }
 .mat-empty { margin: 0; }
 .mat-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 8px; }
 .mat-list:empty { display: none; }
-.mat-card { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; align-items: start; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); padding: 6px; }
+.mat-card { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-2); padding: 8px; }
 .mat-card.mat-has-video, .mat-card.mat-has-audio { grid-template-columns: 168px minmax(0, 1fr); }
-.mat-thumb { width: 100%; aspect-ratio: 4 / 3; background: var(--film); color: var(--film-ink); border-radius: 3px; overflow: hidden; display: grid; place-items: center; }
+.mat-thumb { width: 100%; aspect-ratio: 4 / 3; background: var(--film); color: var(--film-ink); border-radius: var(--radius-xs); overflow: hidden; display: grid; place-items: center; }
 .mat-has-audio .mat-thumb { aspect-ratio: auto; background: none; }
 .mat-thumb img, .mat-thumb video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .mat-thumb audio { width: 100%; height: 32px; }
 .mat-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mat-head { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.mat-tagbadge { flex: none; font-size: 11px; font-weight: 700; color: var(--on-accent-soft); background: var(--accent-soft); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
+.mat-tagbadge { flex: none; font-size: 11px; font-weight: 600; color: var(--on-tag-browser); background: var(--tag-browser); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
 .mat-tagbadge.sound { color: var(--on-tag-llm); background: var(--tag-llm); }
-.mat-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; }
+.mat-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
 .mat-tools { flex: none; display: flex; gap: 2px; }
-.mat-tools button { min-height: 22px; padding: 0 6px; font-size: 11px; }
+.mat-tools button { min-height: 24px; padding: 0 8px; font-size: 11px; }
 .mat-info { font-size: 11px; color: var(--muted); }
 .mat-fields { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 4px 6px; align-items: center; margin-top: 4px; }
 .mat-fields .prop-label { font-size: 11px; white-space: normal; line-height: 1.2; }
@@ -392,7 +420,7 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .vid-flow { flex: none; }
 .wf-export { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .wf-export .note { margin: 0; }
-.vid-flow button { min-height: 30px; font-size: 13px; }
+.vid-flow button { min-height: 32px; font-size: 13px; }
 @media (max-width: 640px) {
   .mat-list { grid-template-columns: 1fr; }
   .mat-card, .mat-card.mat-has-video, .mat-card.mat-has-audio { grid-template-columns: 1fr; }
@@ -406,16 +434,16 @@ dialog#materials::backdrop { background: rgba(0, 0, 0, .55); }
 .spec-meter { width: 100%; justify-content: flex-start; gap: 8px; min-height: 22px; padding: 0 2px; border: none; background: transparent; font-size: 11px; color: var(--muted); font-weight: 500; }
 #spec-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spec-meter:hover:not(:disabled) { background: transparent; color: var(--ink); text-decoration: underline; }
-.spec-bar { flex: none; width: 64px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.spec-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--control); overflow: hidden; }
 .spec-bar > span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .2s; }
 .spec[data-level="warn"] .spec-bar > span { background: var(--lamp); }
 .spec[data-level="over"] .spec-bar > span { background: var(--danger); }
 #spec-undo { margin-top: 4px; min-height: 24px; padding: 0 10px; font-size: 12px; }
-.spec-issues { display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-s); padding: 6px 8px; background: var(--warn-soft); color: var(--on-warn-soft); max-height: 30vh; overflow-y: auto; }
+.spec-issues { display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-s); padding: 8px 10px; background: var(--warn-soft); color: var(--on-warn-soft); max-height: 30vh; overflow-y: auto; }
 .spec[data-level="over"] .spec-issues { background: var(--danger-soft); color: var(--ink); }
 .spec[data-level="ok"] .spec-issues { background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); }
 .spec-issues ul { margin: 0; padding-left: 16px; font-size: 11px; line-height: 1.45; }
-.spec-issues li.over::marker { content: "⚠ "; color: var(--danger); }
+.spec-issues li.over::marker { content: "⚠\FE0E  "; color: var(--danger); }
 .spec-issues li.warn::marker { content: "! "; color: var(--lamp); font-weight: 700; }
 .spec-issues li.info::marker { content: "i "; color: var(--accent-text); font-weight: 700; }
 .spec-issues li.info { color: var(--muted); }
@@ -427,12 +455,12 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 
 /* ===== DROPZONE ===== */
 .dropzone {
-  display: grid; place-items: center; min-height: 150px; border: 1px dashed var(--line-strong); border-radius: var(--radius-s);
+  display: grid; place-items: center; min-height: 150px; border: 1px dashed var(--line-strong); border-radius: var(--radius-l);
   cursor: pointer; text-align: center; padding: 8px; overflow: hidden; position: relative; background: var(--surface-2);
   transition: border-color .12s, background-color .12s;
 }
-.dropzone:focus-within { outline: 2px solid var(--accent-text); outline-offset: 1px; }
-.dropzone.over { border-color: var(--accent-text); background: var(--accent-soft); }
+.dropzone:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone .hint { color: var(--muted); font-size: 12px; }
 .dropzone .hint strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
 .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -441,7 +469,7 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 #frame-canvas { position: relative; z-index: 1; display: block; max-width: 100%; max-height: 300px; touch-action: none; }
 #frame-canvas.draggable { cursor: grab; }
 #frame-canvas.dragging { cursor: grabbing; }
-#frame-actions button { min-height: 24px; padding: 1px 8px; }
+#frame-actions button { min-height: 28px; padding: 1px 10px; }
 #meta-text { white-space: pre-wrap; font-size: 11px; max-height: 200px; overflow: auto; margin: 0; color: var(--muted); }
 .dropzone.small { min-height: 90px; }
 #last-canvas { display: block; max-width: 100%; max-height: 160px; }
@@ -451,22 +479,22 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .engine-lora { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; cursor: pointer; }
 .engine-lora input { flex: none; margin: 0; }
 .engine-lora span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.engine-lora.off span { color: var(--muted); text-decoration: line-through; }
-.seg { display: flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); }
+.engine-lora.off span { color: var(--disabled-ink); }
+.seg { display: flex; gap: 2px; padding: 2px; border: none; border-radius: var(--radius-s); overflow: hidden; background: var(--control); }
 .seg button {
-  flex: 1; min-width: 0; min-height: 26px; border: none; border-radius: 0; border-right: 1px solid var(--line-strong);
-  padding: 2px 4px; font-size: 12px; background: transparent; white-space: nowrap;
+  flex: 1; min-width: 0; min-height: 28px; border: none; border-radius: calc(var(--radius-s) - 2px);
+  padding: 2px 6px; font-size: 12px; font-weight: 500; color: var(--muted); background: transparent; white-space: nowrap;
 }
-.seg button:last-child { border-right: none; }
-.seg button:hover:not(:disabled) { background: var(--control-hover); }
-.seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.seg button:last-child { margin-right: 0; }
+.seg button:hover:not(:disabled) { background: var(--control); color: var(--ink); }
+.seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-low); }
 .opt-grid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 5px 8px; align-items: center; }
 .frame-info { font-size: 12px; color: var(--muted); margin: 0; white-space: pre-wrap; }
 .frame-info:empty { display: none; }
-.frame-info strong { color: var(--ink); }
+.frame-info strong { color: var(--ink); font-weight: 600; }
 
 /* ===== STATUS ===== */
-.status-panel { padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; }
+.status-panel { padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
 /* 全体の進み具合は、下にスクロールしても常に上に出しておく */
 .col-output > .status-panel { position: sticky; top: 0; z-index: 6; box-shadow: 0 1px 0 var(--line); }
 .status-panel .help-box { max-height: 40vh; overflow-y: auto; }
@@ -475,11 +503,11 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .col-output > #long-panel > .panel-head { position: sticky; top: var(--status-h, 0px); z-index: 5; }
 @media (max-width: 860px) { .col-output > #long-panel > .panel-head { top: calc(var(--topbar-h) + var(--status-h, 0px)); } }
 .status-head { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
-#cancel { min-height: 24px; padding: 1px 10px; }
+#cancel { min-height: 28px; padding: 1px 12px; }
 .filmstrip { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; flex: none; }
 .filmstrip li {
-  position: relative; display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px; font-weight: 700; padding: 1px 9px;
-  border-radius: 3px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line);
+  position: relative; display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 11px;
+  border-radius: 999px; background: var(--control); color: var(--muted); border: 1px solid transparent;
 }
 .filmstrip li + li { margin-left: 12px; }
 .filmstrip li + li::before { content: "›"; position: absolute; left: -11px; top: 50%; transform: translateY(-55%); color: var(--muted); font-weight: 400; }
@@ -496,17 +524,17 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 .filmstrip li[data-state="done"] { background: color-mix(in srgb, var(--st) 14%, var(--surface)); color: var(--st); border-color: var(--st); }
 .filmstrip li[data-state="error"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
 .overall { display: flex; align-items: center; gap: 8px; flex: 1 1 160px; min-width: 120px; }
-.progress { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.progress { height: 4px; background: var(--control); border-radius: 999px; overflow: hidden; }
 .overall .progress { flex: 1; }
 .progress > div { height: 100%; width: 0; background-color: var(--lamp); transition: width .4s, background-color .4s; }
-.overall .progress { height: 6px; border-radius: 3px; }
+.overall .progress { height: 6px; border-radius: 999px; }
 #progress[data-phase="image"] > div { background-color: var(--st-image); }
 #progress[data-phase="story"] > div { background-color: var(--st-story); }
 #progress[data-phase="prompt"] > div { background-color: var(--st-prompt); }
 #progress[data-phase="video"] > div { background-color: var(--st-video); }
 #progress[data-phase="join"] > div { background-color: var(--st-join); }
 #progress[data-phase] + .overall-pct { color: var(--ink); }
-.overall-pct { font-size: 11px; font-weight: 700; color: var(--muted); min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
+.overall-pct { font-size: 12px; font-weight: 600; color: var(--muted); min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
 .progress.busy > div {
   background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
   background-size: 60px 100%; background-repeat: no-repeat; animation: shimmer 1.3s linear infinite;
@@ -516,12 +544,12 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 #run-status.err { color: var(--danger); }
 
 /* ComfyUI のデータ不足の案内 */
-.help-box { border: 1px solid var(--lamp); background: var(--warn-soft); color: var(--on-warn-soft); border-radius: var(--radius-s); padding: 8px 10px; font-size: 12px; }
+.help-box { border: 1px solid transparent; background: var(--warn-soft); color: var(--on-warn-soft); border-radius: var(--radius-l); padding: 10px 14px; font-size: 12px; }
 .help-head { display: flex; align-items: center; gap: 8px; }
-.help-head strong { font-size: 13px; }
-.help-head button { margin-left: auto; min-height: 22px; padding: 0 8px; color: inherit; }
+.help-head strong { font-size: 13px; font-weight: 600; }
+.help-head button { margin-left: auto; min-height: 24px; padding: 0 10px; color: inherit; }
 .help-box p { margin: 4px 0; }
-.help-items { margin: 2px 0 6px; padding-left: 1.3em; font-weight: 700; word-break: break-all; }
+.help-items { margin: 2px 0 6px; padding-left: 1.3em; font-weight: 600; word-break: break-all; }
 .help-steps { margin: 4px 0 8px; padding-left: 1.5em; }
 .help-steps li { margin-bottom: 2px; }
 .help-steps ul { margin: 2px 0; padding-left: 1.2em; }
@@ -546,11 +574,11 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 /* サムネイルは常に1行。増えたら横スクロール（スクロールバーを常に見せ、マウスホイールでも横に動く） */
 .gallery { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 2px 2px 8px; margin: 0 -2px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 .gallery::-webkit-scrollbar { height: 8px; }
-.gallery::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.gallery::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; }
 .gallery::-webkit-scrollbar-track { background: transparent; }
 .gallery:empty { display: none; }
-.job { flex: 0 0 148px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden; background: var(--surface-2); display: flex; flex-direction: column; }
-.job[aria-current="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 2px var(--accent-text); }
+.job { flex: 0 0 148px; scroll-snap-align: end; border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden; background: var(--surface-2); display: flex; flex-direction: column; }
+.job[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .job-thumb { position: relative; display: block; width: 100%; min-height: 0; padding: 0; border: none; border-radius: 0; background: var(--film); aspect-ratio: 16 / 10; overflow: hidden; }
 .job-thumb:hover:not(:disabled) { background: var(--film); }
 .job-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; transition: filter .3s; }
@@ -569,19 +597,19 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 #prompt-panel.long-view .head-tools, #prompt-panel.long-view .revise-row { display: none; }
 #prompt-panel.long-view textarea { background: var(--surface); }
 /* 区間の間のつなぎの画像のエリア */
-.long-keycard { display: grid; grid-template-columns: 180px 1fr; gap: 10px; margin: 0 0 0 24px; padding: 8px; border: 1px dashed var(--line-strong); border-radius: var(--radius-s); background: var(--surface); position: relative; }
+.long-keycard { display: grid; grid-template-columns: 180px 1fr; gap: 12px; margin: 0 0 0 24px; padding: 10px; border: 1px dashed var(--line-strong); border-radius: var(--radius-l); background: var(--surface); position: relative; }
 .long-keycard::before { content: "↓"; position: absolute; left: -18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 700; }
 .long-keycard[data-has="true"] { border-style: solid; border-color: var(--lamp); }
-.long-keycard[data-picked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
+.long-keycard[data-picked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .long-keytools .long-key-pick { margin-left: 4px; font-size: 12px; }
-.long-keycard.over { border-color: var(--accent-text); background: color-mix(in srgb, var(--accent-text) 8%, var(--surface)); }
+.long-keycard.over { border-color: var(--accent); background: var(--accent-soft); }
 .long-keythumb { position: relative; padding: 0; border: none; border-radius: var(--radius-s); background: var(--film); min-height: 90px; height: 100%; overflow: hidden; display: grid; place-items: center; color: var(--film-ink); font-size: 11px; white-space: pre-line; text-align: center; cursor: pointer; }
 .long-keythumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .long-keymain { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 12px; }
 .long-keyhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .long-keysrc { color: var(--muted); }
 .long-keytools { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
-.long-keytools button { min-height: 24px; padding: 0 8px; font-size: 11px; }
+.long-keytools button { min-height: 26px; padding: 0 10px; font-size: 11px; }
 .long-keyinfo summary, .long-keyprompt summary { cursor: pointer; color: var(--muted); }
 .long-keyinfo dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 4px 0 0; }
 .long-keyinfo dt { color: var(--muted); }
@@ -592,10 +620,10 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-foot > details { flex: 1; min-width: 0; }
 .long-main details summary { line-height: 22px; }
 .long-key { flex: none; display: flex; align-items: center; gap: 6px; height: 22px; font-size: 12px; color: var(--muted); white-space: nowrap; }
-.long-key img { width: 36px; height: 22px; object-fit: contain; background: var(--film); border-radius: 3px; }
-.long-key button { min-height: 22px; height: 22px; padding: 0 7px; font-size: 11px; }
-.long-row { border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); padding: 8px; display: grid; grid-template-columns: 180px 1fr; gap: 10px; align-items: stretch; }
-.long-row[data-picked="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 1px var(--accent-text); }
+.long-key img { width: 36px; height: 22px; object-fit: contain; background: var(--film); border-radius: var(--radius-xs); }
+.long-key button { min-height: 24px; height: 24px; padding: 0 9px; font-size: 11px; }
+.long-row { border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-2); padding: 10px; display: grid; grid-template-columns: 180px 1fr; gap: 12px; align-items: stretch; }
+.long-row[data-picked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .long-row[data-current="true"] { box-shadow: 0 0 0 2px var(--lamp); }
 /* サムネイルは行の高さいっぱいに広げ、画像は縦横比を保ったまま天地・左右の中央に置く */
 .long-thumb { position: relative; padding: 0; border: none; border-radius: var(--radius-s); background: var(--film); min-height: 100px; height: 100%; overflow: hidden; display: grid; place-items: center; color: var(--film-ink); font-size: 11px; }
@@ -605,7 +633,7 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-thumb .spinner { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .25); border-top-color: var(--lamp); animation: spin .9s linear infinite; }
 .long-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .long-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
-.long-head .long-name { font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+.long-head .long-name { font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
 .long-head .long-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .long-sec { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); width: 250px; }
 .long-sec .numctl { flex: 1; }
@@ -614,9 +642,9 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-state { color: var(--muted); }
 .long-state.err { color: var(--danger); }
 .long-head .long-pick { margin-left: auto; }
-.long-head .long-reseed { margin-left: auto; min-height: 22px; padding: 0 8px; font-size: 11px; }
+.long-head .long-reseed { margin-left: auto; min-height: 24px; padding: 0 10px; font-size: 11px; }
 .long-head .long-reseed + .long-pick { margin-left: 4px; }
-.long-head .long-del { min-height: 22px; padding: 0 7px; font-size: 11px; }
+.long-head .long-del { min-height: 24px; padding: 0 9px; font-size: 11px; }
 .long-main textarea, .long-keymain textarea { width: 100%; max-width: 100%; box-sizing: border-box; color: var(--ink); }
 .long-main textarea::placeholder, .long-keymain textarea::placeholder { color: var(--muted); opacity: .75; }
 .long-row { position: relative; }
@@ -628,7 +656,7 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 [data-work="video"] { --wk: var(--st-video); }
 [data-work="join"] { --wk: var(--st-join); }
 .long-row[data-work="wait"], .long-keycard[data-work="wait"] { --wk: var(--line-strong); border-style: dashed; box-shadow: none; }
-.work-tag { position: absolute; top: -9px; right: 10px; z-index: 3; padding: 0 8px; border-radius: 9px; font-size: 11px; font-weight: 700; line-height: 18px; color: #fff; background: color-mix(in srgb, var(--wk) var(--st-fill), #000); border: 1px solid var(--wk); display: inline-flex; align-items: center; gap: 5px; pointer-events: none; }
+.work-tag { position: absolute; top: -9px; right: 12px; z-index: 3; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 18px; color: #fff; background: color-mix(in srgb, var(--wk) var(--st-fill), #000); border: 1px solid var(--wk); display: inline-flex; align-items: center; gap: 5px; pointer-events: none; }
 [data-work="wait"] > .work-tag { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--line-strong); }
 .work-tag .busy-spin { width: 10px; height: 10px; border-width: 2px; border-color: rgba(255, 255, 255, .35); border-top-color: #fff; }
 /* 画像・動画を作っている（作り直している）サムネイルは暗くして、回転するマークと文字を重ねる */
@@ -640,9 +668,9 @@ textarea.autogrow { resize: none; overflow-y: hidden; min-height: var(--h-contro
 .long-thumb .long-playmark { position: absolute; right: 6px; bottom: 6px; padding: 1px 6px; border-radius: 3px; background: rgba(0, 0, 0, .6); color: #fff; font-size: 10.5px; pointer-events: none; }
 /* つなぎの画像の拡大表示 */
 dialog.zoom { padding: 0; border: none; background: transparent; max-width: 96vw; max-height: 96vh; overflow: visible; }
-dialog.zoom::backdrop { background: rgba(0, 0, 0, .82); }
+dialog.zoom::backdrop { background: var(--backdrop); }
 dialog.zoom figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-dialog.zoom img { max-width: 94vw; max-height: 86vh; object-fit: contain; border-radius: 4px; background: var(--film); cursor: zoom-out; }
+dialog.zoom img { max-width: 94vw; max-height: 86vh; object-fit: contain; border-radius: var(--radius-l); background: var(--film); cursor: zoom-out; }
 dialog.zoom figcaption { color: #fff; font-size: 13px; text-align: center; }
 dialog.zoom .zoom-close { position: fixed; top: 12px; right: 14px; min-height: 30px; }
 .long-main details summary { cursor: pointer; font-size: 12px; color: var(--muted); }
@@ -674,7 +702,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job[data-state="done"] .job-badge::before { background: #4fd18f; }
 .job[data-state="error"] .job-badge::before { background: #ff6b6b; }
 .job[data-state="canceled"] .job-badge { color: rgba(255, 255, 255, .75); }
-.job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 6px; font-size: 11px; font-weight: 700; text-align: center; background: var(--accent); color: var(--on-accent); }
+.job-now { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 6px; font-size: 11px; font-weight: 600; text-align: center; background: var(--accent); color: var(--on-accent); }
 .job:not([aria-current="true"]) .job-now { display: none; }
 /* 長い動画（つないだ動画）は、幅を広げてオレンジの枠と帯で目立たせる。区間の動画には「区間N」の札を付ける */
 .job.job-draft { border-style: dashed; }
@@ -682,33 +710,34 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .job.job-long { flex-basis: 236px; border: 2px solid var(--lamp); box-shadow: 0 0 0 1px var(--lamp); }
 .job.job-long[aria-current="true"] { border-color: var(--accent-text); box-shadow: 0 0 0 2px var(--accent-text); }
 .job.job-long .job-thumb { aspect-ratio: 16 / 8; }
-.job-ribbon { position: absolute; right: 4px; bottom: 4px; z-index: 1; padding: 1px 6px; border-radius: 3px; font-size: 11px; font-weight: 700; pointer-events: none; background: rgba(0, 0, 0, .65); color: #fff; }
-.job.job-long .job-ribbon { left: 0; right: 0; bottom: 0; border-radius: 0; padding: 2px 8px; text-align: left; background: var(--lamp); color: #1d1300; }
+.job-ribbon { position: absolute; right: 4px; bottom: 4px; z-index: 1; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; pointer-events: none; background: rgba(0, 0, 0, .65); color: #fff; }
+.job.job-long .job-ribbon { left: 0; right: 0; bottom: 0; border-radius: 0; padding: 2px 8px; text-align: left; background: var(--lamp); color: var(--on-lamp); display: flex; align-items: center; gap: 5px; }
+.job.job-long .job-ribbon::before { content: ""; width: 12px; height: 12px; flex: none; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18M17 7.5h4M17 16.5h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18M17 7.5h4M17 16.5h4'/%3E%3C/svg%3E") center / contain no-repeat; }
 .job[aria-current="true"] .job-ribbon { bottom: 21px; }
 .job.job-long .job-title { color: var(--ink); }
-.job-body { padding: 5px 7px 7px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
-.job-title { font-weight: 700; font-size: 12px; line-height: 1.35; }
+.job-body { padding: 7px 9px 9px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.job-title { font-weight: 600; font-size: 12px; line-height: 1.35; }
 .job-status { color: var(--muted); white-space: pre-wrap; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .job-status.err { color: var(--danger); }
 .job-time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .job .progress { height: 3px; }
 .job { position: relative; cursor: pointer; }
 .job-act {
-  position: absolute; top: 4px; right: 4px; z-index: 2; min-height: 20px; padding: 0 7px; font-size: 11px; font-weight: 700;
+  position: absolute; top: 4px; right: 4px; z-index: 2; min-height: 22px; padding: 0 8px; font-size: 11px; font-weight: 600;
   display: inline-flex; align-items: center; justify-content: center; line-height: 1;
-  border: 1px solid rgba(255, 255, 255, .35); border-radius: 3px; background: rgba(0, 0, 0, .55); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .25); border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff;
 }
 .job-act:hover:not(:disabled) { background: rgba(0, 0, 0, .8); }
-.job-act.danger { background: #c9252d; border-color: transparent; color: #fff; }
+.job-act.danger { background: #c9303a; border-color: transparent; color: #fff; }
 .job-act.danger:hover:not(:disabled) { background: #a81e25; }
 .preview-label { font-size: 12px; color: var(--muted); }
 .preview-actions { flex: none; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .long-video-tools { display: flex; gap: 6px; }
 .long-video-tools[hidden] { display: none; }
 #long-i2i-field[hidden], #long-i2i-info[hidden] { display: none; }
-.preview-label.active { color: var(--accent-text); font-weight: 700; }
+.preview-label.active { color: var(--ink); font-weight: 600; }
 /* プレビューの高さは、ブラウザの表示エリアの高さの半分を基準にする（小さい画面でもつぶれないよう最低 280px） */
-.screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-s); display: grid; place-items: center; overflow: hidden; }
+.screen { position: relative; flex: none; height: max(50vh, 280px); background: var(--film); border-radius: var(--radius-l); display: grid; place-items: center; overflow: hidden; }
 .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .screen .empty { color: var(--film-ink); font-size: 12px; padding: 16px; text-align: center; }
 /* 生成中・エラーの動画を選んだとき: 元の画像を薄く出し、その上に状態を表示する */
@@ -721,31 +750,31 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 .run-row .count-field { margin: 0; }
 .run-row:has(.count-field[hidden]) { grid-template-columns: minmax(0, 1fr); }
 .run-row select, .run-row button.big { height: var(--run-height); margin: 0; }
-.run-row select { padding: 0 6px; font-size: 13px; }
+.run-row select { padding: 0 8px; font-size: 13px; }
 .run-block .note { margin: 0; font-size: 11px; }
 
 /* ===== SETTINGS DIALOG ===== */
 dialog#settings {
   width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
-  padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
+  box-shadow: var(--shadow-high);
 }
 dialog#settings[open] { display: flex; flex-direction: column; }
-dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
-.dlg-head { flex: none; display: flex; align-items: center; padding: 4px 6px 4px 14px; min-height: 36px; border-bottom: 1px solid var(--line); background: var(--head); }
-.dlg-head h2 { margin: 0; font-size: 13px; }
+dialog#settings::backdrop { background: var(--backdrop); }
+.dlg-head { flex: none; display: flex; align-items: center; padding: 8px 12px 8px 20px; min-height: 52px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.dlg-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
 .dlg-head button { margin-left: auto; }
-.dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: flex-end; padding: 5px 14px; border-top: 1px solid var(--line); background: var(--head); font-size: 12px; color: var(--muted); }
-.dlg-foot a { color: var(--accent-text); font-weight: 700; }
-.dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
-.tabs { border-right: 1px solid var(--line); padding: 6px; display: flex; flex-direction: column; gap: 1px; overflow-y: auto; background: var(--head); }
-.tab-group { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); padding: 8px 8px 2px; }
+.dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: flex-end; padding: 8px 20px; border-top: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--muted); }
+.dlg-foot a { color: var(--link); font-weight: 600; }
+.dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.tabs { border-right: 1px solid var(--line); padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--bg); }
+.tab-group { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--muted); padding: 10px 10px 4px; }
 .tab-group:first-child { padding-top: 2px; }
-.tab-group:not(:first-child) { border-top: 1px solid var(--line-strong); margin-top: 6px; padding-top: 8px; }
-.tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; padding: 3px 8px; font-size: 13px; }
-.tabs button:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
-.tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
-.pane { padding: 14px 16px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.tab-group:not(:first-child) { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 12px; }
+.tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; padding: 3px 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.tabs button:hover:not(:disabled) { background: var(--control); border-color: transparent; color: var(--ink); }
+.tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--surface); border-color: transparent; color: var(--ink); font-weight: 600; box-shadow: var(--shadow-low); }
+.pane { padding: 20px 24px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
 .pane::after { content: ""; flex: none; height: 4px; }
 @media (max-width: 700px) {
   .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
@@ -753,60 +782,68 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   .tab-group { display: none; }
   .tabs button { flex: none; }
   .pane { padding: 12px 12px 0; }
-  .pane-actions { margin: auto -12px 0; padding: 8px 12px; }
+  .pane-actions { margin: auto -12px 0; padding: 10px 12px; }
   .inline-field { grid-template-columns: 1fr; }
 }
-.pane-head h3 { margin: 0 0 2px; font-size: 16px; }
+.pane-head h3 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
 .lead { margin: 0; font-size: 12px; color: var(--muted); max-width: 72ch; }
-.lead a, .note a { color: var(--accent-text); font-weight: 700; }
-.card { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; background: var(--surface-2); }
-.card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; font-size: 13px; font-weight: 700; }
-.card-title .num { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 11px; flex: none; }
-.sub-title { display: flex; align-items: center; gap: 6px; margin: 10px 0 2px; font-size: 13px; padding-top: 8px; border-top: 1px solid var(--line); }
-.badge { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+.lead a, .note a { color: var(--link); font-weight: 600; }
+.card { border: 1px solid var(--line); border-radius: var(--radius-l); padding: 12px 14px; background: var(--surface-2); }
+.card-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.card-title .num { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 11px; flex: none; }
+.sub-title { display: flex; align-items: center; gap: 6px; margin: 10px 0 2px; font-size: 13px; font-weight: 600; padding-top: 8px; border-top: 1px solid var(--line); }
+.badge { font-size: 11px; font-weight: 500; color: var(--muted); background: var(--control); border: 1px solid transparent; border-radius: 999px; padding: 0 8px; }
 .cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: card; }
 .cards > .card { counter-increment: card; position: relative; padding-left: 42px; }
 .cards > .card::before {
-  content: counter(card); position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 11px;
+  content: counter(card); position: absolute; left: 12px; top: 12px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 11px;
 }
 .cards .card-title { margin-bottom: 4px; min-height: 20px; }
+.card-title .num, .cards > .card::before, .timeline li::before {
+  display: block; box-sizing: border-box; text-align: center; line-height: 1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-variant-numeric: lining-nums tabular-nums; text-box: trim-both cap alphabetic; padding-top: calc((20px - 1cap) / 2);
+}
+.timeline li::before { padding-top: calc((24px - 1cap) / 2); }
 .note.sub { font-size: 11px; margin-bottom: 0; }
 .copyline { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 2px 0 6px; }
 .copyline code { padding: 3px 8px; }
 .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 12px; }
-.kv dt { font-weight: 700; }
+.kv dt { font-weight: 600; }
 .kv dd { margin: 0; color: var(--muted); }
 .steps { margin: 8px 0 6px; padding-left: 20px; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .steps li { margin-bottom: 4px; }
 .inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: end; }
 .pane-actions {
-  position: sticky; bottom: 0; z-index: 2; margin: auto -16px 0; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-  background: var(--head); border-top: 1px solid var(--line);
+  position: sticky; bottom: 0; z-index: 2; margin: auto -24px 0; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  background: var(--surface); border-top: 1px solid var(--line);
 }
 .pane-actions .msg { flex: 1 1 100%; margin: 0; }
 .pane-actions .msg:empty { display: none; }
-.danger-zone { border-color: var(--danger); }
+.danger-zone { border-color: var(--danger-fill); }
 #diag-out:not(:empty) { margin-top: 8px; }
-.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: end; padding: 8px 12px; border-radius: var(--radius-s); background: var(--head); border: 1px solid var(--line); }
+.picker { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: end; padding: 10px 14px; border-radius: var(--radius-l); background: var(--bg); border: 1px solid var(--line); }
 .picker .field { margin: 0; }
 .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
 @media (max-width: 700px) { .map-grid { grid-template-columns: 1fr; } }
-.diag { font-size: 13px; margin: 4px 0; }
+.diag { font-size: 13px; margin: 4px 0; display: flex; align-items: baseline; gap: 8px; }
+.diag::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--danger-fill); transform: translateY(-1px); }
+.diag[data-state="ok"]::before { background: var(--ok); }
+.diag[data-state="warn"]::before { background: var(--lamp); }
 
 /* ===== TIMELINE ===== */
 .timeline { list-style: none; margin: 4px 0 0; padding: 0; counter-reset: step; }
 .timeline li { position: relative; padding: 0 0 12px 36px; counter-increment: step; }
 .timeline li::before {
   content: counter(step); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-weight: 700; font-size: 12px;
+  background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 12px;
 }
 .timeline li::after { content: ""; position: absolute; left: 11px; top: 28px; bottom: 2px; width: 2px; background: var(--line); }
 .timeline li:last-child::after { display: none; }
 .tl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 24px; }
-.tl-head strong { font-size: 13px; }
+.tl-head strong { font-size: 13px; font-weight: 600; }
 .timeline p { margin: 2px 0 0; font-size: 12px; color: var(--muted); max-width: 72ch; }
-.where { font-size: 11px; font-weight: 700; border-radius: 3px; padding: 0 7px; }
+.where { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 8px; }
 .where.browser { background: var(--tag-browser); color: var(--on-tag-browser); }
 .where.llm { background: var(--tag-llm); color: var(--on-tag-llm); }
 .where.comfy { background: var(--tag-comfy); color: var(--on-tag-comfy); }
@@ -815,6 +852,58 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   .progress.busy > div { animation: none; }
   .job-thumb .spinner { animation-duration: 3s; }
 }
+
+/* ===== PANEL BAR (FOLD / SEPARATE WINDOW) ===== */
+.layout { --rail-w: 28px; }
+.panel-bar { flex: none; display: flex; align-items: center; gap: 2px; height: 30px; padding: 0 4px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.panel-collapse, .panel-pop {
+  min-height: 0; height: 24px; padding: 0 7px; border: none; border-radius: var(--radius-xs); background: transparent; color: var(--muted);
+  font-size: 13px; font-weight: 600; line-height: 1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.panel-collapse:hover:not(:disabled), .panel-pop:hover:not(:disabled) { background: var(--control); color: var(--ink); border: none; }
+.panel-collapse { letter-spacing: -.12em; }
+.panel-collapse .label { display: none; letter-spacing: 0; font-size: 12px; font-weight: 500; }
+.panel-pop .label { font-size: 12px; font-weight: 500; }
+.panel-pop::before, .panel-return::before { content: ""; width: 14px; height: 14px; flex: none; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.panel-pop { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E"); }
+.panel-pop.is-detached, .panel-return { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 3 12 12M12 6v6h6M18 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4'/%3E%3C/svg%3E"); }
+[data-panel] > .panel-bar { justify-content: flex-start; }
+[data-panel="left"] > .panel-bar > .panel-collapse { margin-left: auto; }
+[data-panel="right"] > .panel-bar > .panel-pop { margin-left: auto; }
+.layout.hide-left > [data-panel="left"] > :not(.panel-bar), .layout.hide-right > [data-panel="right"] > :not(.panel-bar) { display: none; }
+.layout.hide-left > [data-panel="left"] > .panel-bar, .layout.hide-right > [data-panel="right"] > .panel-bar { height: 100%; padding: 4px 2px; border-bottom: none; align-items: flex-start; justify-content: center; }
+.layout.hide-left > [data-panel="left"] .panel-pop, .layout.hide-right > [data-panel="right"] .panel-pop { display: none; }
+.layout.hide-left > [data-panel="left"] .panel-collapse, .layout.hide-right > [data-panel="right"] .panel-collapse { margin: 0; width: 100%; height: auto; padding: 8px 0; flex-direction: column; justify-content: flex-start; }
+.panel-ghost { background: var(--surface); }
+
+/* ===== PANEL IN A SEPARATE WINDOW ===== */
+html:has(> body.panel-window-body), body.panel-window-body { height: 100%; }
+body.panel-window-body { display: flex; flex-direction: column; overflow: hidden; padding-top: 0; }
+.layout.panel-window { display: flex; flex: 1 1 auto; min-height: 0; height: 100%; background: var(--surface); }
+.layout.panel-window > [data-panel] { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.layout.panel-window .side-scroll, .layout.panel-window .insp-scroll { overflow-y: auto; }
+.layout.panel-window .panel-collapse, .layout.panel-window .side-resizer { display: none; }
+.layout.panel-window [data-panel="right"] > .panel-bar > .panel-pop { margin-left: 0; }
+.layout.hide-left { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+@media (max-width: 860px) {
+  .layout.hide-left { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .layout.hide-left > [data-panel="left"] > .panel-bar, .layout.hide-right > [data-panel="right"] > .panel-bar { height: 30px; align-items: center; justify-content: flex-start; }
+  .layout.hide-left > [data-panel="left"] .panel-collapse, .layout.hide-right > [data-panel="right"] .panel-collapse { flex-direction: row; width: auto; padding: 0 12px; }
+  .layout.hide-left .panel-collapse .label, .layout.hide-right .panel-collapse .label { display: inline; }
+}
+
+/* ===== HELP SWITCH (SAME TEXT LINE AS THE BUTTONS) ===== */
+.topbar .help-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0 4px; min-height: var(--h-control); padding: 3px 4px; font-size: 13px; font-weight: 500; line-height: 1.3; color: var(--ink); white-space: nowrap; cursor: pointer; }
+
+/* ===== HELP (HOW TO USE) ===== */
+.help-btn { border-color: transparent; background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.help-sec h4 { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.help-sec .no { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 700; display: block; box-sizing: border-box; text-align: center; line-height: 1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-variant-numeric: lining-nums tabular-nums; text-box: trim-both cap alphabetic; padding-top: calc((24px - 1cap) / 2); }
+.help-sec ul { margin: 0; padding-left: 52px; font-size: 13px; line-height: 1.75; max-width: 90ch; }
+.help-sec li + li { margin-top: 3px; }
+@media (max-width: 700px) { .help-sec ul { padding-left: 20px; } }
 </style>
 </head>
 <body>
@@ -829,6 +918,8 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
   <button class="quiet" id="save-state" title="画像・素材・設定・ストーリー・プロンプトを1つの JSON ファイルに保存します。そのファイルを画面にドロップすると、この状態に戻せます">状態を保存</button>
   <button class="quiet" id="open-flow">動画ができるまで</button>
   <button class="quiet" id="open-settings">設定</button>
+  <label class="check help-toggle" title="オフにすると、左パネルの説明文をすべて隠します（使い慣れた人向け）"><input type="checkbox" id="help-toggle" checked> 説明</label>
+  <button class="help-btn" id="open-help">？ ツールの使い方</button>
 </header>
 <div class="banner" id="setup-banner" hidden>
   <span id="setup-banner-text"></span>
@@ -836,11 +927,12 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
 </div>
 
 <main class="layout">
-  <aside class="col-input" aria-label="入力と指定">
+  <aside class="col-input" data-panel="left" aria-label="入力と指定">
+    <div class="panel-bar"><button class="panel-pop" id="btn-pop-left" type="button"><span class="label"></span></button><button class="panel-collapse" id="btn-toggle-left" type="button" aria-expanded="true"><span class="arrow"></span><span class="label">左パネル</span></button></div>
     <div class="side-resizer" id="side-resizer" role="separator" aria-orientation="vertical" aria-label="操作パネルの幅（ドラッグで変更、ダブルクリックで元に戻す）" title="ドラッグで操作パネルの幅を変えます（ダブルクリックで元の幅）" tabindex="0"></div>
     <div class="side-scroll">
       <section class="psec" aria-labelledby="flow-title">
-        <h2 class="psec-title psec-title-tools"><span id="flow-title">作り方</span><label class="help-toggle" title="オフにすると、左パネルの説明文をすべて隠します（使い慣れた人向け）"><input type="checkbox" id="help-toggle" checked> 説明</label></h2>
+        <h2 class="psec-title psec-title-tools"><span id="flow-title">作り方</span></h2>
         <div class="psec-body">
           <div class="seg" id="flow-mode" role="group" aria-labelledby="flow-title">
             <button type="button" data-flow="image">画像から動画</button>
@@ -1184,6 +1276,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <div class="tab-group" aria-hidden="true">使い方</div>
       <button role="tab" data-pane="guide" aria-selected="true">はじめに</button>
       <button role="tab" data-pane="flow">動画ができるまで</button>
+      <button role="tab" data-pane="help">ツールの使い方</button>
       <div class="tab-group" aria-hidden="true">接続</div>
       <button role="tab" data-pane="llm">文章AI</button>
       <button role="tab" data-pane="video">動画AI</button>
@@ -1248,7 +1341,7 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       </ol>
       <div class="card">
         <h4 class="card-title">接続を確認する</h4>
-        <p class="note">準備ができたら押してください。両方 🟢 になれば完了です。</p>
+        <p class="note">準備ができたら押してください。両方 <span class="status-dot" data-state="ok"></span> になれば完了です。</p>
         <button class="primary" id="run-diag">いまの設定で接続を確認</button>
         <div id="diag-out"></div>
       </div>
@@ -1302,11 +1395,22 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, .55); }
       <div class="card"><h4 class="card-title">「長い動画」のとき</h4><p class="note" style="margin:0">GPU を取り合わないように、① 文章AI（全体のストーリーと区間分け、つなぎの画像のプロンプト、全区間の動画プロンプト）→ ② Stable Diffusion（つなぎの画像。オンのときだけ）→ ③ ComfyUI（区間の動画を1本ずつ）の順に、ひとつずつ進めます。2つ目からの区間は、前の区間の動画から取り出した最後のフレームを最初の画像にします（I2VA）。作り直す区間のすぐ後ろの区間がもうあり、その区間は作り直さないときは、その区間の最初のフレームで終わるように FL2VA で作るので、継ぎ目がずれません。「つないで1本にする」は、ブラウザの中（ffmpeg.wasm）で区間の動画をつなぎ、継ぎ目で重なる1コマを落として1本の MP4 にします（初回だけ約30MBを読み込みます）。</p></div><div class="card"><h4 class="card-title">やり直すときに動く手順</h4><p class="note" style="margin:0">「このストーリーでプロンプトを作り直す」は手順4〜5だけ、「AIで修正」も手順4〜5だけ、「このプロンプトで動画を作り直す」は手順6〜10だけをやり直します。画像の読み込みや、文章AIへの依頼をくり返さないので早く終わります。</p></div>
     </section>
 
+    <section class="pane" data-pane="help" hidden>
+      <header class="pane-head"><h3>ツールの使い方</h3><p class="lead">Stillmotion でできることと、操作の流れをまとめました。</p></header>
+      <section class="help-sec"><h4><span class="no">1</span>最初に接続する</h4><ul><li>「設定」→「はじめに」の手順で、ComfyUI に web-app-cors を入れ、文章AIのサーバーで CORS をオンにします。</li><li>右上の「文章AI」「動画AI」の点が緑になればつながっています。あとからAIを起動したときは「更新」を押します。</li><li>「設定」→「マシンスペック」で GPU と VRAM を読み取っておくと、このPCに重すぎる大きさや長さのときに警告が出ます。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">2</span>1枚の画像から動画を作る</h4><ul><li>左の「作り方」で「画像から動画」を選び、「画像」に PNG をドロップします。Stable Diffusion で作った画像なら、埋め込まれたプロンプトやモデル名も読み取ります。</li><li>「動画のサイズ」で縦横比・大きさ・合わせ方（切り抜く・ぼかし余白・黒い余白）を選びます。切り抜くときは、画像をドラッグして位置を変えられます。</li><li>「プロンプトの指定」でモードを選びます。I2VA は画像を最初のフレームに、L2VA は最後のフレームにします。FL2VA は最初と最後の画像のあいだをつなぎます。</li><li>左下の「最初から実行」を押すと、文章AIがストーリーとプロンプトを書き、ComfyUI が動画を作ります。本数を選ぶと、同じ画像とプロンプトで続けて作ります。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">3</span>素材から動画を作る</h4><ul><li>「作り方」で「素材から動画」を選び、画像・動画・音声をまとめてドロップします。</li><li>素材の画面で、それぞれにタグ・使い方・メモを付けると、それらを参照した動画を作ります。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">4</span>長い動画を作る</h4><ul><li>「作り方」で「長い動画」を選び、全体の長さと区間の数を決めます。</li><li>文章AIが全体のストーリーを区間に分け、区間ごとに動画を作ります。区間の一覧で文を直したり、「区間を追加」「まだの区間を作る」で続きを作れます。</li><li>区間のつなぎ目の画像は、SD WebUI で作ることもできます。最後に「つないで1本にする」で1本の動画にします。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">5</span>ストーリーとプロンプトを直す</h4><ul><li>右の「ストーリー」を書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。</li><li>プロンプトの下の欄に直したい内容を書いて「AIで修正」（Ctrl+Enter）を押すと、文章AIが英語のプロンプトを書き直します。</li><li>「このプロンプトで動画を作り直す」で、同じ画像からもう一度作ります。「自然なループ」をオンにすると、終わりと始まりがつながるループ動画になります。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">6</span>残す・共有する</h4><ul><li>動画の下の「動画を保存」「GIFで保存」「プロンプトを保存」で残します。</li><li>上の「状態を保存」で、画像・素材・設定・ストーリー・プロンプトを JSON に保存します。その JSON を画面にドロップすると、そのときの状態に戻ります。</li><li>「Prompt Reel に投稿」で、動画と生成情報を Prompt Reel の投稿画面に渡します。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">7</span>画面を使いやすくする</h4><ul><li>上の「説明」をオフにすると、左パネルの説明文を隠します。</li><li>左パネルの上の « でパネルを畳み、作業エリアを広くできます。畳んだ細い帯の » で開きます。</li><li>「別ウィンドウ」で、左パネルだけを別のウィンドウに出せます（2画面で使うときなど）。中身はそのまま使え、ウィンドウを閉じるか「メイン画面に戻す」で元に戻ります。</li><li>左パネルの右端をドラッグすると幅を変えられます（ダブルクリックで元の幅）。</li></ul></section>
+    </section>
+
     <section class="pane" data-pane="llm" hidden>
       <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。サーバーURLの下の候補を押すと切り替わります（緑の点は起動中）。ページを開いたとき・このページに戻ってきたとき・上部の「更新」を押したときに起動中のものを探し、まだ候補にないものは自動で追加します。</p></header>
       <div class="card">
         <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
-        <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect">🔍 自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
+        <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
         <label class="field" style="margin-bottom:0">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
         <div class="llm-chips" id="llm-chips" role="group" aria-label="接続先（押すと切り替わります）"></div>
         <label class="field" style="margin-bottom:0">名前（メイン画面に表示されます）<input type="text" id="llm-name"></label>
@@ -3385,6 +3489,22 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
   progressWeights: { image: 0.1, story: 0.15, prompt: 0.2, video: 0.55 },
   // 操作パネル（左）の幅の範囲（px と、画面の幅に対する割合）
   sidePanel: { min: 260, max: 720, maxRatio: 0.6 },
+  panelWindow: {
+    pollMs: 1000,
+    minWidth: 280,
+    labels: { left: "左パネル", right: "右パネル" },
+    pop: "別ウィンドウ",
+    popTitle: "このパネルを別ウィンドウに表示します（中身はそのまま使えます。ウィンドウを閉じるとメイン画面に戻ります）",
+    back: "メイン画面に戻す",
+    backTitle: "このパネルをメイン画面に戻します",
+    ghostLabel: "別ウィンドウで表示中",
+    ghostTitle: "このパネルは別ウィンドウで表示中です（押すとメイン画面に戻します）",
+    blocked: "別ウィンドウを開けませんでした。ブラウザのポップアップのブロックを解除してください。",
+  },
+  panelFold: {
+    arrows: { left: ["«", "»"] },
+    titles: { left: ["左のパネル（作り方・画像・動画のサイズ・プロンプトの指定・実行ボタン）を隠して、作業エリアを広く表示します", "左のパネルを出します"] },
+  },
   // 画像の情報に入っているキャラクター名・人名は動画モデルには通じないので、見た目で言い換えさせる（ストーリーとプロンプトの両方）
   namingRule: `CHARACTER NAMES (strict): the image information may contain character names, person names, series or franchise titles, or artist names (tags such as "firstname lastname", "name (series)", "series name"). The video model has no idea who they are, so never write any of them. Refer to each person by their visible appearance instead - apparent sex and age, hair color and style, eye color, outfit, and other distinctive features - and keep using the same description for the same person every time (for example "the girl with long red hair in twin tails"). You may use the names only privately, to tell the people apart and, if you know the character, to fill in their usual appearance where it agrees with the picture. If the input story contains names, replace them with appearance descriptions.`,
   // 表情: 顔が固まったり急に切り替わったりしないよう、人間らしく少しずつ変わる様子を書かせる（すべての作り方のプロンプトに足す）
@@ -4100,7 +4220,7 @@ Tips for better results:
 };
 
 // ===== UTILITIES =====
-const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id) || PanelWindow.find(id);
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clone = (obj) => JSON.parse(JSON.stringify(obj));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -7057,7 +7177,7 @@ class MainView {
   }
 
   autoGrowAll() {
-    document.querySelectorAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
+    PanelWindow.queryAll("textarea.autogrow").forEach((ta) => this.autoGrow(ta));
   }
 
   saveUi(patch) {
@@ -7070,6 +7190,7 @@ class MainView {
   }
 
   destroy() {
+    this.panelWindow?.destroy();
     this.listeners.abort();
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
     for (const job of this.jobs) {
@@ -7091,15 +7212,15 @@ class MainView {
     });
     this.on($("save-state"), "click", () => this.saveState());
     // 「状態を保存」の JSON は、画面のどこにドロップしても読み込む（枠の上に落としたときは枠の側で振り分ける）
-    this.on(document, "dragover", (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); });
-    this.on(document, "drop", (e) => {
+    this.on(document, "dragover", PanelWindow.mirror("dragover", (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); }));
+    this.on(document, "drop", PanelWindow.mirror("drop", (e) => {
       if (e.defaultPrevented || ![...(e.dataTransfer?.types || [])].includes("Files")) return;
       e.preventDefault();
       if (e.target.closest?.("dialog")) return;
       const state = [...e.dataTransfer.files].find((f) => MainView.isStateFile(f));
       if (state) this.loadState(state);
       else this.status(USER_SETTINGS.messages.stateDropHere, true);
-    });
+    }));
     this.on(drop, "dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
     this.on(drop, "dragleave", () => drop.classList.remove("over"));
     this.on(drop, "drop", (e) => {
@@ -7117,7 +7238,7 @@ class MainView {
       this.store.save();
       this.statusBar.refresh();
     });
-    document.querySelectorAll("#ja-toggle button").forEach((b) => this.on(b, "click", () => this.setTranslate(b.dataset.ja === "on")));
+    PanelWindow.queryAll("#ja-toggle button").forEach((b) => this.on(b, "click", () => this.setTranslate(b.dataset.ja === "on")));
     this.linkPromptHeights();
     this.on($("run-count"), "change", (e) => { this.saveUi({ runCount: Number(e.target.value) }); this.updateRunLabels(); });
     this.on($("last-clear"), "click", () => this.clearLastImage());
@@ -7186,6 +7307,7 @@ class MainView {
     this.on($("story-to-prompt"), "click", () => this.storyToPrompt());
     this.bindLong();
     this.bindSideResizer();
+    this.bindPanels();
     this.bindHelpToggle();
     this.bindLeaveGuard();
     this.on($("rerun-video"), "click", () => this.runVideoOnly());
@@ -7197,8 +7319,8 @@ class MainView {
     this.on($("instruction"), "keydown", (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); this.revise($("instruction").value); }
     });
-    document.querySelectorAll("textarea.autogrow").forEach((ta) => this.on(ta, "input", () => this.autoGrow(ta)));
-    this.on(window, "resize", () => this.autoGrowAll());
+    PanelWindow.queryAll("textarea.autogrow").forEach((ta) => this.on(ta, "input", () => this.autoGrow(ta)));
+    this.on(window, "resize", PanelWindow.mirrorWindow("resize", () => this.autoGrowAll()));
     // サムネイルの列の上では、マウスホイールの縦の動きを横スクロールに変える（端まで行ったらページのスクロールに任せる）
     this.on($("gallery"), "wheel", (e) => {
       const g = e.currentTarget;
@@ -7303,7 +7425,7 @@ class MainView {
 
   updateTranslateUi() {
     const on = !!this.store.data.translate;
-    document.querySelectorAll("#ja-toggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.ja === "on") === on)));
+    PanelWindow.queryAll("#ja-toggle button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.ja === "on") === on)));
     if (this.longPromptView) { this.showLongPrompt(this.selectedJob); return; }
     $("prompt-ja-field").hidden = !on;
     $("to-ja").hidden = !on;
@@ -7841,7 +7963,7 @@ class MainViewAutoSize {
     $("aspect").value = ui.aspect;
     this.view.fillMegapixelOptions();
     $("aspect").disabled = workflowSize;
-    document.querySelectorAll("#fit-mode button").forEach((b) => {
+    PanelWindow.queryAll("#fit-mode button").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.fit === ui.fit));
       b.disabled = workflowSize;
     });
@@ -8166,7 +8288,7 @@ class MainViewFixedCamera {
     const cfg = USER_SETTINGS.promptOptions;
     const h3 = this.view.isH3();
     const ui = this.view.store.ui.promptOptions;
-    document.querySelectorAll("#prompt-options button").forEach((b) => {
+    PanelWindow.queryAll("#prompt-options button").forEach((b) => {
       b.setAttribute("aria-pressed", String(ui[b.dataset.group] === b.dataset.value));
       b.disabled = !h3 && cfg.h3Only.includes(b.dataset.group);
     });
@@ -8217,7 +8339,7 @@ class MainViewLoop {
     const visible = !this.view.isRef() && !this.view.isLong() && this.view.isH3() && this.view.promptOptions().mode === "FL2VA" && !this.view.last;
     const on = this.view.store.ui.loop === "on";
     $("loop-box").hidden = !visible;
-    document.querySelectorAll("#loop-choice button").forEach((b) => {
+    PanelWindow.queryAll("#loop-choice button").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.value === this.view.store.ui.loop));
       b.disabled = !!this.view.running;
     });
@@ -8444,7 +8566,7 @@ class MainViewLoop {
   }
 
   setStep(step, state, note) {
-    const li = document.querySelector(`#filmstrip li[data-step="${step}"]`);
+    const li = PanelWindow.query(`#filmstrip li[data-step="${step}"]`);
     if (state === "active") this.activeStep = step;
     li.dataset.state = state;
     li.querySelector("small").textContent = note;
@@ -8454,7 +8576,7 @@ class MainViewLoop {
   // 画像・プロンプト・動画を1本のゲージにまとめた全体の進み具合
   updateProgress() {
     const w = USER_SETTINGS.progressWeights;
-    const stateOf = (step) => document.querySelector(`#filmstrip li[data-step="${step}"]`).dataset.state;
+    const stateOf = (step) => PanelWindow.query(`#filmstrip li[data-step="${step}"]`).dataset.state;
     const part = (state) => ({ done: 1, active: 0.5 })[state] || 0;
     const run = this.view.currentRun ? this.view.jobs.filter((j) => this.view.currentRun.has(j.id) && j.state !== "canceled") : [];
     const jobPart = (j) => (j.state === "running" ? j.progress : this.view.isPending(j) ? 0 : 1);
@@ -8489,13 +8611,13 @@ class MainViewLoop {
     $("long-list").querySelectorAll("input, textarea, .long-del, .long-key-btn").forEach((el) => { el.disabled = busy; });
     if (!busy) $("long-list").querySelectorAll(".long-key-sd").forEach((el) => { el.disabled = !this.view.longSdOn() || el.dataset.lock === "true"; });
     if (!busy) $("long-list").querySelectorAll(".long-key-pick input, .long-reseed").forEach((el) => { el.disabled = el.dataset.lock === "true"; });
-    document.querySelectorAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
+    PanelWindow.queryAll("#flow-mode button").forEach((b) => { b.disabled = busy; });
     if (!busy) this.view.updatePromptOptions();
-    else document.querySelectorAll("#prompt-options button, #loop-choice button, #loop-recheck").forEach((b) => { b.disabled = true; });
+    else PanelWindow.queryAll("#prompt-options button, #loop-choice button, #loop-recheck").forEach((b) => { b.disabled = true; });
     if (!busy) this.view.updateFrame();
     else {
       $("aspect").disabled = true;
-      document.querySelectorAll("#fit-mode button").forEach((b) => { b.disabled = true; });
+      PanelWindow.queryAll("#fit-mode button").forEach((b) => { b.disabled = true; });
     }
     if (!busy && this.view.longSegs) this.view.updateLongButtons();
     this.updateCancel();
@@ -8626,12 +8748,12 @@ class MainViewModeAndMaterials {
     const ref = this.isRef();
     const cfg = USER_SETTINGS.refs;
     const long = this.isLong();
-    document.querySelectorAll("#flow-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.view.store.uiFlow)));
+    PanelWindow.queryAll("#flow-mode button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.view.store.uiFlow)));
     $("flow-info").textContent = cfg.flowInfo[this.view.store.uiFlow];
     $("sec-long").hidden = !long;
     $("long-panel").hidden = !long;
     $("long-video-tools").hidden = !long;
-    document.querySelector('#filmstrip li[data-step="join"]').hidden = !long;
+    PanelWindow.query('#filmstrip li[data-step="join"]').hidden = !long;
     this.view.applyLongPromptView(long);
     $("story-title").textContent = long ? "全体のストーリー" : "ストーリー";
     $("story-to-prompt").textContent = long ? "このストーリーで区間を分け直す" : "このストーリーでプロンプトを作り直す";
@@ -8647,7 +8769,7 @@ class MainViewModeAndMaterials {
     $("fit-field").hidden = ref;
     $("popt-mode").hidden = ref || long;
     $("popt-mode-seg").hidden = ref || long;
-    document.querySelector('#filmstrip li[data-step="image"]').firstChild.textContent = ref ? "素材" : "画像";
+    PanelWindow.query('#filmstrip li[data-step="image"]').firstChild.textContent = ref ? "素材" : "画像";
     $("run-note").textContent = long ? "全体のストーリーを区間に分けて、1区間ずつ順番に作ります。" : ref ? "同じ素材・プロンプトで、選んだ本数を作ります。" : "同じ画像・プロンプトで、選んだ本数を作ります。";
     if (!this.view.running) {
       if (ref) this.view.setStep("image", this.view.materialItems.length ? "done" : "idle", Materials.shortSummary(this.view.materialItems));
@@ -8684,7 +8806,7 @@ class MainViewModeAndMaterials {
     this.view.on($("mat-clear"), "click", () => {
       if (this.view.materialItems.length && confirm(USER_SETTINGS.messages.materialsClearConfirm)) this.setMaterials([]);
     });
-    document.querySelectorAll("#flow-mode button").forEach((b) => this.view.on(b, "click", () => this.setFlow(b.dataset.flow)));
+    PanelWindow.queryAll("#flow-mode button").forEach((b) => this.view.on(b, "click", () => this.setFlow(b.dataset.flow)));
     Materials.load().then((items) => {
       // 読み込み中に追加された素材があれば、保存されていた素材の後ろにつなげる
       const added = this.view.materialItems.filter((i) => !items.some((x) => x.id === i.id));
@@ -8780,7 +8902,7 @@ class MainViewModeAndMaterials {
       const t = tags.get(i.id);
       const chip = el("span", "mat-chip");
       chip.title = `${t.tag}${t.sound ? ` + ${t.sound}` : ""}　${i.name}`;
-      if (i.thumb) { const img = el("img"); img.src = i.thumb; img.alt = ""; chip.append(img); } else chip.append(el("span", "mat-icon", i.kind === "audio" ? "♪" : "▶"));
+      if (i.thumb) { const img = el("img"); img.src = i.thumb; img.alt = ""; chip.append(img); } else chip.append(el("span", "mat-icon", i.kind === "audio" ? "♪\uFE0E" : "▶\uFE0E"));
       chip.append(el("span", "mat-tag", t.tag.replace(/[<>]/g, "") + (t.sound ? "+音" : "")));
       return chip;
     }));
@@ -8800,7 +8922,7 @@ class MainViewModeAndMaterials {
     // 入力中の欄があると、作り直すときの blur で change が走り、描き直しが入れ子になるので先に確定させる
     const focused = document.activeElement;
     if (focused && $("materials").contains(focused) && focused.closest(".mat-list")) { focused.blur(); return this.renderMaterials(); }
-    document.querySelectorAll("#materials .mat-kind").forEach((section) => {
+    PanelWindow.queryAll("#materials .mat-kind").forEach((section) => {
       const kind = section.dataset.kind;
       const list = ordered.filter((i) => i.kind === kind);
       section.querySelector(".mat-count").textContent = `${kind === "audio" ? c.audio : list.length} / ${cfg.max[kind]}`;
@@ -8826,7 +8948,7 @@ class MainViewModeAndMaterials {
     };
     const card = el("article", "mat-card");
     const thumb = el("div", "mat-thumb");
-    if (item.thumb) { const img = el("img"); img.src = item.thumb; img.alt = ""; thumb.append(img); } else thumb.append(el("span", "mat-icon", item.kind === "audio" ? "♪" : "▶"));
+    if (item.thumb) { const img = el("img"); img.src = item.thumb; img.alt = ""; thumb.append(img); } else thumb.append(el("span", "mat-icon", item.kind === "audio" ? "♪\uFE0E" : "▶\uFE0E"));
     const main = el("div", "mat-main");
     const head = el("div", "mat-head");
     head.append(el("span", "mat-tagbadge", tag.tag));
@@ -9151,7 +9273,7 @@ class MainViewMachineSpec {
   renderBusy() {
     const m = USER_SETTINGS.messages;
     const q = this.busyQueue || [];
-    document.querySelectorAll(".busy-mask").forEach((mask) => {
+    PanelWindow.queryAll(".busy-mask").forEach((mask) => {
       const id = mask.dataset.for;
       const state = q[0] === id ? "thinking" : q.includes(id) ? "waiting" : "";
       mask.hidden = !state;
@@ -9774,12 +9896,12 @@ class MainViewChrome {
       e.preventDefault();
       e.returnValue = "";
     });
-    this.view.on(window, "keydown", (e) => {
+    this.view.on(window, "keydown", PanelWindow.mirrorWindow("keydown", (e) => {
       const reload = e.key === "F5" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r");
       if (!reload || this.allowLeave || !this.hasWork()) return;
       e.preventDefault();
       this.openLeaveDialog("reload");
-    });
+    }));
     this.view.on($("leave-cancel"), "click", () => dlg.close());
     this.view.on($("leave-state"), "click", () => this.view.saveState());
     this.view.on($("leave-long"), "click", () => {
@@ -9811,10 +9933,46 @@ class MainViewChrome {
     dlg.showModal();
   }
 
+  // SIDE PANEL (FOLD / SEPARATE WINDOW)
+  bindPanels() {
+    PanelWindow.onWindow((doc, win) => {
+      const numbers = NumberControl.watch(doc.body);
+      return () => numbers.disconnect();
+    });
+    this.view.on($("btn-toggle-left"), "click", () => this.togglePanel());
+    this.view.panelWindow = new PanelWindow({
+      side: "left",
+      col: PanelWindow.query('[data-panel="left"]'),
+      button: $("btn-pop-left"),
+      onChange: (on, error) => {
+        if (error) this.view.status(error, true);
+        this.applyPanels();
+        this.view.autoGrowAll();
+      },
+    });
+    this.applyPanels();
+  }
+
+  applyPanels() {
+    const cfg = USER_SETTINGS.panelFold;
+    const hidden = !!this.view.store.ui.hideLeft || !!this.view.panelWindow?.detached;
+    PanelWindow.query(".layout").classList.toggle("hide-left", hidden);
+    const btn = $("btn-toggle-left");
+    btn.setAttribute("aria-expanded", String(!hidden));
+    btn.querySelector(".arrow").textContent = cfg.arrows.left[hidden ? 1 : 0];
+    btn.title = cfg.titles.left[hidden ? 1 : 0];
+    btn.setAttribute("aria-label", cfg.titles.left[hidden ? 1 : 0]);
+  }
+
+  togglePanel() {
+    this.view.saveUi({ hideLeft: !this.view.store.ui.hideLeft });
+    this.applyPanels();
+  }
+
   // 操作パネルの幅を、境界線のドラッグで変える（幅は保存して、次に開いたときも使う）
   bindSideResizer() {
     const cfg = USER_SETTINGS.sidePanel;
-    const layout = document.querySelector(".layout");
+    const layout = PanelWindow.query(".layout");
     const handle = $("side-resizer");
     const clamp = (w) => Math.round(Math.min(Math.max(w, cfg.min), Math.max(cfg.min, Math.min(cfg.max, window.innerWidth * cfg.maxRatio))));
     const apply = (w) => { layout.style.setProperty("--side-w", `${clamp(w)}px`); };
@@ -9823,7 +9981,7 @@ class MainViewChrome {
     this.view.on(handle, "pointerdown", (e) => {
       e.preventDefault();
       handle.setPointerCapture(e.pointerId);
-      start = { x: e.clientX, w: document.querySelector(".col-input").getBoundingClientRect().width };
+      start = { x: e.clientX, w: PanelWindow.query(".col-input").getBoundingClientRect().width };
       handle.classList.add("dragging");
       document.body.classList.add("resizing-side");
     });
@@ -9833,7 +9991,7 @@ class MainViewChrome {
       start = null;
       handle.classList.remove("dragging");
       document.body.classList.remove("resizing-side");
-      this.view.saveUi({ sideWidth: Math.round(document.querySelector(".col-input").getBoundingClientRect().width) });
+      this.view.saveUi({ sideWidth: Math.round(PanelWindow.query(".col-input").getBoundingClientRect().width) });
     };
     this.view.on(handle, "pointerup", end);
     this.view.on(handle, "pointercancel", end);
@@ -9841,11 +9999,188 @@ class MainViewChrome {
     this.view.on(handle, "keydown", (e) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       e.preventDefault();
-      const w = clamp(document.querySelector(".col-input").getBoundingClientRect().width + (e.key === "ArrowRight" ? 16 : -16));
+      const w = clamp(PanelWindow.query(".col-input").getBoundingClientRect().width + (e.key === "ArrowRight" ? 16 : -16));
       apply(w);
       this.view.saveUi({ sideWidth: w });
     });
     this.view.on(window, "resize", () => { if (this.view.store.ui.sideWidth) apply(this.view.store.ui.sideWidth); });
+  }
+}
+
+// ===== PANEL WINDOW (SHOW A SIDE PANEL IN A SEPARATE WINDOW) =====
+class PanelWindow {
+  static active = new Set();
+  static mirrors = [];
+  static hooks = [];
+
+  static find(id) {
+    for (const panel of this.active) {
+      const el = panel.doc?.getElementById(id);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  static query(selector) {
+    const hit = document.querySelector(selector);
+    if (hit) return hit;
+    for (const panel of this.active) {
+      const el = panel.doc?.querySelector(selector);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  static queryAll(selector) {
+    const list = [...document.querySelectorAll(selector)];
+    for (const panel of this.active) if (panel.doc) list.push(...panel.doc.querySelectorAll(selector));
+    return list;
+  }
+
+  static mirror(type, fn, opts) {
+    this.mirrors.push({ type, fn, opts, onWindow: false });
+    return fn;
+  }
+
+  static mirrorWindow(type, fn, opts) {
+    this.mirrors.push({ type, fn, opts, onWindow: true });
+    return fn;
+  }
+
+  static onWindow(hook) {
+    this.hooks.push(hook);
+  }
+
+  constructor({ side, col, button, onChange }) {
+    this.cfg = USER_SETTINGS.panelWindow;
+    this.side = side;
+    this.col = col;
+    this.button = button;
+    this.onChange = onChange;
+    this.win = null;
+    this.doc = null;
+    this.ghost = null;
+    this.handlers = [];
+    this.disposers = [];
+    this.onButton = () => this.toggle();
+    this.button.addEventListener("click", this.onButton);
+    this.render();
+  }
+
+  get detached() {
+    return !!this.win;
+  }
+
+  toggle() {
+    if (this.win) this.dock();
+    else this.detach();
+  }
+
+  render() {
+    const c = this.cfg;
+    const on = this.detached;
+    const text = on ? c.backTitle : c.popTitle;
+    this.button.classList.toggle("is-detached", on);
+    this.button.title = text;
+    this.button.setAttribute("aria-label", text);
+    const label = this.button.querySelector(".label");
+    if (label) label.textContent = on ? c.back : c.pop;
+  }
+
+  listen(target, type, fn, opts) {
+    target.addEventListener(type, fn, opts);
+    this.handlers.push([target, type, fn, opts]);
+  }
+
+  detach() {
+    const c = this.cfg;
+    const rect = this.col.getBoundingClientRect();
+    const width = Math.max(c.minWidth, Math.round(rect.width));
+    const height = Math.round(window.innerHeight);
+    const left = Math.round(window.screenX + rect.left);
+    const top = Math.round(window.screenY + window.outerHeight - window.innerHeight);
+    const name = `${document.title}_${this.side}_panel`.replace(/\W+/g, "_");
+    const win = window.open("", name, `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
+    if (!win) {
+      this.onChange?.(false, c.blocked);
+      return;
+    }
+    const doc = win.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html lang="${document.documentElement.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title></title></head><body></body></html>`);
+    doc.close();
+    doc.title = `${document.title} — ${c.labels[this.side]}`;
+    document.head.querySelectorAll('style, link[rel="stylesheet"], link[rel="icon"]').forEach((node) => doc.head.append(doc.importNode(node, true)));
+    const syncBody = () => { doc.body.className = `${document.body.className} panel-window-body`.trim(); };
+    syncBody();
+    this.bodySync = new MutationObserver(syncBody);
+    this.bodySync.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    const shell = doc.createElement("main");
+    shell.className = "layout panel-window";
+    doc.body.append(shell);
+    this.ghost = this.makeGhost();
+    this.col.replaceWith(this.ghost);
+    shell.append(this.col);
+    this.win = win;
+    this.doc = doc;
+    PanelWindow.active.add(this);
+    for (const m of PanelWindow.mirrors) this.listen(m.onWindow ? win : doc, m.type, m.fn, m.opts);
+    this.listen(doc, "dragover", (e) => e.preventDefault());
+    this.listen(doc, "drop", (e) => e.preventDefault());
+    this.listen(win, "pagehide", () => this.dock());
+    this.listen(window, "pagehide", () => this.dock());
+    this.disposers = PanelWindow.hooks.map((hook) => hook(doc, win)).filter(Boolean);
+    this.timer = setInterval(() => { if (win.closed) this.dock(); }, c.pollMs);
+    this.render();
+    this.onChange?.(true);
+    win.focus();
+  }
+
+  makeGhost() {
+    const c = this.cfg;
+    const ghost = document.createElement("aside");
+    ghost.className = `${this.col.className} panel-ghost`;
+    ghost.dataset.panel = this.side;
+    ghost.setAttribute("aria-label", c.ghostTitle);
+    const bar = document.createElement("div");
+    bar.className = "panel-bar";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "panel-collapse panel-return";
+    btn.title = c.ghostTitle;
+    btn.setAttribute("aria-label", c.ghostTitle);
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = c.ghostLabel;
+    btn.append(label);
+    btn.addEventListener("click", () => this.dock());
+    bar.append(btn);
+    ghost.append(bar);
+    return ghost;
+  }
+
+  dock() {
+    if (!this.win) return;
+    const win = this.win;
+    clearInterval(this.timer);
+    this.bodySync.disconnect();
+    for (const [target, type, fn, opts] of this.handlers) target.removeEventListener(type, fn, opts);
+    this.handlers = [];
+    for (const dispose of this.disposers) dispose();
+    this.disposers = [];
+    PanelWindow.active.delete(this);
+    this.win = null;
+    this.doc = null;
+    this.ghost.replaceWith(this.col);
+    this.ghost = null;
+    if (!win.closed) win.close();
+    this.render();
+    this.onChange?.(false);
+  }
+
+  destroy() {
+    this.dock();
+    this.button.removeEventListener("click", this.onButton);
   }
 }
 
@@ -9857,8 +10192,8 @@ class MainViewLongPanel {
 
   bindLong() {
     // 進み具合の欄の高さを CSS に渡して、区間の見出しをそのすぐ下に止める
-    const status = document.querySelector(".col-output > .status-panel");
-    const setH = () => document.querySelector(".col-output").style.setProperty("--status-h", `${status.offsetHeight}px`);
+    const status = PanelWindow.query(".col-output > .status-panel");
+    const setH = () => PanelWindow.query(".col-output").style.setProperty("--status-h", `${status.offsetHeight}px`);
     new ResizeObserver(setH).observe(status);
     setH();
     const cfg = USER_SETTINGS.long;
@@ -9910,7 +10245,7 @@ class MainViewLongPanel {
     document.addEventListener("play", (e) => {
       const playing = e.target;
       if (!(playing instanceof HTMLMediaElement)) return;
-      document.querySelectorAll("video, audio").forEach((v) => {
+      PanelWindow.queryAll("video, audio").forEach((v) => {
         if (v === playing || v.paused) return;
         if (v.closest(".long-thumb")) this.stopThumbVideo(v); else v.pause();
       });
@@ -12106,10 +12441,10 @@ class MainViewState {
     if (job.thumb) img.src = job.thumb;
     else img.hidden = true;
     img.alt = "";
-    thumb.append(img, el("span", "job-badge"), el("span", "play", "▶"), el("span", "job-now", "プレビュー中"));
+    thumb.append(img, el("span", "job-badge"), el("span", "play", "▶\uFE0E"), el("span", "job-now", "プレビュー中"));
     if (job.joined) {
       card.classList.add("job-long");
-      thumb.append(el("span", "job-ribbon", `🎞 長い動画　${job.seconds}秒・${job.joined.segments.length}区間`));
+      thumb.append(el("span", "job-ribbon", `長い動画　${job.seconds}秒・${job.joined.segments.length}区間`));
     } else if (job.segment) {
       card.classList.add("job-seg");
       thumb.append(el("span", "job-ribbon", `区間${job.segment.index + 1}`));
@@ -12350,13 +12685,15 @@ class NumberControl {
   static watch(root) {
     const sel = 'input[type="range"], input[type="number"]';
     root.querySelectorAll(sel).forEach((el) => this.enhance(el));
-    new MutationObserver((list) => {
+    const obs = new MutationObserver((list) => {
       for (const rec of list) for (const node of rec.addedNodes) {
         if (node.nodeType !== 1) continue;
         if (node.matches?.(sel)) this.enhance(node);
         node.querySelectorAll?.(sel).forEach((el) => this.enhance(el));
       }
-    }).observe(root, { childList: true, subtree: true });
+    });
+    obs.observe(root, { childList: true, subtree: true });
+    return obs;
   }
 
   static num(v) {
@@ -12556,8 +12893,8 @@ class SettingsView {
   bind() {
     this.on($("close-settings"), "click", () => this.dialog.close());
     this.on(this.dialog, "close", () => { for (const k of ["llm", "video", "machine"]) this.flushAutosave(k); this.onChange(); });
-    document.querySelectorAll(".tabs button").forEach((b) => this.on(b, "click", () => this.showPane(b.dataset.pane)));
-    document.querySelectorAll("[data-copy]").forEach((b) => this.on(b, "click", () => {
+    PanelWindow.queryAll(".tabs button").forEach((b) => this.on(b, "click", () => this.showPane(b.dataset.pane)));
+    PanelWindow.queryAll("[data-copy]").forEach((b) => this.on(b, "click", () => {
       navigator.clipboard.writeText($(b.dataset.copy).textContent);
       b.textContent = "コピーしました";
     }));
@@ -12593,7 +12930,7 @@ class SettingsView {
     this.on($("llm-del"), "click", () => this.deleteEntry("llmProfiles", "llmActive", this.editing.llm, $("llm-msg"), () => this.loadAll()));
 
     this.on($("vid-pick"), "change", (e) => this.loadVideo(e.target.value));
-    document.querySelectorAll("#vid-flow button").forEach((b) => this.on(b, "click", () => this.setVideoFlow(b.dataset.flow)));
+    PanelWindow.queryAll("#vid-flow button").forEach((b) => this.on(b, "click", () => this.setVideoFlow(b.dataset.flow)));
     this.on($("vid-new"), "click", () => this.startNew("video"));
     this.on($("vid-cancel"), "click", () => this.cancelNew("video"));
     this.on($("vid-test"), "click", () => this.testComfy());
@@ -12701,9 +13038,9 @@ class SettingsView {
   }
 
   showPane(name) {
-    if (!document.querySelector(`.pane[data-pane="${name}"]`)) name = "guide";
-    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
-    document.querySelectorAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== name; });
+    if (!PanelWindow.query(`.pane[data-pane="${name}"]`)) name = "guide";
+    PanelWindow.queryAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
+    PanelWindow.queryAll(".pane").forEach((p) => { p.hidden = p.dataset.pane !== name; });
     this.store.ui.settingsPane = name;
     // メイン画面と同じ表（モデル・LoRA・サンプラーなど）は、開いたときにつながっている先から読み直す
     if (name === "video") this.renderVideoParams();
@@ -12903,7 +13240,8 @@ class SettingsView {
     const add = (label, state) => {
       const p = document.createElement("p");
       p.className = "diag";
-      p.textContent = `${state === "ok" ? "🟢" : state === "cors" ? "🟡" : "🔴"} ${label}: ${Net.probeMessage(state)}`;
+      p.dataset.state = state === "ok" ? "ok" : state === "cors" ? "warn" : "down";
+      p.textContent = `${label}: ${Net.probeMessage(state)}`;
       out.appendChild(p);
     };
     const llm = this.store.llm;
@@ -13199,7 +13537,7 @@ class SettingsView {
     this.editing.video = id && ids.includes(id) ? id : null;
     const inFlow = Object.fromEntries(ids.map((x) => [x, d.videoProfiles[x]]));
     fillSelect($("vid-pick"), [...this.pickerEntries(inFlow), ...(this.editing.video ? [] : [["", "（新しい設定）"]])], this.editing.video || "");
-    document.querySelectorAll("#vid-flow button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.videoFlow)));
+    PanelWindow.queryAll("#vid-flow button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.flow === this.videoFlow)));
     const ref = this.videoFlow === "ref";
     $("wf-note").textContent = ref ? m.wfNoteRef : m.wfNoteImage;
     fillSelect($("vid-style"), this.pickerEntries(d.styles, ["h3", USER_SETTINGS.refStyleId]));
@@ -13436,14 +13774,15 @@ class App {
     const signal = this.listeners.signal;
     $("open-settings").addEventListener("click", () => this.settings.open(), { signal });
     $("open-flow").addEventListener("click", () => this.settings.open("flow"), { signal });
+    $("open-help").addEventListener("click", () => this.settings.open("help"), { signal });
     // 見出し（ラベル）や余白のクリックで文字入力欄にカーソルが移らないようにする（入力欄そのもののクリックは通常どおり）
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", PanelWindow.mirror("click", (e) => {
       const label = e.target.closest?.("label");
       if (!label || e.target.closest("input, textarea, select, button, a")) return;
       const control = label.control;
       const typing = control && (control.tagName === "TEXTAREA" || (control.tagName === "INPUT" && USER_SETTINGS.textInputTypes.includes(control.type)));
       if (typing) e.preventDefault();
-    }, { signal, capture: true });
+    }, { capture: true }), { signal, capture: true });
     $("share-app-link").href = USER_SETTINGS.shareAppUrl;
     $("official-skill-link").href = USER_SETTINGS.officialSkillUrl;
     this.statusBar.onComfyOk = (url) => this.autoReadMachine(url);
