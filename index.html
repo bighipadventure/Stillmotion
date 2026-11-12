@@ -416,6 +416,24 @@ dialog#materials::backdrop { background: var(--backdrop); }
 .mat-check input { margin: 0; }
 .mat-trim { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
 .mat-trim input { width: 78px; }
+.mat-tabs-bar { flex: none; padding: 10px 20px 0; }
+.mat-tabs { display: inline-flex; }
+.mat-tabs button { min-height: 30px; padding: 0 14px; }
+.voice-conn { margin: 0; font-size: 12px; color: var(--muted); }
+.voice-conn:empty { display: none; }
+.voice-body { gap: 8px; }
+.voice-drop { min-height: 52px; }
+#voice-seed { width: 180px; }
+.voice-body .field { margin: 0; }
+.voice-body #voice-text { width: 100%; box-sizing: border-box; }
+.voice-grid { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 6px 8px; align-items: center; }
+.voice-grid .note { margin: 0; }
+.voice-grid > textarea, .voice-grid > select, .voice-grid > input { width: 100%; max-width: 100%; box-sizing: border-box; min-width: 0; }
+.voice-emoji { display: flex; flex-wrap: wrap; gap: 4px; }
+.voice-emoji button { min-height: 24px; padding: 0 6px; font-size: 11px; }
+.voice-adv > summary { font-size: 12px; }
+.voice-result { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.voice-result audio { height: 32px; flex: 1 1 260px; }
 .vid-flow { flex: none; }
 .wf-export { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .wf-export .note { margin: 0; }
@@ -430,6 +448,9 @@ dialog#materials::backdrop { background: var(--backdrop); }
 
 /* ===== マシンスペックの目安 ===== */
 .spec { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.spec-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.spec-head .spec-meter { flex: 1 1 auto; width: auto; }
+.spec-fold { flex: none; margin-left: auto; min-height: 22px; padding: 0 8px; font-size: 11px; font-weight: 500; }
 .spec-meter { width: 100%; justify-content: flex-start; gap: 8px; min-height: 22px; padding: 0 2px; border: none; background: transparent; font-size: 11px; color: var(--muted); font-weight: 500; }
 #spec-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spec-meter:hover:not(:disabled) { background: transparent; color: var(--ink); text-decoration: underline; }
@@ -1078,7 +1099,10 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
     </div>
     <div class="side-foot run-block">
       <div class="spec" id="spec-check" data-level="ok" hidden>
-        <button type="button" class="spec-meter" id="spec-meter"><span class="spec-bar" aria-hidden="true"><span id="spec-bar-fill"></span></span><span id="spec-text"></span></button>
+        <div class="spec-head">
+          <button type="button" class="spec-meter" id="spec-meter"><span class="spec-bar" aria-hidden="true"><span id="spec-bar-fill"></span></span><span id="spec-text"></span></button>
+          <button type="button" class="spec-fold" id="spec-fold" aria-controls="spec-issues" hidden></button>
+        </div>
         <div class="spec-issues" id="spec-issues" hidden>
           <div class="spec-changes" id="spec-changes" hidden><strong id="spec-changes-title"></strong><ul id="spec-changes-list"></ul></div>
           <ul id="spec-list"></ul>
@@ -1212,7 +1236,13 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
 
 <dialog id="materials" aria-labelledby="mat-dlg-title">
   <div class="dlg-head"><h2 id="mat-dlg-title">素材</h2><span class="adv-sub" id="mat-dlg-sub"></span><button id="close-materials">閉じる</button></div>
-  <div class="adv-body">
+  <div class="mat-tabs-bar">
+    <div class="seg mat-tabs" id="mat-tabs" role="tablist" aria-label="素材の画面">
+      <button type="button" role="tab" data-mat-tab="items" aria-pressed="true" aria-selected="true">素材</button>
+      <button type="button" role="tab" data-mat-tab="voice" aria-pressed="false" aria-selected="false">セリフの音声を作る（Irodori-TTS）</button>
+    </div>
+  </div>
+  <div class="adv-body" data-mat-pane="items">
     <label class="dropzone mat-dropzone" id="mat-dlg-drop">
       <input type="file" id="mat-input" multiple accept="image/*,video/*,audio/*,.mkv,.flac,.opus,.m4a" aria-label="素材のファイルを選ぶ">
       <span class="hint"><strong>画像・動画・音声をまとめてドロップ</strong>クリックして選ぶこともできます。種類は自動で分けます。</span>
@@ -1235,7 +1265,50 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <div class="mat-list"></div>
     </section>
   </div>
-  <div class="adv-foot">
+  <div class="adv-body voice-body" data-mat-pane="voice" hidden>
+    <p class="voice-conn" id="voice-conn"></p>
+    <label class="field">セリフ（絵文字を入れると、その場所で話し方が変わります）<textarea id="voice-text" rows="2" placeholder="例: 😊おはようございます。⏸️今日もいい天気ですね。"></textarea></label>
+    <div class="voice-emoji" id="voice-emoji" role="group" aria-label="話し方の絵文字を入れる"></div>
+    <label class="dropzone mat-dropzone voice-drop" id="voice-drop">
+      <input type="file" id="voice-drop-input" multiple accept=".safetensors,audio/*,.wav,.mp3,.m4a,.flac,.ogg,.opus,.aac" aria-label="カセットか声の見本の音声を選ぶ">
+      <span class="hint"><strong>カセット（*.speaker.safetensors）や声の見本の音声をドロップ</strong>クリックして選ぶこともできます。カセットなら「カセット」、音声なら「参照音声」に切り替えます。</span>
+    </label>
+    <div class="voice-grid">
+      <span class="field-label">声の指定</span>
+      <div class="seg" id="voice-mode" role="group" aria-label="声の指定"></div>
+      <span class="field-label" id="voice-cassette-label">カセット</span>
+      <div class="row" id="voice-cassette-row"><select id="voice-cassette" class="grow" aria-labelledby="voice-cassette-label"></select><button type="button" id="voice-cassette-reload">一覧を読み直す</button></div>
+      <span class="field-label" id="voice-ref-label">参照音声</span>
+      <div class="row" id="voice-ref-row"><span class="note" id="voice-ref-info"></span><button type="button" id="voice-ref-clear">見本を外す</button></div>
+      <span class="field-label" id="voice-caption-label">声・話し方</span>
+      <textarea id="voice-caption" class="autogrow" rows="1" aria-labelledby="voice-caption-label"></textarea>
+      <span class="field-label" id="voice-checkpoint-label">モデル</span>
+      <select id="voice-checkpoint" aria-labelledby="voice-checkpoint-label"></select>
+      <span class="field-label" id="voice-seed-label">シード</span>
+      <div class="row"><input type="number" id="voice-seed" data-numctl="1" min="0" step="1" placeholder="空欄でおまかせ" aria-labelledby="voice-seed-label"></div>
+    </div>
+    <p class="note" id="voice-mode-note"></p>
+    <details class="voice-adv">
+      <summary>詳しい設定</summary>
+      <div class="voice-grid">
+        <span class="field-label" id="voice-steps-label">ステップ数</span>
+        <input type="number" id="voice-steps" min="1" max="200" step="1" placeholder="空欄でモデルのおすすめ" aria-labelledby="voice-steps-label">
+        <span class="field-label" id="voice-speed-label">長さの倍率</span>
+        <input type="number" id="voice-duration" min="0.25" max="4" step="0.05" aria-labelledby="voice-speed-label">
+        <span class="field-label">長さの確認</span>
+        <label class="check mat-check"><input type="checkbox" id="voice-length-check"> 2回読んで、言い切れる長さに合わせる（時間は約2倍）</label>
+      </div>
+    </details>
+    <div class="row"><button class="primary" id="voice-generate">音声を作る</button><span class="msg" id="voice-status" aria-live="polite"></span></div>
+    <div class="voice-result" id="voice-result" hidden>
+      <audio id="voice-audio" controls preload="auto"></audio>
+      <span class="note" id="voice-meta"></span>
+      <button type="button" id="voice-keep-seed">このシードに固定</button>
+      <button class="primary" id="voice-adopt">素材に入れる（セリフとして使う）</button>
+    </div>
+    <div class="row" id="voice-fit" hidden><span class="note" id="voice-fit-text"></span><button type="button" id="voice-fit-btn">動画の長さを音声に合わせる</button></div>
+  </div>
+  <div class="adv-foot" data-mat-pane="items">
     <button class="danger" id="mat-clear">すべて外す</button>
     <span class="note">素材はこのページを開いている間だけ使えます（再読み込みや閉じると消えます）。&lt;Picture 1&gt; などのタグは、プロンプトの中で素材を指す名前です。</span>
   </div>
@@ -1297,6 +1370,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <button role="tab" data-pane="llm">文章AI</button>
       <button role="tab" data-pane="video">動画AI</button>
       <button role="tab" data-pane="sd">画像AI</button>
+      <button role="tab" data-pane="voice">音声AI</button>
       <button role="tab" data-pane="machine">マシンスペック</button>
       <div class="tab-group" aria-hidden="true">プロンプトの調整</div>
       <button role="tab" data-pane="skills">スキル</button>
@@ -1336,6 +1410,16 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
             <li>起動オプションの <code>--api</code> と <code>--cors-allow-origins=…</code> は不要です。消して空にしてかまいません。</li>
             <li>WebUI を停止 → 起動し直します。ログに <code>[web-app-cors] v4 allowed origins: …</code> と出れば読み込まれています（v1〜v3 と出る場合は古い版なので、ダウンロードし直して入れ替えてください）。</li>
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
+          </ol>
+        </li>
+        <li class="card">
+          <h4 class="card-title">（セリフの音声を Irodori-TTS で作るときだけ）Irodori Bridge を起動する</h4>
+          <p class="note">「素材から動画」の「素材」の画面で、PC の中の Irodori-TTS にセリフを読み上げてもらうための中継プログラムです。このPCの中（127.0.0.1）だけで動き、このページのアドレスからの接続だけを受け付けます。文章や音声が外部に送られることはありません。</p>
+          <ol class="steps">
+            <li>Irodori-TTS をまだ入れていない場合は、公式の手順（GitHub の Aratako/Irodori-TTS）で入れます。</li>
+            <li><code>irodori_bridge.py</code> と <code>Irodori Bridge起動.bat</code>（Stillmotion の <code>irodori-bridge</code> フォルダにあります）を、Irodori-TTS のフォルダ（例: <code>D:\Irodori-TTS</code>）の<strong>直下</strong>に置きます。直下に置かないと動きません。別の場所から起動したいときは、BAT は動かさずにショートカットを作ります。</li>
+            <li>学習済みのカセット（<code>*.speaker.safetensors</code>）を使うときは、<code>D:\Irodori-TTS\cassettes</code> に入れます（フォルダに分けてもかまいません。初回の起動で作られます）。</li>
+            <li><code>Irodori Bridge起動.bat</code> をダブルクリックし、「準備完了です」と出れば完了です。ブラウザで <code>http://127.0.0.1:8791/health</code> を開き、<code>"ok": true</code> と出ることでも確かめられます。Irodori-TTS の画面（Gradio）は起動しなくてかまいません（同時に起動すると VRAM を取り合います）。</li>
           </ol>
         </li>
         <li class="card">
@@ -1520,6 +1604,17 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         <p class="note" id="sd-gen-note"></p>
         <div class="wfp-grid" id="sd-gen"></div>
         <div class="row" style="margin-top:6px"><button id="sd-gen-reset" hidden>元の画像に合わせる設定に戻す</button></div>
+      </div>
+    </section>
+
+    <section class="pane" data-pane="voice" hidden>
+      <header class="pane-head"><h3>音声AI（Irodori-TTS）</h3><p class="lead">「素材から動画」の「素材」の画面でセリフの音声を作るときの接続先です。PC の中の Irodori-TTS に、中継プログラム Irodori Bridge を通してつなぎます（準備は「はじめに」を見てください）。変更は自動で保存されます。</p></header>
+      <div class="card">
+        <h4 class="card-title">接続先</h4>
+        <label class="field">Irodori Bridge の URL<input type="url" id="voice-url" spellcheck="false"></label>
+        <div class="row"><button id="voice-test">接続を確かめる</button><span class="msg" id="voice-msg"></span></div>
+        <label class="check"><input type="checkbox" id="voice-unload"> 動画を作る前に、音声AIのモデルを外して VRAM を空ける（おすすめ）</label>
+        <p class="note">音声AIと動画AI（ComfyUI）は同じ GPU を使います。セリフの音声を先に作ってから動画を作ると、取り合いにならず速く済みます。音声を作るときは、動画AIの設定で「生成後に ComfyUI のGPUメモリを解放する」がオンなら、先に ComfyUI のモデルを外します。</p>
       </div>
     </section>
 
@@ -3150,6 +3245,85 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     },
   },
 
+  // ===== セリフの音声（Irodori-TTS を Irodori Bridge 経由で使う） =====
+  voice: {
+    defaults: {
+      bridgeUrl: "http://127.0.0.1:8791", unloadBeforeVideo: true, mode: "caption", caption: "", cassette: "",
+      checkpoint: "Aratako/Irodori-TTS-v4.1-Small", seed: "", numSteps: "", durationScale: 1, lengthCheck: false,
+    },
+    modes: [
+      ["caption", "キャプション", "声の注文書（文章）だけで声を作ります。シードを固定すると、同じ声で作り直せます。"],
+      ["cassette", "カセット", "学習済みのカセット（*.speaker.safetensors）の声で読みます。カセットは Irodori-TTS の cassettes フォルダに入れておきます。キャプションを書くと、話し方の指定として使います。"],
+      ["reference", "参照音声", "声の見本の録音（5〜15秒を数本、合計30秒くらいが目安）に似せた声で読みます。見本はこのページを開いている間だけ使います。キャプションを書くと、話し方の指定として使います。"],
+    ],
+    checkpoints: [
+      ["Aratako/Irodori-TTS-v4.1-Small", "公式（v4.1-Small）"],
+      ["Aratako/Irodori-TTS-v4.1-Small-MF", "高速（v4.1-Small-MF）"],
+      ["phasefield-audio/Irodori-TTS-v4.1-Anime", "アニメ版（v4.1-Anime）"],
+    ],
+    cassetteBase: "Aratako/Irodori-TTS-v4.1-Small",
+    captionLabel: { caption: "声・話し方", other: "話し方（任意）" },
+    captionPlaceholder: { caption: "例: 若い女性の声。明るく、はきはきと話す。", other: "例: 落ち着いて、ゆっくり話す。" },
+    emojis: [
+      ["👂", "囁き", "耳元の音"], ["😮‍💨", "吐息", "溜息、寝息"], ["⏸️", "間", "沈黙"], ["🤭", "笑い", "くすくす、含み笑い"], ["🥵", "喘ぎ", "うめき声、唸り声"],
+      ["📢", "エコー", "リバーブ"], ["😏", "からかう", "甘えるように"], ["🥺", "震え声", "自信なさげに"], ["🌬️", "息切れ", "荒い息遣い、呼吸音"], ["😮", "息をのむ", "Gasp"],
+      ["👅", "舐める音", "咀嚼音、水音"], ["💋", "リップノイズ", "Lip smack"], ["🫶", "優しく", "Tenderly"], ["😭", "泣き声", "嗚咽、悲しみ"], ["😱", "悲鳴", "叫び、絶叫"],
+      ["😪", "眠そう", "気だるげに"], ["😴", "寝言", "いびき"], ["⏩", "早口", "一気に、急いで"], ["📞", "電話越し", "スピーカー越し"], ["🐢", "ゆっくり", "Slowly"],
+      ["🥤", "飲み込む", "唾を飲む音"], ["🤧", "咳・鼻", "咳き込み、鼻すすり"], ["😒", "舌打ち", "Tutting"], ["😰", "慌てる", "動揺、緊張、どもり"], ["😆", "喜び", "嬉しそうに"],
+      ["💥", "勢いよく", "力強い勢い"], ["😠", "怒り", "不満げ、拗ねる"], ["😲", "驚き", "感嘆"], ["🥱", "あくび", "Yawn"], ["😖", "苦しげ", "Agonizingly"],
+      ["😟", "心配", "不安そうに"], ["🫣", "照れ", "恥ずかしそうに"], ["🙄", "呆れ", "Exasperatedly"], ["😊", "楽しげ", "嬉しそうに"], ["😎", "得意げ", "自信ありげに"],
+      ["👌", "相槌", "頷く音"], ["🙏", "懇願", "お願いするように"], ["🥴", "酔う", "Drunkenly"], ["🎵", "鼻歌", "Humming"], ["🤐", "口を塞ぐ", "Muffled"],
+      ["😌", "安堵", "満足げに"], ["🤔", "疑問", "Questioning"], ["💪", "力強く", "力を込めて"], ["👃", "嗅ぐ音", "匂いを嗅ぐ音"], ["📖", "朗読", "ナレーション"],
+    ],
+    emojiPattern: /[\p{Extended_Pictographic}‍️⃣]/gu,
+    maxTextChars: 500,
+    maxReferences: 8,
+    cassetteSuffix: ".speaker.safetensors",
+    pollMs: 700,
+    submitTimeoutMs: 60000,
+    fileName: "voice_{n}.wav",
+    materialRole: "reuse",
+    materialMemo: "セリフ（この音声のとおりに話す）: {text}",
+    messages: {
+      needText: "セリフを入れてください。",
+      tooLong: "セリフが長すぎます（{n} 文字まで）。動画1本ぶん（15秒まで）に収まるよう区切ってください。",
+      needCassette: "カセットを選んでください（一覧が空なら、Irodori-TTS の cassettes フォルダに入れて「一覧を読み直す」を押します）。",
+      needReference: "参照音声のファイルを選んでください。",
+      down: "Irodori Bridge（{url}）につながりません。Irodori-TTS のフォルダにある「Irodori Bridge起動.bat」で起動してください。",
+      cors: "Irodori Bridge は動いていますが、このページからの接続が許可されていません（irodori_bridge.py の ALLOWED_ORIGINS を確認してください）。",
+      noIrodori: "Irodori Bridge は動いていますが、Irodori-TTS を読み込めていません（{err}）。irodori_bridge.py を Irodori-TTS のフォルダの直下に置いて起動し直してください。",
+      idle: "接続OK（モデルは最初の生成で読み込みます）",
+      ready: "準備完了（{device}・モデル読み込み済み）",
+      checking: "確かめています…",
+      queued: "順番待ち（{n} 番目）…",
+      running: "{note}…（{sec}秒）",
+      sending: "Irodori Bridge に送っています…",
+      done: "できました。聞いて確かめ、よければ「素材に入れる」を押してください。",
+      cancelled: "取り消しました。",
+      cancel: "取り消す",
+      generate: "音声を作る",
+      regenerate: "作り直す",
+      meta: "{sec}秒・シード {seed}・{model}",
+      adopted: "音声の素材に入れました（使い方「そのまま使う」、メモにセリフを入れました）。",
+      voiceOn: "プロンプトの指定の「セリフ・歌」を「あり」にしました。",
+      audioFull: "音声の素材がいっぱいです（動画の音声を含めて {n} 本まで）。いらない音声を外してから入れてください。",
+      tooLongClip: "この音声は {sec} 秒あります。素材に使えるのは {max} 秒までなので、セリフを短くして作り直してください。",
+      fit: "音声（{sec}秒）が動画の長さ（{len}秒）より長いです。",
+      fitDone: "動画の長さを {len} 秒にしました。",
+      cassettesNone: "（カセットがありません）",
+      cassettesDown: "（Irodori Bridge につながると一覧が出ます）",
+      refInfo: "{n} 本・合計 {sec} 秒",
+      refNone: "まだありません（上の枠に声の見本の音声をドロップします）",
+      refFull: "参照音声は {n} 本までです。",
+      cassetteUpload: "{name}（ドロップしたファイル）",
+      dropCassette: "カセット「{name}」を使います。",
+      dropReference: "参照音声を {n} 本にしました。",
+      dropUnsupported: "使えないファイルです（カセットは *.speaker.safetensors、見本は音声ファイル）: {names}",
+      baseWarn: "カセットは公式（v4.1-Small）で学習したものなので、ほかのモデルでは声が似ないことがあります。",
+      diagLabel: "音声AI Irodori Bridge（使うときだけ）",
+    },
+  },
+
   // ===== マシンスペック（生成の重さの目安） =====
   // 公開されている MiniMax H3 のローカル実行の報告（VRAM 別の解像度・長さ）を元にした目安。
   // budget は「メガピクセル × 秒数（＋参照素材の分）」で、これを超えるとメモリ不足や極端な遅さになりやすい。
@@ -3220,6 +3394,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       overGuess: "VRAM の量からの控えめな見積もりなので、実際には時間がかかるだけで作れることもあります。一度作れると、その実績を基準に目安を直します。",
       meterProof: "実績から・",
       meterEta: "・約{eta}",
+      foldShow: "注意 {n}件 ▸",
+      foldHide: "たたむ ▾",
     },
   },
 
@@ -5328,6 +5504,70 @@ class SdComfyClient {
   }
 }
 
+// ===== IRODORI BRIDGE (TTS) =====
+class IrodoriClient {
+  static config(store) {
+    return { ...USER_SETTINGS.voice.defaults, ...(store.data.voice || {}) };
+  }
+
+  static save(store, patch) {
+    store.data.voice = { ...IrodoriClient.config(store), ...patch };
+    store.save();
+  }
+
+  constructor(url) {
+    this.base = String(url || USER_SETTINGS.voice.defaults.bridgeUrl).trim().replace(/\/+$/, "");
+  }
+
+  async call(path, { method = "GET", body, signal, timeoutMs = USER_SETTINGS.probeTimeoutMs * 4, binary = false } = {}) {
+    const timeout = AbortSignal.timeout(timeoutMs);
+    let res;
+    try {
+      res = await fetch(this.base + path, {
+        method, signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+        headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (err) {
+      if (signal?.aborted) throw err;
+      throw new UserError(USER_SETTINGS.voice.messages.down.replace("{url}", this.base));
+    }
+    if (binary && res.ok) return res.blob();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new UserError(data.error?.message || `Irodori Bridge: HTTP ${res.status}`);
+    return data;
+  }
+
+  health(signal) { return this.call("/health", { signal, timeoutMs: USER_SETTINGS.probeTimeoutMs }); }
+  cassettes(signal) { return this.call("/cassettes", { signal }); }
+  submit(body, signal) { return this.call("/jobs", { method: "POST", body, signal, timeoutMs: USER_SETTINGS.voice.submitTimeoutMs }); }
+  job(id, signal) { return this.call(`/jobs/${id}`, { signal }); }
+  audio(id, signal) { return this.call(`/jobs/${id}/audio.wav`, { signal, binary: true, timeoutMs: USER_SETTINGS.voice.submitTimeoutMs }); }
+  cancel(id) { return this.call(`/jobs/${id}`, { method: "DELETE" }); }
+  unload() { return this.call("/unload", { method: "POST" }); }
+
+  async check() {
+    const m = USER_SETTINGS.voice.messages;
+    try {
+      const health = await this.health();
+      if (!health.irodori) return { state: "warn", text: m.noIrodori.replace("{err}", health.irodori_error || "?"), health };
+      if (health.loaded) return { state: "ok", text: m.ready.replace("{device}", health.device_name || health.device || ""), health };
+      return { state: "ok", text: m.idle, health };
+    } catch {
+      const probe = await Net.probe(`${this.base}/health`);
+      return { state: probe === "cors" ? "warn" : "down", text: probe === "cors" ? m.cors : m.down.replace("{url}", this.base), health: null };
+    }
+  }
+
+  static async fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+}
+
 // ===== WORKFLOW MAPPER =====
 class WorkflowMapper {
   static sortedIds(wf) {
@@ -7265,6 +7505,7 @@ class MainView {
     this.initUiState();
     this.bind();
     this.bindMaterials();
+    this.bindVoice();
     this.buildFrameControls();
     this.buildPromptOptions();
     this.buildLoopControls();
@@ -7430,6 +7671,7 @@ class MainView {
     this.on($("spec-optimize"), "click", () => this.optimizeForSpec());
     this.on($("spec-undo"), "click", () => this.undoOptimize());
     this.on($("spec-meter"), "click", () => this.openSettings("machine"));
+    this.on($("spec-fold"), "click", () => { this.saveUi({ specFolded: !this.store.ui.specFolded }); this.updateSpecCheck(); });
     this.bindCanvas();
     const lastDrop = $("last-drop");
     this.on($("last-input"), "change", (e) => e.target.files[0] && this.loadLastImage(e.target.files[0]));
@@ -8924,6 +9166,7 @@ class MainViewModeAndMaterials {
       if (this.view.running) return;
       this.renderMaterials();
       dlg.showModal();
+      this.view.refreshVoiceConnection();
     };
     this.view.on($("open-materials"), "click", open);
     this.view.on($("mat-drop"), "click", open);
@@ -9107,9 +9350,9 @@ class MainViewModeAndMaterials {
       b.addEventListener("click", fn);
       return b;
     };
-    tools.append(
-      button("外す", "この素材を外す", () => this.removeMaterial(item.id)),
-    );
+    const remove = button("外す", "この素材を外す", () => this.removeMaterial(item.id));
+    remove.classList.add("danger");
+    tools.append(remove);
     head.append(tools);
     main.append(head, el("div", "mat-info", Materials.infoText(item)));
     const fields = el("div", "mat-fields");
@@ -9252,7 +9495,12 @@ class MainViewMachineSpec {
     $("spec-changes").hidden = !changes.length;
     $("spec-changes-title").textContent = USER_SETTINGS.messages.specChangesTitle;
     $("spec-changes-list").replaceChildren(...changes.map((text) => Object.assign(document.createElement("li"), { textContent: text })));
-    $("spec-issues").hidden = !result.issues.length && !changes.length;
+    const hasIssues = result.issues.length > 0 || changes.length > 0;
+    const folded = !!this.view.store.ui.specFolded;
+    $("spec-issues").hidden = !hasIssues || folded;
+    $("spec-fold").hidden = !hasIssues;
+    $("spec-fold").textContent = folded ? pm.foldShow.replace("{n}", result.issues.length + changes.length) : pm.foldHide;
+    $("spec-fold").setAttribute("aria-expanded", String(!folded));
     $("spec-list").replaceChildren(...result.issues.map((i) => {
       const li = document.createElement("li");
       li.className = i.level;
@@ -12264,6 +12512,7 @@ class MainViewState {
     else await this.applyImage(comfy, job, workflow, size, values);
     job.workflow = workflow;
     if (signal.aborted) throw new DOMException("aborted", "AbortError");
+    await this.view.voiceBeforeVideo();
     job.promptId = await comfy.queue(workflow);
     job.queuedAt = Date.now();
     this.setJob(job, { state: "queued", note: "" });
@@ -12770,6 +13019,361 @@ class MainViewPromptReel {
   }
 }
 
+// ===== セリフの音声（Irodori-TTS） =====
+class MainViewVoice {
+  constructor(view) {
+    this.view = view;
+    this.voiceJob = null;
+    this.voiceResult = null;
+    this.voiceRefs = [];
+    this.voiceCassettes = null;
+    this.voiceReachable = false;
+    this.voiceCheckedAt = 0;
+    this.voiceFitSeconds = 0;
+    this.voiceTab = "items";
+    this.voiceCassetteUpload = null;
+    this.voiceUseUpload = false;
+  }
+
+  voiceConfig() {
+    return IrodoriClient.config(this.view.store);
+  }
+
+  saveVoice(patch) {
+    IrodoriClient.save(this.view.store, patch);
+    this.renderVoice();
+  }
+
+  voiceClient() {
+    return new IrodoriClient(this.voiceConfig().bridgeUrl);
+  }
+
+  bindVoice() {
+    const v = USER_SETTINGS.voice;
+    const on = (id, type, fn) => this.view.on($(id), type, fn);
+    $("voice-emoji").replaceChildren(...v.emojis.map(([emoji, label, description]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = `${emoji} ${label}`;
+      b.title = `「${emoji}」を入れる（${label}: ${description}）`;
+      this.view.on(b, "click", () => this.insertVoiceEmoji(emoji));
+      return b;
+    }));
+    $("voice-mode").replaceChildren(...v.modes.map(([value, label]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.value = value;
+      b.textContent = label;
+      this.view.on(b, "click", () => this.saveVoice({ mode: value }));
+      return b;
+    }));
+    fillSelect($("voice-checkpoint"), v.checkpoints);
+    $("voice-text").maxLength = v.maxTextChars;
+    $("mat-tabs").querySelectorAll("button").forEach((b) => this.view.on(b, "click", () => this.setMatTab(b.dataset.matTab)));
+    const drop = $("voice-drop");
+    on("voice-drop", "dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    on("voice-drop", "dragleave", () => drop.classList.remove("over"));
+    on("voice-drop", "drop", (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.remove("over"); this.dropVoiceFiles([...e.dataTransfer.files]); });
+    on("voice-drop-input", "change", (e) => { this.dropVoiceFiles([...e.target.files]); e.target.value = ""; });
+    on("voice-ref-clear", "click", () => { this.voiceRefs = []; this.renderVoiceRefs(); });
+    on("voice-checkpoint", "change", (e) => this.saveVoice({ checkpoint: e.target.value }));
+    on("voice-cassette", "change", (e) => {
+      this.voiceUseUpload = e.target.value === "__upload__";
+      if (this.voiceUseUpload) this.renderVoice();
+      else this.saveVoice({ cassette: e.target.value });
+    });
+    on("voice-cassette-reload", "click", () => this.loadCassettes());
+    on("voice-caption", "input", (e) => { this.view.autoGrow(e.target); IrodoriClient.save(this.view.store, { caption: e.target.value }); });
+    on("voice-seed", "input", (e) => IrodoriClient.save(this.view.store, { seed: e.target.value }));
+    on("voice-steps", "input", (e) => IrodoriClient.save(this.view.store, { numSteps: e.target.value }));
+    on("voice-duration", "input", (e) => IrodoriClient.save(this.view.store, { durationScale: Number(e.target.value) || 1 }));
+    on("voice-length-check", "change", (e) => IrodoriClient.save(this.view.store, { lengthCheck: e.target.checked }));
+    on("voice-generate", "click", () => (this.voiceJob ? this.cancelVoice() : this.generateVoice()));
+    on("voice-keep-seed", "click", () => {
+      if (!this.voiceResult) return;
+      $("voice-seed").value = this.voiceResult.meta.seed;
+      this.saveVoice({ seed: String(this.voiceResult.meta.seed) });
+    });
+    on("voice-adopt", "click", () => this.adoptVoice());
+    on("voice-fit-btn", "click", () => this.fitSecondsToVoice());
+    this.renderVoice();
+  }
+
+  renderVoice() {
+    const v = USER_SETTINGS.voice;
+    const cfg = this.voiceConfig();
+    const mode = v.modes.some(([m]) => m === cfg.mode) ? cfg.mode : v.defaults.mode;
+    $("voice-mode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === mode)));
+    $("voice-mode-note").textContent = (v.modes.find(([m]) => m === mode) || [])[2] || "";
+    for (const [id, show] of [["voice-cassette", mode === "cassette"], ["voice-ref", mode === "reference"]]) {
+      $(`${id}-label`).hidden = !show;
+      $(`${id}-row`).hidden = !show;
+    }
+    const kind = mode === "caption" ? "caption" : "other";
+    $("voice-caption-label").textContent = v.captionLabel[kind];
+    $("voice-caption").placeholder = v.captionPlaceholder[kind];
+    if (document.activeElement !== $("voice-caption")) $("voice-caption").value = cfg.caption;
+    $("voice-checkpoint").value = cfg.checkpoint;
+    if (document.activeElement !== $("voice-seed")) $("voice-seed").value = cfg.seed;
+    $("voice-steps").value = cfg.numSteps;
+    $("voice-duration").value = cfg.durationScale;
+    $("voice-length-check").checked = !!cfg.lengthCheck;
+    this.renderCassettes();
+    this.renderVoiceRefs();
+    const warn = mode === "cassette" && cfg.checkpoint !== v.cassetteBase ? v.messages.baseWarn : "";
+    if (warn) $("voice-mode-note").textContent += `\n${warn}`;
+    this.view.autoGrow($("voice-caption"));
+    this.renderVoiceButton();
+  }
+
+  setMatTab(tab) {
+    this.voiceTab = tab === "voice" ? "voice" : "items";
+    $("mat-tabs").querySelectorAll("button").forEach((b) => {
+      const active = b.dataset.matTab === this.voiceTab;
+      b.setAttribute("aria-pressed", String(active));
+      b.setAttribute("aria-selected", String(active));
+    });
+    $("materials").querySelectorAll("[data-mat-pane]").forEach((el) => { el.hidden = el.dataset.matPane !== this.voiceTab; });
+    if (this.voiceTab === "voice") {
+      this.renderVoice();
+      this.refreshVoiceConnection();
+    }
+  }
+
+  renderVoiceButton() {
+    const m = USER_SETTINGS.voice.messages;
+    $("voice-generate").textContent = this.voiceJob ? m.cancel : this.voiceResult ? m.regenerate : m.generate;
+    $("voice-generate").classList.toggle("primary", !this.voiceJob);
+  }
+
+  renderCassettes() {
+    const m = USER_SETTINGS.voice.messages;
+    const cfg = this.voiceConfig();
+    const list = this.voiceCassettes || [];
+    const entries = list.map((c) => [c.path, c.path]);
+    if (cfg.cassette && !list.some((c) => c.path === cfg.cassette)) entries.unshift([cfg.cassette, cfg.cassette]);
+    if (this.voiceCassetteUpload) entries.unshift(["__upload__", m.cassetteUpload.replace("{name}", this.voiceCassetteUpload.name)]);
+    if (!entries.length) entries.push(["", this.voiceCassettes ? m.cassettesNone : m.cassettesDown]);
+    fillSelect($("voice-cassette"), entries, this.voiceUseUpload && this.voiceCassetteUpload ? "__upload__" : cfg.cassette);
+  }
+
+  setVoiceStatus(text, kind = "") {
+    setMsg($("voice-status"), text, kind);
+  }
+
+  insertVoiceEmoji(emoji) {
+    const ta = $("voice-text");
+    const start = ta.selectionStart ?? ta.value.length;
+    ta.setRangeText(emoji, start, ta.selectionEnd ?? start, "end");
+    ta.focus();
+  }
+
+  async dropVoiceFiles(files) {
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
+    const cassette = files.find((f) => f.name.toLowerCase().endsWith(v.cassetteSuffix));
+    const audios = files.filter((f) => f !== cassette && Materials.kindOf(f) === "audio");
+    const unknown = files.filter((f) => f !== cassette && !audios.includes(f));
+    const notes = [];
+    if (cassette) {
+      this.voiceCassetteUpload = cassette;
+      this.voiceUseUpload = true;
+      notes.push(m.dropCassette.replace("{name}", cassette.name));
+    }
+    if (audios.length) {
+      const known = new Set(this.voiceRefs.map((r) => `${r.file.name}|${r.file.size}`));
+      for (const file of audios) {
+        if (known.has(`${file.name}|${file.size}`)) continue;
+        if (this.voiceRefs.length >= v.maxReferences) { notes.push(m.refFull.replace("{n}", v.maxReferences)); break; }
+        const url = URL.createObjectURL(file);
+        const audio = await Materials.loadMedia("audio", url).catch(() => null);
+        URL.revokeObjectURL(url);
+        this.voiceRefs.push({ file, duration: audio && Number.isFinite(audio.duration) ? audio.duration : 0 });
+      }
+      notes.push(m.dropReference.replace("{n}", this.voiceRefs.length));
+    }
+    if (unknown.length) notes.push(m.dropUnsupported.replace("{names}", unknown.map((f) => f.name).join("、")));
+    const mode = cassette ? "cassette" : audios.length ? "reference" : null;
+    if (mode) IrodoriClient.save(this.view.store, { mode });
+    this.renderVoice();
+    this.setVoiceStatus(notes.join("\n"), unknown.length ? "err" : "");
+  }
+
+  renderVoiceRefs() {
+    const m = USER_SETTINGS.voice.messages;
+    const total = this.voiceRefs.reduce((sum, r) => sum + r.duration, 0);
+    $("voice-ref-info").textContent = this.voiceRefs.length
+      ? `${m.refInfo.replace("{n}", this.voiceRefs.length).replace("{sec}", total.toFixed(1))}: ${this.voiceRefs.map((r) => r.file.name).join("、")}`
+      : m.refNone;
+    $("voice-ref-clear").hidden = !this.voiceRefs.length;
+  }
+
+  async refreshVoiceConnection(force = false) {
+    if (this.voiceTab !== "voice" || !$("materials").open || (!force && Date.now() - this.voiceCheckedAt < USER_SETTINGS.probeTimeoutMs * 4)) return;
+    this.voiceCheckedAt = Date.now();
+    $("voice-conn").textContent = USER_SETTINGS.voice.messages.checking;
+    const result = await this.voiceClient().check();
+    this.voiceReachable = !!result.health;
+    $("voice-conn").textContent = result.state === "ok" ? `● ${result.text}` : "";
+    if (result.state !== "ok" && !this.voiceJob) this.setVoiceStatus(result.text, "err");
+    else if (!this.voiceJob && $("voice-status").classList.contains("err")) this.setVoiceStatus("");
+    if (result.health) await this.loadCassettes(true);
+    else this.renderCassettes();
+  }
+
+  async loadCassettes(quiet = false) {
+    try {
+      const data = await this.voiceClient().cassettes();
+      this.voiceCassettes = data.cassettes || [];
+      const cfg = this.voiceConfig();
+      if (!cfg.cassette && this.voiceCassettes.length) IrodoriClient.save(this.view.store, { cassette: this.voiceCassettes[0].path });
+    } catch (err) {
+      this.voiceCassettes = null;
+      if (!quiet) this.setVoiceStatus(describeError(err, "Irodori Bridge"), "err");
+    }
+    this.renderCassettes();
+  }
+
+  async voiceRequest() {
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
+    const cfg = this.voiceConfig();
+    const text = $("voice-text").value.trim();
+    if (!text) throw new UserError(m.needText);
+    if (text.length > v.maxTextChars) throw new UserError(m.tooLong.replace("{n}", v.maxTextChars));
+    const number = (s) => (String(s ?? "").trim() === "" ? null : Number(s));
+    const voice = { mode: cfg.mode };
+    if (cfg.mode === "cassette" && this.voiceUseUpload && this.voiceCassetteUpload) {
+      voice.cassette_upload_base64 = await IrodoriClient.fileToDataUrl(this.voiceCassetteUpload);
+    } else if (cfg.mode === "cassette") {
+      if (!cfg.cassette) throw new UserError(m.needCassette);
+      voice.cassette = cfg.cassette;
+    } else if (cfg.mode === "reference") {
+      if (!this.voiceRefs.length) throw new UserError(m.needReference);
+      voice.reference_audio_base64 = await Promise.all(this.voiceRefs.map(async (r) => ({ name: r.file.name, data: await IrodoriClient.fileToDataUrl(r.file) })));
+    }
+    return {
+      text, caption: cfg.caption.trim() || null, checkpoint: cfg.checkpoint, voice,
+      seed: number(cfg.seed), num_steps: number(cfg.numSteps), duration_scale: Number(cfg.durationScale) || 1, length_check: !!cfg.lengthCheck,
+    };
+  }
+
+  async generateVoice() {
+    const m = USER_SETTINGS.voice.messages;
+    const job = { controller: new AbortController(), id: null };
+    const signal = job.controller.signal;
+    const client = this.voiceClient();
+    this.voiceJob = job;
+    this.renderVoiceButton();
+    try {
+      const body = await this.voiceRequest();
+      this.setVoiceStatus(m.sending);
+      await this.freeComfyForVoice();
+      const sent = await client.submit(body, signal);
+      job.id = sent.job_id;
+      this.voiceReachable = true;
+      let state;
+      for (;;) {
+        await sleep(USER_SETTINGS.voice.pollMs);
+        if (signal.aborted) throw new DOMException("aborted", "AbortError");
+        state = await client.job(job.id, signal);
+        if (state.state === "done") break;
+        if (state.state === "error") throw new UserError(state.error?.message || state.error?.code || "error");
+        if (state.state === "cancelled") throw new DOMException("aborted", "AbortError");
+        this.setVoiceStatus(state.state === "queued" ? m.queued.replace("{n}", state.queue_position || 1) : m.running.replace("{note}", state.note || "").replace("{sec}", Math.round(state.elapsed || 0)));
+      }
+      const blob = await client.audio(job.id, signal);
+      const r = state.result;
+      this.setVoiceResult(blob, {
+        engine: "Irodori-TTS", text: body.text, caption: body.caption || "", mode: body.voice.mode,
+        cassette: body.voice.cassette || (body.voice.cassette_upload_base64 ? this.voiceCassetteUpload?.name || "" : ""),
+        checkpoint: r.checkpoint, seed: r.seed, duration: r.duration,
+      });
+      const warnings = [...(sent.warnings || []), ...(r.warnings || [])].filter((w, i, a) => a.indexOf(w) === i);
+      this.setVoiceStatus([m.done, ...warnings].join("\n"), warnings.length ? "" : "ok");
+    } catch (err) {
+      const aborted = err.name === "AbortError" || signal.aborted;
+      if (aborted && job.id) client.cancel(job.id).catch(() => {});
+      this.setVoiceStatus(aborted ? m.cancelled : describeError(err, "Irodori Bridge"), aborted ? "" : "err");
+    } finally {
+      this.voiceJob = null;
+      this.renderVoiceButton();
+    }
+  }
+
+  cancelVoice() {
+    this.voiceJob?.controller.abort();
+  }
+
+  setVoiceResult(blob, meta) {
+    const m = USER_SETTINGS.voice.messages;
+    if (this.voiceResult) URL.revokeObjectURL(this.voiceResult.url);
+    this.voiceResult = { blob, meta, url: URL.createObjectURL(blob) };
+    $("voice-audio").src = this.voiceResult.url;
+    $("voice-audio").volume = USER_SETTINGS.initialVolume;
+    const model = (USER_SETTINGS.voice.checkpoints.find(([id]) => id === meta.checkpoint) || [, meta.checkpoint])[1];
+    $("voice-meta").textContent = m.meta.replace("{sec}", Number(meta.duration).toFixed(1)).replace("{seed}", meta.seed).replace("{model}", model);
+    $("voice-result").hidden = false;
+    $("voice-fit").hidden = true;
+  }
+
+  async adoptVoice() {
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
+    const refs = USER_SETTINGS.refs;
+    const r = this.voiceResult;
+    if (!r || this.view.running) return;
+    const items = this.view.materialItems;
+    if (Materials.counts(items).audio >= refs.max.audio) { this.setVoiceStatus(m.audioFull.replace("{n}", refs.max.audio), "err"); return; }
+    if (r.meta.duration > refs.clip.max + 0.05) {
+      this.setVoiceStatus(m.tooLongClip.replace("{sec}", Number(r.meta.duration).toFixed(1)).replace("{max}", refs.clip.max), "err");
+      return;
+    }
+    const names = new Set(items.map((i) => i.name));
+    let n = 1;
+    while (names.has(v.fileName.replace("{n}", String(n).padStart(2, "0")))) n++;
+    const file = new File([r.blob], v.fileName.replace("{n}", String(n).padStart(2, "0")), { type: "audio/wav" });
+    const item = await Materials.analyze(file, "audio");
+    const spoken = r.meta.text.replace(v.emojiPattern, "").replace(/\s+/g, " ").trim();
+    Object.assign(item, { role: v.materialRole, memo: v.materialMemo.replace("{text}", spoken), voice: { ...r.meta } });
+    this.view.materialItems.push(item);
+    this.view.materialsChanged();
+    const notes = [m.adopted];
+    if (this.view.store.ui.promptOptions?.voice !== "on") {
+      PanelWindow.query('#popt-voice-seg button[data-value="on"]')?.click();
+      if (this.view.store.ui.promptOptions?.voice === "on") notes.push(m.voiceOn);
+    }
+    this.setVoiceStatus(notes.join("\n"), "ok");
+    const length = Number($("seconds").value);
+    const sec = Number(item.duration) || r.meta.duration;
+    this.voiceFitSeconds = sec;
+    $("voice-fit").hidden = !(sec > length + 0.05);
+    $("voice-fit-text").textContent = m.fit.replace("{sec}", sec.toFixed(1)).replace("{len}", length);
+  }
+
+  fitSecondsToVoice() {
+    const el = $("seconds");
+    const step = Number(el.getAttribute("step")) || 0.5;
+    const target = Math.min(Number(el.max) || Infinity, Math.ceil((this.voiceFitSeconds || 0) / step) * step);
+    el.value = target;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    $("voice-fit").hidden = true;
+    this.setVoiceStatus(USER_SETTINGS.voice.messages.fitDone.replace("{len}", el.value), "ok");
+  }
+
+  async freeComfyForVoice() {
+    const video = this.view.store.video;
+    if (!video?.freeVram || !video.comfyUrl || this.view.jobs.some((j) => ["preparing", "queued", "running"].includes(j.state))) return;
+    await fetch(`${video.comfyUrl.replace(/\/+$/, "")}/free`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unload_models: true, free_memory: true }), signal: AbortSignal.timeout(USER_SETTINGS.probeTimeoutMs) }).catch(() => {});
+  }
+
+  async voiceBeforeVideo() {
+    if (!this.voiceReachable || !this.voiceConfig().unloadBeforeVideo) return;
+    await this.voiceClient().unload().catch(() => {});
+  }
+}
+
 // ===== MainView の組み立て =====
 const PART_INSTANCES = new WeakMap();
 
@@ -12815,6 +13419,7 @@ installParts(MainView, [
   MainViewLongJoin,
   MainViewState,
   MainViewPromptReel,
+  MainViewVoice,
 ]);
 
 // ===== 数値の入力（スライダー＋ステッパー＋数値を押すと手入力。Stillmange と同じ） =====
@@ -13103,6 +13708,13 @@ class SettingsView {
     this.on($("sd-url"), "change", () => { const d = this.sdConfig(); d.urls[d.backend] = $("sd-url").value.trim() || USER_SETTINGS.sd.backends[d.backend].url; this.store.save(); this.onChange?.(); this.renderSdGen(); });
     this.on($("sd-test"), "click", () => { this.testSd(); this.renderSdGen(); });
     this.on($("sd-gen-reset"), "click", () => { this.sdConfig().gen = {}; this.store.save(); this.renderSdGen(); });
+    this.on($("voice-url"), "change", () => {
+      IrodoriClient.save(this.store, { bridgeUrl: $("voice-url").value.trim() || USER_SETTINGS.voice.defaults.bridgeUrl });
+      this.fillVoice();
+      setMsg($("voice-msg"), USER_SETTINGS.messages.autoSaved, "ok");
+    });
+    this.on($("voice-unload"), "change", (e) => IrodoriClient.save(this.store, { unloadBeforeVideo: e.target.checked }));
+    this.on($("voice-test"), "click", () => this.testVoice());
     this.on($("vid-params-reset"), "click", () => {
       delete (this.store.ui.overrides ??= {})[this.editing.video];
       this.store.save();
@@ -13176,6 +13788,18 @@ class SettingsView {
     setMsg($("sd-msg"), `${client.label}（${client.base}）: ${Net.probeMessage(state)}`, state === "ok" ? "ok" : "err");
   }
 
+  fillVoice() {
+    const cfg = IrodoriClient.config(this.store);
+    $("voice-url").value = cfg.bridgeUrl;
+    $("voice-unload").checked = !!cfg.unloadBeforeVideo;
+  }
+
+  async testVoice() {
+    setMsg($("voice-msg"), USER_SETTINGS.voice.messages.checking);
+    const result = await new IrodoriClient(IrodoriClient.config(this.store).bridgeUrl).check();
+    setMsg($("voice-msg"), result.text, result.state === "ok" ? "ok" : "err");
+  }
+
   showPane(name) {
     if (!PanelWindow.query(`.pane[data-pane="${name}"]`)) name = "guide";
     PanelWindow.queryAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pane === name)));
@@ -13197,6 +13821,7 @@ class SettingsView {
     $("opt-translate").checked = d.translate;
     this.fillMachine(d.machine);
     this.fillSd();
+    this.fillVoice();
     setMsg($("spec-msg"), "");
   }
 
@@ -13388,6 +14013,8 @@ class SettingsView {
     const video = this.store.video;
     const comfyUrl = video?.comfyUrl || USER_SETTINGS.defaultComfyUrl;
     add(`ComfyUI（${comfyUrl}）`, await Net.probe(`${comfyUrl.replace(/\/+$/, "")}/system_stats`));
+    const voice = new IrodoriClient(IrodoriClient.config(this.store).bridgeUrl);
+    add(`${USER_SETTINGS.voice.messages.diagLabel}（${voice.base}）`, await Net.probe(`${voice.base}/health`));
   }
 
   // GENERIC DELETE
