@@ -370,7 +370,7 @@ dialog#advanced::backdrop { background: var(--backdrop); }
 .mat-strip { display: flex; flex-wrap: wrap; gap: 4px; }
 .mat-strip:empty { display: none; }
 .mat-chip { position: relative; width: 66px; height: 50px; border-radius: var(--radius-xs); overflow: hidden; background: var(--film); color: var(--film-ink); display: grid; place-items: center; }
-.mat-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mat-chip img { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .mat-icon { font-size: 18px; line-height: 1; }
 .mat-tag { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1.5; background: rgba(0, 0, 0, .7); color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 dialog#materials {
@@ -396,9 +396,9 @@ dialog#materials::backdrop { background: var(--backdrop); }
 .mat-list:empty { display: none; }
 .mat-card { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-2); padding: 8px; }
 .mat-card.mat-has-video, .mat-card.mat-has-audio { grid-template-columns: 168px minmax(0, 1fr); }
-.mat-thumb { width: 100%; aspect-ratio: 4 / 3; background: var(--film); color: var(--film-ink); border-radius: var(--radius-xs); overflow: hidden; display: grid; place-items: center; }
-.mat-has-audio .mat-thumb { aspect-ratio: auto; background: none; }
-.mat-thumb img, .mat-thumb video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
+.mat-thumb { position: relative; width: 100%; aspect-ratio: 4 / 3; background: var(--film); color: var(--film-ink); border-radius: var(--radius-xs); overflow: hidden; display: grid; place-items: center; }
+.mat-has-audio .mat-thumb { aspect-ratio: auto; background: none; align-self: center; }
+.mat-thumb img, .mat-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
 .mat-thumb audio { width: 100%; height: 32px; }
 .mat-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .mat-head { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -414,15 +414,34 @@ dialog#materials::backdrop { background: var(--backdrop); }
 .mat-fields textarea.autogrow { padding-top: 2px; padding-bottom: 2px; min-height: 24px; }
 .mat-check { margin: 0; font-size: 12px; align-items: center; }
 .mat-check input { margin: 0; }
-.mat-trim { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
-.mat-trim input { width: 78px; }
+.mat-trim { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.mat-trim input { width: 100%; min-width: 0; text-align: right; }
 .mat-tabs-bar { flex: none; padding: 10px 20px 0; }
 .mat-tabs { display: inline-flex; }
 .mat-tabs button { min-height: 30px; padding: 0 14px; }
 .voice-conn { margin: 0; font-size: 12px; color: var(--muted); }
 .voice-conn:empty { display: none; }
 .voice-body { gap: 8px; }
-.voice-drop { min-height: 52px; }
+.voice-file-row { display: flex; align-items: stretch; gap: 6px; min-width: 0; }
+.dropzone.voice-drop { flex: 1 1 auto; min-width: 0; min-height: 90px; }
+.dropzone.voice-drop.has-file { border-style: solid; }
+.dropzone.voice-drop .hint strong { overflow-wrap: anywhere; }
+.voice-file-row > button { flex: none; align-self: center; }
+.voice-foot { flex-direction: column; align-items: stretch; gap: 10px; }
+.voice-foot-row { display: flex; }
+.voice-foot .voice-generate { flex: none; min-width: 240px; min-height: 48px; font-size: 16px; font-weight: 700; margin-left: 0; }
+.voice-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.voice-alert .msg { flex: 1 1 320px; margin: 0; white-space: pre-wrap; }
+.voice-setup { flex: none; }
+.voice-setup .primary { margin-left: 0; }
+.ref-frame { display: flex; flex-direction: column; gap: 6px; }
+#ref-fit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#ref-frame-canvas { position: relative; z-index: 1; display: block; max-width: 100%; max-height: 300px; touch-action: none; }
+#ref-actions button { min-height: 28px; padding: 1px 10px; }
+#ref-meta-text { white-space: pre-wrap; font-size: 11px; max-height: 200px; overflow: auto; margin: 0; color: var(--muted); }
+#ref-frame-canvas.draggable { cursor: grab; }
+#ref-frame-canvas.dragging { cursor: grabbing; }
+.voice-unload-check { margin-top: 12px; }
 #voice-seed { width: 180px; }
 .voice-body .field { margin: 0; }
 .voice-body #voice-text { width: 100%; box-sizing: border-box; }
@@ -432,8 +451,21 @@ dialog#materials::backdrop { background: var(--backdrop); }
 .voice-emoji { display: flex; flex-wrap: wrap; gap: 4px; }
 .voice-emoji button { min-height: 24px; padding: 0 6px; font-size: 11px; }
 .voice-adv > summary { font-size: 12px; }
-.voice-result { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.voice-result audio { height: 32px; flex: 1 1 260px; }
+.voice-history { display: flex; flex-direction: column; gap: 8px; }
+.voice-history-title { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+.voice-history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.voice-item { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 10px 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-l); background: var(--surface-2); }
+.voice-item.latest { border-color: var(--line-strong); box-shadow: inset 3px 0 0 var(--accent); }
+.voice-item-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.voice-item-head { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.voice-item-badge { padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.voice-item audio { width: 100%; height: 32px; }
+.voice-item-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.voice-item-actions button { min-height: 28px; padding: 1px 10px; font-size: 12px; }
+.voice-item-settings { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; margin: 0; font-size: 12px; align-content: start; }
+.voice-item-settings dt { color: var(--muted); white-space: nowrap; }
+.voice-item-settings dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 760px) { .voice-item { grid-template-columns: minmax(0, 1fr); } }
 .vid-flow { flex: none; }
 .wf-export { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .wf-export .note { margin: 0; }
@@ -995,6 +1027,25 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         </div>
       </section>
 
+      <section class="psec" id="sec-ref-base" aria-labelledby="ref-base-title" hidden>
+        <h2 class="psec-title" id="ref-base-title">基準の画像</h2>
+        <div class="psec-body">
+          <div class="dropzone has-image ref-base-view">
+            <canvas id="ref-frame-canvas" tabindex="0" aria-label="基準の画像のプレビュー（切り抜くときはドラッグで位置、ホイールで大きさを調整）"></canvas>
+          </div>
+          <div class="row" id="ref-actions">
+            <button type="button" id="ref-change">別の画像</button>
+            <button type="button" id="ref-reset">切り抜きをリセット</button>
+            <input type="file" id="ref-change-input" accept="image/*" hidden aria-label="基準にする画像を選ぶ">
+          </div>
+          <div class="prop" id="ref-base-field" hidden><span class="prop-label" id="ref-base-label">基準にする素材</span><select id="ref-base" aria-labelledby="ref-base-label"></select></div>
+          <details id="ref-meta-box">
+            <summary>画像の情報（メタデータ）</summary>
+            <pre id="ref-meta-text"></pre>
+          </details>
+        </div>
+      </section>
+
       <section class="psec" id="sec-image" aria-labelledby="img-title">
         <h2 class="psec-title" id="img-title">画像</h2>
         <div class="psec-body">
@@ -1023,6 +1074,14 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
           <label class="prop" id="crop-zoom-field" hidden><span class="prop-label">切り抜き（%）<output id="crop-zoom-out" class="sr-only">100</output></span>
             <input type="range" id="crop-zoom" min="25" max="100" step="1" value="100" aria-label="切り抜きの大きさ（%）">
           </label>
+          <div class="ref-frame" id="ref-frame" hidden>
+            <div class="prop"><span class="prop-label" id="ref-fit-label">合わせ方</span><div class="seg" id="ref-fit" role="group" aria-labelledby="ref-fit-label"></div></div>
+            <label class="prop" id="ref-zoom-field" hidden><span class="prop-label">切り抜き（%）</span>
+              <input type="range" id="ref-zoom" min="25" max="100" step="1" value="100" aria-label="基準の画像の切り抜きの大きさ（%）">
+            </label>
+            <div class="row"><button type="button" id="ref-aspect-fit">縦横比を基準の画像に合わせる</button></div>
+            <p class="frame-info" id="ref-frame-info" aria-live="polite"></p>
+          </div>
           <p class="frame-info" id="frame-info" aria-live="polite"></p>
         </div>
       </section>
@@ -1269,17 +1328,25 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
     <p class="voice-conn" id="voice-conn"></p>
     <label class="field">セリフ（絵文字を入れると、その場所で話し方が変わります）<textarea id="voice-text" rows="2" placeholder="例: 😊おはようございます。⏸️今日もいい天気ですね。"></textarea></label>
     <div class="voice-emoji" id="voice-emoji" role="group" aria-label="話し方の絵文字を入れる"></div>
-    <label class="dropzone mat-dropzone voice-drop" id="voice-drop">
-      <input type="file" id="voice-drop-input" multiple accept=".safetensors,audio/*,.wav,.mp3,.m4a,.flac,.ogg,.opus,.aac" aria-label="カセットか声の見本の音声を選ぶ">
-      <span class="hint"><strong>カセット（*.speaker.safetensors）や声の見本の音声をドロップ</strong>クリックして選ぶこともできます。カセットなら「カセット」、音声なら「参照音声」に切り替えます。</span>
-    </label>
     <div class="voice-grid">
       <span class="field-label">声の指定</span>
       <div class="seg" id="voice-mode" role="group" aria-label="声の指定"></div>
       <span class="field-label" id="voice-cassette-label">カセット</span>
-      <div class="row" id="voice-cassette-row"><select id="voice-cassette" class="grow" aria-labelledby="voice-cassette-label"></select><button type="button" id="voice-cassette-reload">一覧を読み直す</button></div>
+      <div class="voice-file-row" id="voice-cassette-row">
+        <label class="dropzone voice-drop" id="voice-cassette-drop">
+          <input type="file" id="voice-cassette-input" accept=".safetensors" aria-labelledby="voice-cassette-label">
+          <span class="hint"><strong id="voice-cassette-name"></strong><span id="voice-cassette-sub"></span></span>
+        </label>
+        <button type="button" id="voice-cassette-clear" hidden>外す</button>
+      </div>
       <span class="field-label" id="voice-ref-label">参照音声</span>
-      <div class="row" id="voice-ref-row"><span class="note" id="voice-ref-info"></span><button type="button" id="voice-ref-clear">見本を外す</button></div>
+      <div class="voice-file-row" id="voice-ref-row">
+        <label class="dropzone voice-drop" id="voice-ref-drop">
+          <input type="file" id="voice-ref-input" multiple accept="audio/*,.wav,.mp3,.m4a,.flac,.ogg,.opus,.aac" aria-labelledby="voice-ref-label">
+          <span class="hint"><strong id="voice-ref-name"></strong><span id="voice-ref-info"></span></span>
+        </label>
+        <button type="button" id="voice-ref-clear" hidden>外す</button>
+      </div>
       <span class="field-label" id="voice-caption-label">声・話し方</span>
       <textarea id="voice-caption" class="autogrow" rows="1" aria-labelledby="voice-caption-label"></textarea>
       <span class="field-label" id="voice-checkpoint-label">モデル</span>
@@ -1299,14 +1366,18 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         <label class="check mat-check"><input type="checkbox" id="voice-length-check"> 2回読んで、言い切れる長さに合わせる（時間は約2倍）</label>
       </div>
     </details>
-    <div class="row"><button class="primary" id="voice-generate">音声を作る</button><span class="msg" id="voice-status" aria-live="polite"></span></div>
-    <div class="voice-result" id="voice-result" hidden>
-      <audio id="voice-audio" controls preload="auto"></audio>
-      <span class="note" id="voice-meta"></span>
-      <button type="button" id="voice-keep-seed">このシードに固定</button>
-      <button class="primary" id="voice-adopt">素材に入れる（セリフとして使う）</button>
-    </div>
     <div class="row" id="voice-fit" hidden><span class="note" id="voice-fit-text"></span><button type="button" id="voice-fit-btn">動画の長さを音声に合わせる</button></div>
+    <section class="voice-history" id="voice-history" aria-labelledby="voice-history-title" hidden>
+      <h3 class="voice-history-title" id="voice-history-title"></h3>
+      <ol class="voice-history-list" id="voice-history-list"></ol>
+    </section>
+  </div>
+  <div class="adv-foot voice-foot" data-mat-pane="voice" hidden>
+    <div class="voice-foot-row"><button class="primary voice-generate" id="voice-generate">音声を作る</button></div>
+    <div class="voice-alert" id="voice-alert" hidden>
+      <span class="msg" id="voice-status" aria-live="polite"></span>
+      <div class="row voice-setup" id="voice-setup" hidden><button class="primary" type="button" data-irodori-download>Irodori Bridge をダウンロード</button><button type="button" data-irodori-guide>つなぎ方を見る</button></div>
+    </div>
   </div>
   <div class="adv-foot" data-mat-pane="items">
     <button class="danger" id="mat-clear">すべて外す</button>
@@ -1412,14 +1483,22 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
             <li>ブラウザで <code id="cors-ext-a1111-ping"></code> を開き、<code>{"ok":true, …, "api":true}</code> と出れば準備完了です。ログに <code>could not enable API</code> と出た場合は、起動オプションに <code>--api</code> を足してください。</li>
           </ol>
         </li>
-        <li class="card">
-          <h4 class="card-title">（セリフの音声を Irodori-TTS で作るときだけ）Irodori Bridge を起動する</h4>
-          <p class="note">「素材から動画」の「素材」の画面で、PC の中の Irodori-TTS にセリフを読み上げてもらうための中継プログラムです。このPCの中（127.0.0.1）だけで動き、このページのアドレスからの接続だけを受け付けます。文章や音声が外部に送られることはありません。</p>
+        <li class="card" id="guide-irodori">
+          <h4 class="card-title">（セリフの音声を Irodori-TTS で作るときだけ）Irodori-TTS とつなぐ</h4>
+          <p class="note">「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」で、PC の中の <a href="https://github.com/Aratako/Irodori-TTS" target="_blank" rel="noopener">Irodori-TTS</a> にセリフを読み上げてもらうための準備です。中継プログラム「Irodori Bridge」がこのPCの中（127.0.0.1:8791）だけで動き、このページのアドレスからの接続だけを受け付けます。文章や音声が外部に送られることはありません。NVIDIA の GPU を使います。</p>
+          <div class="row"><button class="primary" type="button" data-irodori-download>Irodori Bridge をダウンロード（irodori-bridge.zip）</button></div>
           <ol class="steps">
-            <li>Irodori-TTS をまだ入れていない場合は、公式の手順（GitHub の Aratako/Irodori-TTS）で入れます。</li>
-            <li><code>irodori_bridge.py</code> と <code>Irodori Bridge起動.bat</code>（Stillmotion の <code>irodori-bridge</code> フォルダにあります）を、Irodori-TTS のフォルダ（例: <code>D:\Irodori-TTS</code>）の<strong>直下</strong>に置きます。直下に置かないと動きません。別の場所から起動したいときは、BAT は動かさずにショートカットを作ります。</li>
-            <li>学習済みのカセット（<code>*.speaker.safetensors</code>）を使うときは、<code>D:\Irodori-TTS\cassettes</code> に入れます（フォルダに分けてもかまいません。初回の起動で作られます）。</li>
+            <li><strong>Irodori-TTS を入れる</strong>（入れてあれば次へ）。
+              <ol>
+                <li><a href="https://git-scm.com/download/win" target="_blank" rel="noopener">Git</a> をインストールします（設定はそのままで大丈夫です）。</li>
+                <li>PowerShell を開き、<code>powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"</code> を貼り付けて Enter を押し、uv を入れます。終わったら PowerShell を開き直します。</li>
+                <li>次を1行ずつ実行します: <code>cd D:\</code> → <code>git clone https://github.com/Aratako/Irodori-TTS.git</code> → <code>cd Irodori-TTS</code> → <code>uv sync --extra cu128</code>。<code>D:\Irodori-TTS\.venv</code> ができれば完了です（数分〜十数分かかります）。</li>
+              </ol>
+            </li>
+            <li>上のボタンでダウンロードした ZIP を展開し、<code>irodori_bridge.py</code> と <code>Irodori Bridge起動.bat</code> を Irodori-TTS のフォルダ（例: <code>D:\Irodori-TTS</code>）の<strong>直下</strong>に置きます。直下に置かないと動きません。別の場所から起動したいときは、BAT は動かさずにショートカットを作ります。</li>
             <li><code>Irodori Bridge起動.bat</code> をダブルクリックし、「準備完了です」と出れば完了です。ブラウザで <code>http://127.0.0.1:8791/health</code> を開き、<code>"ok": true</code> と出ることでも確かめられます。Irodori-TTS の画面（Gradio）は起動しなくてかまいません（同時に起動すると VRAM を取り合います）。</li>
+            <li>「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」を開き、「接続OK」と出れば使えます。最初の1回は、モデル（約 3.3GB）のダウンロードと読み込みに数分かかります。作った音声は Irodori-TTS の画面と同じ <code>D:\Irodori-TTS\gradio_outputs</code> に保存され、新しい 10 件がこのページに一覧で出ます。</li>
+            <li>学習済みのカセット（<code>*.speaker.safetensors</code>）を使うときは、「声の指定」を「カセット」にして、ファイルを枠にドロップ（またはクリックして選択）します。一度使ったカセットは、このブラウザが覚えています。</li>
           </ol>
         </li>
         <li class="card">
@@ -1610,10 +1689,15 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
     <section class="pane" data-pane="voice" hidden>
       <header class="pane-head"><h3>音声AI（Irodori-TTS）</h3><p class="lead">「素材から動画」の「素材」の画面でセリフの音声を作るときの接続先です。PC の中の Irodori-TTS に、中継プログラム Irodori Bridge を通してつなぎます（準備は「はじめに」を見てください）。変更は自動で保存されます。</p></header>
       <div class="card">
+        <h4 class="card-title">はじめて使うとき</h4>
+        <p class="note">Irodori-TTS を入れ、中継プログラム Irodori Bridge を Irodori-TTS のフォルダの直下に置いて起動します。くわしい手順は「はじめに」にあります（ZIP の中の README.txt にも同じ手順があります）。</p>
+        <div class="row"><button class="primary" type="button" data-irodori-download>Irodori Bridge をダウンロード（irodori-bridge.zip）</button><button type="button" data-irodori-guide>「はじめに」の手順を見る</button></div>
+      </div>
+      <div class="card">
         <h4 class="card-title">接続先</h4>
         <label class="field">Irodori Bridge の URL<input type="url" id="voice-url" spellcheck="false"></label>
         <div class="row"><button id="voice-test">接続を確かめる</button><span class="msg" id="voice-msg"></span></div>
-        <label class="check"><input type="checkbox" id="voice-unload"> 動画を作る前に、音声AIのモデルを外して VRAM を空ける（おすすめ）</label>
+        <label class="check voice-unload-check"><input type="checkbox" id="voice-unload"> 動画を作る前に、音声AIのモデルを外して VRAM を空ける（おすすめ）</label>
         <p class="note">音声AIと動画AI（ComfyUI）は同じ GPU を使います。セリフの音声を先に作ってから動画を作ると、取り合いにならず速く済みます。音声を作るときは、動画AIの設定で「生成後に ComfyUI のGPUメモリを解放する」がオンなら、先に ComfyUI のモデルを外します。</p>
       </div>
     </section>
@@ -2516,7 +2600,7 @@ install()
       workflow: {
         "115": {
           "inputs": {
-            "aspect_ratio": "16:9 (Widescreen)",
+            "aspect_ratio": "3:4 (Portrait Standard)",
             "megapixels": 0.2,
             "multiple": 32
           },
@@ -2636,7 +2720,7 @@ install()
         },
         "129": {
           "inputs": {
-            "noise_seed": 108488734354934
+            "noise_seed": 2335328305
           },
           "class_type": "RandomNoise",
           "_meta": {
@@ -2658,7 +2742,7 @@ install()
         },
         "132": {
           "inputs": {
-            "value": 3
+            "value": 7
           },
           "class_type": "PrimitiveFloat",
           "_meta": {
@@ -2676,7 +2760,7 @@ install()
         },
         "143": {
           "inputs": {
-            "model_name": "minimax-h3-ref2va-Q4_0.gguf",
+            "model_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
             "activation_reserve_gb": 0
           },
           "class_type": "H3ModelLoaderAny",
@@ -2710,9 +2794,9 @@ install()
         },
         "146": {
           "inputs": {
-            "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+            "lora_name": "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors",
             "strength": 1,
-            "low_vram": false,
+            "low_vram": true,
             "model": [
               "143",
               0
@@ -2914,6 +2998,18 @@ install()
           "class_type": "ModelPreviewOverrideKJ",
           "_meta": {
             "title": "Model Preview Override"
+          }
+        },
+        "177": {
+          "inputs": {
+            "references": [
+              "165",
+              0
+            ]
+          },
+          "class_type": "MiniMaxH3ReferenceSplitter",
+          "_meta": {
+            "title": "Fantastic H3 Reference Splitter"
           }
         }
       },
@@ -3245,6 +3341,802 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     },
   },
 
+  // ===== 素材から動画の基準の画像（動画の大きさに合わせて切り抜く・余白を付ける） =====
+  refFrame: {
+    fits: [["none", "そのまま"]],
+    defaultFocus: { x: 0.5, y: 0.5, zoom: 1 },
+    messages: {
+      none: "{tag} はそのまま渡し、ComfyUI 側で {w}×{h} に縮小します（切り抜きはしません）。",
+      crop: "{tag} を {w}×{h} に切り抜いて渡します。ドラッグ（または矢印キー）で位置を、マウスホイール（または＋／−キー）か「切り抜き」で大きさを調整できます。",
+      pad: "{tag} を {w}×{h} に、余白を付けて渡します。",
+      workflowSize: "大きさが「ワークフローのまま」なので、{tag} はそのまま渡します（切り抜くには大きさを選びます）。",
+    },
+  },
+
+  // ===== Irodori Bridge の配布物（正本は Stillmotion/irodori-bridge/。_開発用/tools/sync_irodori_bridge.py で反映） =====
+  irodoriBridge: {
+    folder: "irodori-bridge",
+    zipName: "irodori-bridge.zip",
+    script: "irodori_bridge.py",
+    batName: "Irodori Bridge起動.bat",
+    readme: `Irodori Bridge（Stillmotion から Irodori-TTS でセリフの音声を作るための中継プログラム）
+
+Stillmotion（__ORIGINS_TEXT__）の「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」から、
+このPCの中の Irodori-TTS にセリフを読み上げてもらうためのプログラムです。
+このPCの中（127.0.0.1:8791）だけで待ち受け、次のWebアプリ（__ORIGINS_TEXT__）からの接続だけを受け付けます。
+ほかのサイトからの接続は断ります。文章や音声が外部に送られることはありません。
+
+入っているもの
+- irodori_bridge.py ……… 中継プログラム本体
+- Irodori Bridge起動.bat … 起動用（ダブルクリックで起動し、準備ができたか確かめます）
+- README.txt ……………… このファイル
+
+必要なもの
+- Windows と NVIDIA の GPU
+- Irodori-TTS（まだ入れていなければ、下の「1」で入れます）
+
+1. Irodori-TTS を入れる（入れてある場合は 2 へ）
+   (1) Git を入れます: https://git-scm.com/download/win からダウンロードしてインストールします（設定はそのままで大丈夫です）。
+   (2) uv を入れます: PowerShell を開き、次の1行を貼り付けて Enter を押します。
+         powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+       終わったら PowerShell をいったん閉じて、開き直します。
+   (3) Irodori-TTS を入れます。入れたい場所（例: D ドライブ）で、次を1行ずつ実行します。
+         cd D:\\
+         git clone https://github.com/Aratako/Irodori-TTS.git
+         cd Irodori-TTS
+         uv sync --extra cu128
+       D:\\Irodori-TTS ができ、その中に .venv というフォルダができれば完了です（数分〜十数分かかります）。
+       くわしくは公式の説明を見てください: https://github.com/Aratako/Irodori-TTS
+
+2. Irodori Bridge を置く
+   irodori_bridge.py と Irodori Bridge起動.bat を、Irodori-TTS のフォルダ（例: D:\\Irodori-TTS）の「直下」に置きます。
+     D:\\Irodori-TTS\\irodori_bridge.py
+     D:\\Irodori-TTS\\Irodori Bridge起動.bat
+   ほかのフォルダに置くと動きません。デスクトップなど別の場所から起動したいときは、BAT は動かさず、
+   右クリック →「ショートカットの作成」で作ったショートカットを置きます。
+
+3. 起動する
+   Irodori Bridge起動.bat をダブルクリックします。「準備完了です」と出れば完了です。
+   （ブラウザで http://127.0.0.1:8791/health を開き、"ok": true と出ることでも確かめられます）
+   止めるときは、最小化された「Irodori Bridge」の画面を閉じます。
+   Irodori-TTS の画面（Gradio）は起動しなくてかまいません。同時に起動すると GPU のメモリを取り合います。
+
+4. Stillmotion で使う
+   「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」タブを開き、
+   「接続OK」と出ればセリフの音声を作れます。
+   最初の1回は、モデル（約 3.3GB）のダウンロードと読み込みに数分かかります。2回目からは速くなります。
+   作った音声は、Irodori-TTS の画面と同じ D:\\Irodori-TTS\\gradio_outputs に sample_日時_001.wav の名前で保存されます
+   （生成時の設定は、同じ名前の .stillmotion.json に入ります）。Stillmotion には新しい 10 件が一覧で出ます。
+
+カセット（学習済みの声）を使うとき
+   Stillmotion の「声の指定」を「カセット」にして、*.speaker.safetensors を枠にドロップ（またはクリックして選択）します。
+   一度使ったカセットは、ブラウザが覚えています。
+
+うまくいかないとき
+- 「直下に置いてください」と出る … 2 の置き場所を確かめます。
+- 「.venv がありません」と出る …… 1 の (3) の uv sync が終わっているか確かめます。
+- 60 秒待っても応答がない ………… 最小化された「Irodori Bridge」の画面のエラーを確かめます。
+                                   ほかのアプリが 8791 番を使っている場合は、BAT の PORT=8791 の数字を変え、
+                                   Stillmotion の「設定」→「音声AI」の URL も同じ番号にします。
+- Stillmotion で「接続が許可されていません」と出る … Stillmotion は必ず https://bighipadventure.github.io/Stillmotion/ から開きます。
+`,
+    source: `"""Irodori Bridge: Stillmotion（ブラウザ）から Irodori-TTS で音声を作るための中継プログラム。
+
+D:\\\\Irodori-TTS の直下に置き、Irodori-TTS と同じ .venv の Python で動かします（「Irodori Bridge起動.bat」から起動）。
+このPCの中（127.0.0.1）だけで待ち受け、下の ALLOWED_ORIGINS に書いたサイトからの接続だけを受け付けます。
+"""
+import argparse
+import base64
+import binascii
+import json
+import queue
+import re
+import shutil
+import struct
+import threading
+import time
+import traceback
+import uuid
+from datetime import datetime
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+# ===== 許可するアクセス元 =====
+# 下に書いたサイトからの接続だけを許可します（web-app-cors と同じ考え方）。
+ALLOWED_ORIGINS = {
+__ORIGINS__
+}
+# True にすると、このPCで動かすページ（http://localhost / http://127.0.0.1 の全ポート）からの接続も許可します。ふだんは False のまま
+ALLOW_LOCALHOST = False
+LOCALHOST_RE = re.compile(r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$", re.IGNORECASE)
+
+# ===== 待ち受け =====
+HOST = "127.0.0.1"
+DEFAULT_PORT = 8791
+
+# ===== 置き場所 =====
+ROOT = Path(__file__).resolve().parent
+CASSETTE_DIR = ROOT / "cassettes"
+# 作った音声の保存先。Irodori-TTS の画面（gradio_app.py）と同じフォルダ・同じ名前の付け方にする
+OUTPUT_DIR = ROOT / "gradio_outputs"
+OUTPUT_META_SUFFIX = ".stillmotion.json"
+OUTPUT_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+\\.wav$")
+WORK_DIR = ROOT / "bridge_outputs"
+CASSETTE_SUFFIX = ".speaker.safetensors"
+
+# ===== 使えるモデル =====
+CHECKPOINTS = {
+    "Aratako/Irodori-TTS-v4.1-Small": "公式（v4.1-Small）",
+    "Aratako/Irodori-TTS-v4.1-Small-MF": "高速（v4.1-Small-MF）",
+    "phasefield-audio/Irodori-TTS-v4.1-Anime": "アニメ版（v4.1-Anime）",
+}
+DEFAULT_CHECKPOINT = "Aratako/Irodori-TTS-v4.1-Small"
+CASSETTE_BASE_CHECKPOINTS = {"Aratako/Irodori-TTS-v4.1-Small"}
+CODEC_REPO = "Aratako/Semantic-DACVAE-Japanese-32dim"
+
+# ===== 上限 =====
+MAX_TEXT_CHARS = 500
+MAX_CAPTION_CHARS = 500
+MAX_BODY_BYTES = 64 * 1024 * 1024
+MAX_REFERENCE_FILES = 8
+MAX_CANDIDATES = 4
+MAX_QUEUE = 20
+KEEP_JOBS = 30
+MAX_OUTPUT_LIST = 50
+REFERENCE_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".opus", ".aac"}
+CFG_FIELDS = ("cfg_scale_text", "cfg_scale_caption", "cfg_scale_speaker")
+CFG_MODES = {"independent", "joint", "alternating"}
+
+NAME = "irodori-bridge"
+VERSION = "2"
+ALLOWED_PATHS = ("/health", "/cassettes", "/jobs", "/unload", "/outputs")
+JOB_PATH_RE = re.compile(r"^/jobs/([0-9a-f]{32})(/audio\\.wav)?$")
+OUTPUT_PATH_RE = re.compile(r"^/outputs/([A-Za-z0-9_.-]+\\.wav)$")
+MIME_EXT = {"audio/wav": ".wav", "audio/x-wav": ".wav", "audio/wave": ".wav", "audio/mpeg": ".mp3", "audio/mp3": ".mp3",
+            "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/flac": ".flac", "audio/ogg": ".ogg", "audio/opus": ".opus", "audio/aac": ".aac"}
+
+
+class ApiError(Exception):
+    def __init__(self, status, code, message):
+        super().__init__(message)
+        self.status = status
+        self.code = code
+        self.message = message
+
+
+def log(message):
+    print(f"[{NAME}] {time.strftime('%H:%M:%S')} {message}", flush=True)
+
+
+# ===== Irodori-TTS の読み込み =====
+class Irodori:
+    def __init__(self, precision, codec_precision, device):
+        self.precision = precision
+        self.codec_precision = codec_precision
+        self.requested_device = device
+        self.error = ""
+        self.mod = None
+        self.device = ""
+        self.device_name = ""
+        self.resolved = {}
+        try:
+            from irodori_tts import inference_runtime, length_check
+            self.mod = inference_runtime
+            self.length_check = length_check
+            self.device = device or inference_runtime.default_runtime_device()
+            self.device_name = self.describe_device()
+        except Exception as exc:
+            self.error = f"{type(exc).__name__}: {exc}"
+
+    @property
+    def ok(self):
+        return self.mod is not None
+
+    def describe_device(self):
+        try:
+            import torch
+            if self.device.startswith("cuda") and torch.cuda.is_available():
+                return torch.cuda.get_device_name(0)
+        except Exception:
+            pass
+        return self.device
+
+    def checkpoint_path(self, checkpoint):
+        if checkpoint not in self.resolved:
+            self.resolved[checkpoint] = str(self.mod.download_hf_checkpoint(checkpoint))
+        return self.resolved[checkpoint]
+
+    def runtime_key(self, checkpoint):
+        return self.mod.RuntimeKey(
+            checkpoint=self.checkpoint_path(checkpoint),
+            model_device=self.device,
+            codec_repo=CODEC_REPO,
+            model_precision=self.precision,
+            codec_device=self.device,
+            codec_precision=self.codec_precision,
+            compile_model=False,
+            compile_dynamic=False,
+        )
+
+
+# ===== ジョブ =====
+class Jobs:
+    def __init__(self, irodori):
+        self.irodori = irodori
+        self.lock = threading.Lock()
+        self.gpu_lock = threading.Lock()
+        self.jobs = {}
+        self.order = []
+        self.pending = queue.Queue()
+        self.loaded_checkpoint = None
+        self.current = None
+        threading.Thread(target=self.worker, name="irodori-worker", daemon=True).start()
+
+    def queued_ids(self):
+        return [jid for jid in self.order if self.jobs[jid]["state"] == "queued"]
+
+    def add(self, spec, job_dir):
+        with self.lock:
+            if len(self.queued_ids()) >= MAX_QUEUE:
+                raise ApiError(429, "bridge_busy", f"順番待ちが上限（{MAX_QUEUE} 件）です。生成が進んでから頼み直してください。")
+            job = {
+                "id": spec["id"], "state": "queued", "note": "順番待ち", "spec": spec, "dir": job_dir,
+                "created_at": time.time(), "started_at": None, "finished_at": None, "result": None, "error": None, "outputs": [],
+            }
+            self.jobs[job["id"]] = job
+            self.order.append(job["id"])
+            self.prune()
+        self.pending.put(job["id"])
+        return job
+
+    def prune(self):
+        finished = [jid for jid in self.order if self.jobs[jid]["state"] in ("done", "error", "cancelled")]
+        for jid in finished[:max(0, len(finished) - KEEP_JOBS)]:
+            job = self.jobs.pop(jid)
+            self.order.remove(jid)
+            shutil.rmtree(job["dir"], ignore_errors=True)
+
+    def get(self, job_id):
+        with self.lock:
+            job = self.jobs.get(job_id)
+            if job is None:
+                raise ApiError(404, "job_not_found", "そのジョブはありません（古いジョブは自動で消えます）。")
+            return job
+
+    def view(self, job):
+        with self.lock:
+            ids = self.queued_ids()
+            end = job["finished_at"] or time.time()
+            return {
+                "id": job["id"], "state": job["state"], "note": job["note"],
+                "queue_position": ids.index(job["id"]) + 1 if job["id"] in ids else 0,
+                "elapsed": round(end - (job["started_at"] or job["created_at"]), 1) if job["state"] != "queued" else 0,
+                "result": job["result"], "error": job["error"],
+            }
+
+    def cancel(self, job_id):
+        job = self.get(job_id)
+        with self.lock:
+            if job["state"] == "running":
+                raise ApiError(409, "bridge_busy", "生成中のジョブは止められません。終わるまで待ってください。")
+            if job["state"] == "queued":
+                job["state"] = "cancelled"
+                job["note"] = "取り消しました"
+                job["finished_at"] = time.time()
+                return {"ok": True, "state": "cancelled"}
+            self.jobs.pop(job_id)
+            self.order.remove(job_id)
+        shutil.rmtree(job["dir"], ignore_errors=True)
+        return {"ok": True, "state": "deleted"}
+
+    def unload(self):
+        if not self.gpu_lock.acquire(blocking=False):
+            raise ApiError(409, "bridge_busy", "音声を生成中のため、いまはモデルを外せません。")
+        try:
+            was_loaded = self.loaded_checkpoint is not None
+            if self.irodori.ok:
+                self.irodori.mod.clear_cached_runtime()
+            self.loaded_checkpoint = None
+        finally:
+            self.gpu_lock.release()
+        if was_loaded:
+            log("モデルを外しました（VRAM を空けました）")
+        return {"ok": True, "unloaded": was_loaded}
+
+    def set_job(self, job, **patch):
+        with self.lock:
+            job.update(patch)
+
+    def worker(self):
+        while True:
+            job_id = self.pending.get()
+            with self.lock:
+                job = self.jobs.get(job_id)
+                if job is None or job["state"] != "queued":
+                    continue
+                job["state"] = "running"
+                job["started_at"] = time.time()
+                job["note"] = "準備中"
+            with self.gpu_lock:
+                self.current = job_id
+                try:
+                    result = self.run(job)
+                    self.set_job(job, state="done", note="", result=result, finished_at=time.time())
+                    log(f"できました: {result['duration']:.2f} 秒（seed {result['seed']}、{job['finished_at'] - job['started_at']:.1f} 秒かかりました）")
+                except ApiError as exc:
+                    self.set_job(job, state="error", note="", error={"code": exc.code, "message": exc.message}, finished_at=time.time())
+                    log(f"失敗しました: {exc.code}: {exc.message}")
+                except Exception as exc:
+                    traceback.print_exc()
+                    self.set_job(job, state="error", note="", error={"code": "generation_failed", "message": f"{type(exc).__name__}: {exc}"}, finished_at=time.time())
+                finally:
+                    self.current = None
+
+    def run(self, job):
+        spec = job["spec"]
+        irodori = self.irodori
+        if not irodori.ok:
+            raise ApiError(500, "model_load_failed", f"Irodori-TTS を読み込めません（{irodori.error}）。D:\\\\Irodori-TTS の直下に置いて起動したか確認してください。")
+        checkpoint = spec["checkpoint"]
+        reload_needed = self.loaded_checkpoint != checkpoint
+        self.set_job(job, note="モデルを読み込み中（初回は数分かかります）" if reload_needed else "生成中")
+        log(f"生成: {checkpoint} / {spec['voice_mode']} / {len(spec['text'])} 文字")
+        try:
+            runtime, reloaded = irodori.mod.get_cached_runtime(irodori.runtime_key(checkpoint))
+        except Exception as exc:
+            traceback.print_exc()
+            self.loaded_checkpoint = None
+            raise ApiError(500, "model_load_failed", f"{checkpoint} を読み込めませんでした（{type(exc).__name__}: {exc}）")
+        self.loaded_checkpoint = checkpoint
+        self.set_job(job, note="生成中")
+        request = irodori.mod.SamplingRequest(**spec["request"])
+        last_line = {"text": ""}
+
+        def progress(message):
+            last_line["text"] = str(message)
+
+        info = None
+        if spec["length_check"]:
+            result, info = irodori.length_check.synthesize(runtime, request, log_fn=progress)
+        else:
+            result = runtime.synthesize(request, log_fn=progress)
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        outputs = []
+        durations = []
+        for i, audio in enumerate(result.audios, start=1):
+            path = OUTPUT_DIR / f"sample_{stamp}_{i:03d}.wav"
+            irodori.mod.save_wav(path, audio.float(), result.sample_rate)
+            duration = round(int(audio.shape[-1]) / result.sample_rate, 3)
+            meta = {**spec["meta"], "seed": int(result.used_seed), "duration": duration, "sample_rate": int(result.sample_rate),
+                    "created_at": int(time.time() * 1000), "candidate": i}
+            meta_path(path).write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+            outputs.append(str(path))
+            durations.append(duration)
+        job["outputs"] = outputs
+        shutil.rmtree(job["dir"], ignore_errors=True)
+        return {
+            "duration": durations[0], "durations": durations, "candidates": len(outputs), "sample_rate": int(result.sample_rate),
+            "seed": int(result.used_seed), "checkpoint": checkpoint, "voice_mode": spec["voice_mode"], "runtime_reloaded": bool(reloaded),
+            "warnings": spec["warnings"], "messages": [str(m) for m in result.messages], "length_check": info,
+            "files": [Path(o).name for o in outputs],
+        }
+
+
+# ===== リクエストの読み取り =====
+def decode_base64(value, what):
+    if not isinstance(value, str) or not value.strip():
+        raise ApiError(400, "invalid_request", f"{what} が空です。")
+    mime = ""
+    data = value.strip()
+    if data.startswith("data:"):
+        head, _, data = data.partition(",")
+        mime = head[5:].split(";")[0].lower()
+    try:
+        return base64.b64decode(data, validate=True), mime
+    except (binascii.Error, ValueError):
+        raise ApiError(400, "invalid_request", f"{what} を読み取れません（base64 ではありません）。")
+
+
+def resolve_cassette(relative):
+    if not isinstance(relative, str) or not relative.strip():
+        raise ApiError(400, "invalid_request", "カセットを選んでください。")
+    rel = relative.strip().replace("\\\\", "/")
+    if rel.startswith("/") or re.match(r"^[A-Za-z]:", rel) or ".." in rel.split("/"):
+        raise ApiError(400, "invalid_request", "カセットはカセット置き場（cassettes フォルダ）の中から選んでください。")
+    base = CASSETTE_DIR.resolve()
+    path = (base / rel).resolve()
+    if base not in path.parents or not path.name.endswith(CASSETTE_SUFFIX):
+        raise ApiError(400, "invalid_request", "カセットはカセット置き場（cassettes フォルダ）の中の *.speaker.safetensors から選んでください。")
+    if not path.is_file():
+        raise ApiError(404, "cassette_not_found", f"カセット「{rel}」が見つかりません。一覧を読み込み直してください。")
+    return str(path)
+
+
+def optional_number(body, key, kind, low, high):
+    value = body.get(key)
+    if value is None or value == "":
+        return None
+    try:
+        number = kind(value)
+    except (TypeError, ValueError):
+        raise ApiError(400, "invalid_request", f"{key} は数で指定してください。")
+    if not (low <= number <= high):
+        raise ApiError(400, "invalid_request", f"{key} は {low}〜{high} で指定してください。")
+    return number
+
+
+def build_spec(body, job_dir):
+    if not isinstance(body, dict):
+        raise ApiError(400, "invalid_request", "JSON のオブジェクトで送ってください。")
+    text = str(body.get("text") or "").strip()
+    if not text:
+        raise ApiError(400, "invalid_request", "読み上げるテキストが空です。")
+    if len(text) > MAX_TEXT_CHARS:
+        raise ApiError(400, "invalid_request", f"テキストが長すぎます（{MAX_TEXT_CHARS} 文字まで）。区切って作ってください。")
+    caption = str(body.get("caption") or "").strip() or None
+    if caption and len(caption) > MAX_CAPTION_CHARS:
+        raise ApiError(400, "invalid_request", f"キャプションが長すぎます（{MAX_CAPTION_CHARS} 文字まで）。")
+    checkpoint = body.get("checkpoint") or DEFAULT_CHECKPOINT
+    if checkpoint not in CHECKPOINTS:
+        raise ApiError(400, "invalid_request", f"使えないモデルです: {checkpoint}")
+    voice = body.get("voice") or {"mode": "caption"}
+    mode = voice.get("mode") if isinstance(voice, dict) else None
+    request = {"text": text, "caption": caption, "decode_mode": "sequential", "trim_tail": True}
+    warnings = []
+    source = []
+    if mode == "caption":
+        request["no_ref"] = True
+    elif mode == "cassette":
+        if voice.get("reference_audio_base64"):
+            raise ApiError(400, "invalid_request", "参照音声とカセットは同時に使えません。どちらか一方にしてください。")
+        if voice.get("cassette_upload_base64"):
+            data, _ = decode_base64(voice["cassette_upload_base64"], "カセットのファイル")
+            path = Path(job_dir) / f"upload{CASSETTE_SUFFIX}"
+            path.write_bytes(data)
+            request["ref_embed"] = str(path)
+            source = [str(voice.get("cassette_name") or "upload.speaker.safetensors")[:200]]
+        else:
+            request["ref_embed"] = resolve_cassette(voice.get("cassette"))
+            source = [Path(request["ref_embed"]).name]
+        if checkpoint not in CASSETTE_BASE_CHECKPOINTS:
+            warnings.append(f"カセットは公式（v4.1-Small）で学習したものです。{CHECKPOINTS[checkpoint]} では声が似ないことがあります。")
+    elif mode == "reference":
+        if voice.get("cassette") or voice.get("cassette_upload_base64"):
+            raise ApiError(400, "invalid_request", "参照音声とカセットは同時に使えません。どちらか一方にしてください。")
+        items = voice.get("reference_audio_base64")
+        items = items if isinstance(items, list) else [items] if items else []
+        if not items:
+            raise ApiError(400, "invalid_request", "参照音声を入れてください。")
+        if len(items) > MAX_REFERENCE_FILES:
+            raise ApiError(400, "invalid_request", f"参照音声は {MAX_REFERENCE_FILES} 本までです。")
+        paths = []
+        for n, item in enumerate(items, start=1):
+            name = item.get("name", "") if isinstance(item, dict) else ""
+            data, mime = decode_base64(item.get("data") if isinstance(item, dict) else item, f"参照音声 {n}")
+            ext = Path(name).suffix.lower() if Path(name).suffix.lower() in REFERENCE_EXTS else MIME_EXT.get(mime, ".wav")
+            path = Path(job_dir) / f"reference_{n}{ext}"
+            path.write_bytes(data)
+            paths.append(str(path))
+            source.append(name[:200] or path.name)
+        request["ref_wavs"] = paths
+    else:
+        raise ApiError(400, "invalid_request", "voice.mode は caption / reference / cassette のどれかにしてください。")
+    seed = optional_number(body, "seed", int, 0, 2**63 - 1)
+    if seed is not None:
+        request["seed"] = seed
+    steps = optional_number(body, "num_steps", int, 1, 200)
+    if steps is not None:
+        request["num_steps"] = steps
+    request["num_candidates"] = optional_number(body, "num_candidates", int, 1, MAX_CANDIDATES) or 1
+    scale = optional_number(body, "duration_scale", float, 0.25, 4.0)
+    if scale is not None:
+        request["duration_scale"] = scale
+    for key in CFG_FIELDS:
+        value = optional_number(body, key, float, 0.0, 20.0)
+        if value is not None:
+            request[key] = value
+    if body.get("cfg_guidance_mode"):
+        if body["cfg_guidance_mode"] not in CFG_MODES:
+            raise ApiError(400, "invalid_request", "cfg_guidance_mode は independent / joint / alternating のどれかにしてください。")
+        request["cfg_guidance_mode"] = body["cfg_guidance_mode"]
+    meta = {
+        "engine": "Irodori-TTS", "app": NAME, "text": text, "caption": caption or "", "mode": mode, "source": source, "checkpoint": checkpoint,
+        "steps": request.get("num_steps"), "duration_scale": request.get("duration_scale", 1.0), "length_check": bool(body.get("length_check")),
+    }
+    return {
+        "id": Path(job_dir).name, "text": text, "checkpoint": checkpoint, "voice_mode": mode, "request": request,
+        "length_check": bool(body.get("length_check")), "warnings": warnings, "meta": meta,
+    }
+
+
+def meta_path(wav_path):
+    return Path(wav_path).with_name(Path(wav_path).stem + OUTPUT_META_SUFFIX)
+
+
+def wav_seconds(path):
+    try:
+        with open(path, "rb") as f:
+            head = f.read(12)
+            if head[:4] != b"RIFF" or head[8:12] != b"WAVE":
+                return None
+            rate = block = None
+            while True:
+                chunk = f.read(8)
+                if len(chunk) < 8:
+                    return None
+                kind, size = chunk[:4], struct.unpack("<I", chunk[4:])[0]
+                if kind == b"fmt ":
+                    fmt = f.read(size)
+                    rate, block = struct.unpack("<I", fmt[4:8])[0], struct.unpack("<H", fmt[12:14])[0]
+                    if size % 2:
+                        f.read(1)
+                elif kind == b"data":
+                    return round(size / (rate * block), 3) if rate and block else None
+                else:
+                    f.seek(size + (size % 2), 1)
+    except (OSError, struct.error, ZeroDivisionError):
+        return None
+
+
+def output_file(name):
+    if not OUTPUT_NAME_RE.match(name or ""):
+        raise ApiError(400, "invalid_request", "ファイル名が正しくありません。")
+    base = OUTPUT_DIR.resolve()
+    path = (base / name).resolve()
+    if path.parent != base or not path.is_file():
+        raise ApiError(404, "output_not_found", "その音声は見つかりません（フォルダから消されたかもしれません）。")
+    return path
+
+
+def list_outputs(limit):
+    if not OUTPUT_DIR.is_dir():
+        return []
+    files = sorted((p for p in OUTPUT_DIR.glob("*.wav") if p.is_file()), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]
+    out = []
+    for path in files:
+        st = path.stat()
+        meta = None
+        try:
+            meta = json.loads(meta_path(path).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+        duration = meta.get("duration") if meta else None
+        out.append({"name": path.name, "size": st.st_size, "modified": int(st.st_mtime * 1000),
+                    "duration": duration if duration is not None else wav_seconds(path), "meta": meta})
+    return out
+
+
+def list_cassettes():
+    if not CASSETTE_DIR.is_dir():
+        return []
+    out = []
+    for path in sorted(CASSETTE_DIR.rglob(f"*{CASSETTE_SUFFIX}")):
+        if not path.is_file():
+            continue
+        st = path.stat()
+        rel = path.relative_to(CASSETTE_DIR).as_posix()
+        out.append({"name": path.name[: -len(CASSETTE_SUFFIX)], "path": rel, "size": st.st_size, "modified": int(st.st_mtime)})
+    return out
+
+
+# ===== HTTP =====
+def make_handler(app):
+    class Handler(BaseHTTPRequestHandler):
+        server_version = f"{NAME}/{VERSION}"
+        protocol_version = "HTTP/1.1"
+
+        def log_message(self, *args):
+            pass
+
+        def origin_allowed(self, origin):
+            if origin in ALLOWED_ORIGINS:
+                return True
+            return ALLOW_LOCALHOST and bool(LOCALHOST_RE.match(origin))
+
+        def host_allowed(self):
+            host = (self.headers.get("Host") or "").lower()
+            return host in {f"127.0.0.1:{app.port}", f"localhost:{app.port}"}
+
+        def cors_headers(self):
+            origin = self.headers.get("Origin")
+            if not origin or not self.origin_allowed(origin):
+                return {}
+            return {"Access-Control-Allow-Origin": origin, "Access-Control-Allow-Private-Network": "true", "Vary": "Origin"}
+
+        def send_body(self, status, body, content_type, extra=None):
+            self.send_response(status)
+            headers = {"Content-Type": content_type, "Content-Length": str(len(body)), "Cache-Control": "no-store", **self.cors_headers(), **(extra or {})}
+            for k, v in headers.items():
+                self.send_header(k, v)
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+
+        def send_json(self, status, payload):
+            self.send_body(status, json.dumps(payload, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+
+        def send_error_json(self, err):
+            self.close_connection = True
+            body = json.dumps({"error": {"code": err.code, "message": err.message}}, ensure_ascii=False).encode("utf-8")
+            self.send_body(err.status, body, "application/json; charset=utf-8", {"Connection": "close"})
+
+        def gate(self):
+            if not self.host_allowed():
+                raise ApiError(403, "forbidden", "このアドレスからは使えません（127.0.0.1 か localhost で開いてください）。")
+            origin = self.headers.get("Origin")
+            if origin and not self.origin_allowed(origin):
+                raise ApiError(403, "forbidden", "このサイトからの接続は許可されていません。")
+            path = urlsplit(self.path).path.rstrip("/") or "/"
+            if path not in ALLOWED_PATHS and not JOB_PATH_RE.match(path) and not OUTPUT_PATH_RE.match(path):
+                raise ApiError(404, "not_found", "この窓口はありません。")
+            return path
+
+        def handle_safely(self, fn):
+            try:
+                fn(self.gate())
+            except ApiError as err:
+                self.send_error_json(err)
+            except Exception as exc:
+                traceback.print_exc()
+                self.send_error_json(ApiError(500, "generation_failed", f"{type(exc).__name__}: {exc}"))
+
+        def do_OPTIONS(self):
+            def respond(path):
+                self.send_response(204)
+                for k, v in {**self.cors_headers(), "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+                             "Access-Control-Allow-Headers": self.headers.get("Access-Control-Request-Headers", "content-type"),
+                             "Access-Control-Max-Age": "600", "Content-Length": "0"}.items():
+                    self.send_header(k, v)
+                self.end_headers()
+            self.handle_safely(respond)
+
+        def do_GET(self):
+            self.handle_safely(self.route_get)
+
+        def do_POST(self):
+            self.handle_safely(self.route_post)
+
+        def do_DELETE(self):
+            self.handle_safely(self.route_delete)
+
+        def route_get(self, path):
+            if path == "/health":
+                return self.send_json(200, app.health())
+            if path == "/cassettes":
+                return self.send_json(200, {"ok": True, "dir": str(CASSETTE_DIR), "cassettes": list_cassettes()})
+            if path == "/outputs":
+                query = parse_qs(urlsplit(self.path).query)
+                try:
+                    limit = max(1, min(MAX_OUTPUT_LIST, int(query.get("limit", ["10"])[0])))
+                except ValueError:
+                    limit = 10
+                return self.send_json(200, {"ok": True, "dir": str(OUTPUT_DIR), "outputs": list_outputs(limit)})
+            m = OUTPUT_PATH_RE.match(path)
+            if m:
+                data = output_file(m.group(1)).read_bytes()
+                return self.send_body(200, data, "audio/wav", {"Content-Disposition": f'inline; filename="{m.group(1)}"'})
+            m = JOB_PATH_RE.match(path)
+            if not m:
+                raise ApiError(405, "invalid_request", "この窓口は GET では使えません。")
+            job = app.jobs.get(m.group(1))
+            if not m.group(2):
+                return self.send_json(200, app.jobs.view(job))
+            if job["state"] != "done":
+                raise ApiError(409, "not_ready", "音声はまだできていません。")
+            query = parse_qs(urlsplit(self.path).query)
+            try:
+                index = int(query.get("candidate", ["1"])[0])
+            except ValueError:
+                index = 0
+            if not (1 <= index <= len(job["outputs"])):
+                raise ApiError(400, "invalid_request", "candidate の番号が範囲外です。")
+            data = Path(job["outputs"][index - 1]).read_bytes()
+            self.send_body(200, data, "audio/wav", {"Content-Disposition": f'inline; filename="irodori_{job["id"][:8]}_{index}.wav"'})
+
+        def read_json(self):
+            length = int(self.headers.get("Content-Length") or 0)
+            if length <= 0:
+                raise ApiError(400, "invalid_request", "中身が空です。")
+            if length > MAX_BODY_BYTES:
+                raise ApiError(413, "invalid_request", f"送るデータが大きすぎます（{MAX_BODY_BYTES // (1024 * 1024)} MB まで）。参照音声を短くしてください。")
+            if "application/json" not in (self.headers.get("Content-Type") or "").lower():
+                raise ApiError(415, "invalid_request", "Content-Type: application/json で送ってください。")
+            try:
+                return json.loads(self.rfile.read(length).decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                raise ApiError(400, "invalid_request", "JSON を読み取れません。")
+
+        def route_post(self, path):
+            if path == "/unload":
+                return self.send_json(200, app.jobs.unload())
+            if path != "/jobs":
+                raise ApiError(405, "invalid_request", "この窓口は POST では使えません。")
+            body = self.read_json()
+            job_dir = WORK_DIR / uuid.uuid4().hex
+            job_dir.mkdir(parents=True)
+            try:
+                spec = build_spec(body, job_dir)
+                job = app.jobs.add(spec, job_dir)
+            except Exception:
+                shutil.rmtree(job_dir, ignore_errors=True)
+                raise
+            self.send_json(202, {"ok": True, "job_id": job["id"], "state": job["state"], "warnings": spec["warnings"],
+                                 "queue_position": app.jobs.view(job)["queue_position"]})
+
+        def route_delete(self, path):
+            m = OUTPUT_PATH_RE.match(path)
+            if m:
+                target = output_file(m.group(1))
+                target.unlink()
+                meta_path(target).unlink(missing_ok=True)
+                return self.send_json(200, {"ok": True, "deleted": m.group(1)})
+            m = JOB_PATH_RE.match(path)
+            if not m or m.group(2):
+                raise ApiError(405, "invalid_request", "この窓口は DELETE では使えません。")
+            self.send_json(200, app.jobs.cancel(m.group(1)))
+
+    return Handler
+
+
+class App:
+    def __init__(self, port, precision, codec_precision, device):
+        self.port = port
+        self.irodori = Irodori(precision, codec_precision, device)
+        self.jobs = Jobs(self.irodori)
+
+    def health(self):
+        jobs = self.jobs
+        with jobs.lock:
+            queued = len(jobs.queued_ids())
+        return {
+            "ok": True, "name": NAME, "version": VERSION, "irodori": self.irodori.ok, "irodori_error": self.irodori.error,
+            "device": self.irodori.device, "device_name": self.irodori.device_name, "precision": self.irodori.precision,
+            "loaded": jobs.loaded_checkpoint is not None, "checkpoint": jobs.loaded_checkpoint, "busy": jobs.current is not None,
+            "queue": queued, "default_checkpoint": DEFAULT_CHECKPOINT,
+            "checkpoints": [{"id": k, "label": v, "cassette_base": k in CASSETTE_BASE_CHECKPOINTS} for k, v in CHECKPOINTS.items()],
+            "cassette_dir": str(CASSETTE_DIR), "output_dir": str(OUTPUT_DIR), "allowed_origins": sorted(ALLOWED_ORIGINS), "allow_localhost": ALLOW_LOCALHOST,
+            "max_text_chars": MAX_TEXT_CHARS,
+        }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Stillmotion から Irodori-TTS を使うための中継プログラム")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    parser.add_argument("--precision", choices=["fp32", "bf16"], default="fp32", help="モデルの精度（bf16 は CUDA のみ。VRAM が少なく済みます）")
+    parser.add_argument("--codec-precision", choices=["fp32", "bf16"], default="fp32")
+    parser.add_argument("--device", default="", help="cuda / cpu など（空なら自動）")
+    args = parser.parse_args()
+    shutil.rmtree(WORK_DIR, ignore_errors=True)
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    CASSETTE_DIR.mkdir(parents=True, exist_ok=True)
+    app = App(args.port, args.precision, args.codec_precision, args.device or None)
+    server = ThreadingHTTPServer((HOST, args.port), make_handler(app))
+    server.daemon_threads = True
+    log(f"v{VERSION} http://{HOST}:{args.port}  allowed origins: {', '.join(sorted(ALLOWED_ORIGINS))}")
+    if app.irodori.ok:
+        log(f"Irodori-TTS: OK  device: {app.irodori.device_name}  precision: {args.precision}")
+    else:
+        log(f"Irodori-TTS を読み込めません: {app.irodori.error}")
+        log("このファイルを D:\\\\Irodori-TTS の直下に置き、Irodori-TTS の .venv の Python で起動してください。")
+    log(f"カセット置き場: {CASSETTE_DIR}（{len(list_cassettes())} 個）")
+    log(f"作った音声の保存先: {OUTPUT_DIR}")
+    log(f"確認: ブラウザで http://{HOST}:{args.port}/health を開き、\\"ok\\": true と出れば準備完了です。止めるときはこの画面を閉じます。")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
+`,
+    bat: "QGVjaG8gb2ZmDQpzZXRsb2NhbA0KY2QgL2QgIiV+ZHAwIg0KdGl0bGUgSXJvZG9yaSBCcmlkZ2Ugi06Trg0Kc2V0ICJQT1JUPTg3OTEiDQpzZXQgIlBSRUNJU0lPTj1mcDMyIg0Kc2V0ICJQWT0lfmRwMC52ZW52XFNjcmlwdHNccHl0aG9uLmV4ZSINCnNldCAiSEVBTFRIPWh0dHA6Ly8xMjcuMC4wLjE6JVBPUlQlL2hlYWx0aCINCg0KaWYgbm90IGV4aXN0ICIlfmRwMGlyb2RvcmlfdHRzXGluZmVyZW5jZV9ydW50aW1lLnB5IiBnb3RvIHdyb25ncGxhY2UNCmlmIG5vdCBleGlzdCAiJVBZJSIgZ290byBub3ZlbnYNCmlmIG5vdCBleGlzdCAiJX5kcDBpcm9kb3JpX2JyaWRnZS5weSIgZ290byBub2JyaWRnZQ0KDQpjYWxsIDpwaW5nDQppZiBub3QgZXJyb3JsZXZlbCAxIGdvdG8gYWxyZWFkeQ0KDQplY2hvIElyb2RvcmkgQnJpZGdlIILwi06TroK1gtyCt4FpkNqRsZDmIDEyNy4wLjAuMTolUE9SVCWBai4uLg0Kc3RhcnQgIklyb2RvcmkgQnJpZGdlIiAvbWluICIlUFklIiAiJX5kcDBpcm9kb3JpX2JyaWRnZS5weSIgLS1wb3J0ICVQT1JUJSAtLXByZWNpc2lvbiAlUFJFQ0lTSU9OJQ0Kc2V0IC9hIFdBSVRFRD0wDQo6d2FpdA0KdGltZW91dCAvdCAxIC9ub2JyZWFrID5udWwNCnNldCAvYSBXQUlURUQrPTENCmNhbGwgOnBpbmcNCmlmIG5vdCBlcnJvcmxldmVsIDEgZ290byByZWFkeQ0KaWYgJVdBSVRFRCUgZ2VxIDYwIGdvdG8gdGltZW91dA0KZ290byB3YWl0DQoNCjpyZWFkeQ0KZWNoby4NCmVjaG8gj4CU9Yqul7mCxYK3OiAlSEVBTFRIJQ0KZWNobyBTdGlsbG1vdGlvbiCCzIF1kWaN3oKpgueTronmgXaBqIF1kWaN3oF2gsyJ5pbKgsWBQYNag4qDdILMibmQuoLwjeyC6oLcgreBQg0KZWNobyCOfoLfgumCxoKrgs2BQY3Fj6yJu4K1gr2BdUlyb2RvcmkgQnJpZGdlgXaCzInmlsqC8JXCgraCxIKtgr6Cs4KigUINCmVjaG8uDQp0aW1lb3V0IC90IDEwDQpleGl0IC9iIDANCg0KOmFscmVhZHkNCmVjaG8ggreCxYLJi06TroK1gsSCooLcgrc6ICVIRUFMVEglDQp0aW1lb3V0IC90IDEwDQpleGl0IC9iIDANCg0KOnRpbWVvdXQNCmVjaG8uDQplY2hvIDYwIJVikdKCwYLEguCJnpOagqqCoILogtyCuYLxgUKNxY+sibuCtYK9gXVJcm9kb3JpIEJyaWRnZYF2gsyJ5pbKgsmPb4LEgqKC6YNHg4mBW4Lwim2URoK1gsSCrYK+grOCooFCDQplY2hvIJTUjYYgJVBPUlQlIILwgtmCqYLMg0GDdoOKgqqOZ4LBgsSCooLpj+qNh4LNgUGCsYLMg3SDQINDg4uCzCBQT1JUPTg3OTEggsyQlI6agvCVz4KmgsSCrYK+grOCooFCDQpwYXVzZQ0KZXhpdCAvYiAxDQoNCjp3cm9uZ3BsYWNlDQplY2hvIFuDR4OJgVtdIIKxgsyDdINAg0ODi4LNIElyb2RvcmktVFRTIILMg3SDSIOLg1+BaZfhOiBEOlxJcm9kb3JpLVRUU4FqgsySvIm6gsmSdYKigsSCrYK+grOCooFCDQplY2hvICAgICAgICAggqKC3ILMj+qPijogJX5kcDANCmVjaG8gICAgICAgICCVyoLMj+qPioKpgueLTpOugrWCvYKigsaCq4LNgUGCsYLMg3SDQINDg4uCzZOugqmCs4K4gUGDVoOHgVuDZ4NKg2KDZ4LwjeyCwYLEgruCv4LngvCSdYKigsSCrYK+grOCooFCDQpwYXVzZQ0KZXhpdCAvYiAxDQoNCjpub3ZlbnYNCmVjaG8gW4NHg4mBW10gJVBZJSCCqoKgguiC3IK5gvGBQpDmgskgSXJvZG9yaS1UVFMggsyTsZP8gWl1diBzeW5jgWqC8I3PgtyCuYLEgq2CvoKzgqKBQg0KcGF1c2UNCmV4aXQgL2IgMQ0KDQo6bm9icmlkZ2UNCmVjaG8gW4NHg4mBW10gaXJvZG9yaV9icmlkZ2UucHkggqqCoILogtyCuYLxgUKCsYLMg3SDQINDg4uCxpOvgraDdINIg4uDX4LJknWCooLEgq2CvoKzgqKBQg0KcGF1c2UNCmV4aXQgL2IgMQ0KDQo6cGluZw0KcG93ZXJzaGVsbCAtTm9Qcm9maWxlIC1FeGVjdXRpb25Qb2xpY3kgQnlwYXNzIC1Db21tYW5kICJ0cnkgeyAkciA9IEludm9rZS1XZWJSZXF1ZXN0IC1Vc2VCYXNpY1BhcnNpbmcgLVRpbWVvdXRTZWMgMiAnJUhFQUxUSCUnOyBpZiAoJHIuU3RhdHVzQ29kZSAtZXEgMjAwKSB7IGV4aXQgMCB9IGVsc2UgeyBleGl0IDEgfSB9IGNhdGNoIHsgZXhpdCAxIH0iID5udWwgMj4mMQ0KZXhpdCAvYiAlZXJyb3JsZXZlbCUNCg==",
+  },
+
   // ===== セリフの音声（Irodori-TTS を Irodori Bridge 経由で使う） =====
   voice: {
     defaults: {
@@ -3253,7 +4145,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     },
     modes: [
       ["caption", "キャプション", "声の注文書（文章）だけで声を作ります。シードを固定すると、同じ声で作り直せます。"],
-      ["cassette", "カセット", "学習済みのカセット（*.speaker.safetensors）の声で読みます。カセットは Irodori-TTS の cassettes フォルダに入れておきます。キャプションを書くと、話し方の指定として使います。"],
+      ["cassette", "カセット", "学習済みのカセット（*.speaker.safetensors）の声で読みます。使ったカセットは、次に開いたときも使えるようにこのブラウザに覚えておきます。キャプションを書くと、話し方の指定として使います。"],
       ["reference", "参照音声", "声の見本の録音（5〜15秒を数本、合計30秒くらいが目安）に似せた声で読みます。見本はこのページを開いている間だけ使います。キャプションを書くと、話し方の指定として使います。"],
     ],
     checkpoints: [
@@ -3278,6 +4170,8 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     emojiPattern: /[\p{Extended_Pictographic}‍️⃣]/gu,
     maxTextChars: 500,
     maxReferences: 8,
+    cassetteStorageKey: "stillmotion.voiceCassette",
+    history: { max: 10 },
     cassetteSuffix: ".speaker.safetensors",
     pollMs: 700,
     submitTimeoutMs: 60000,
@@ -3287,7 +4181,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     messages: {
       needText: "セリフを入れてください。",
       tooLong: "セリフが長すぎます（{n} 文字まで）。動画1本ぶん（15秒まで）に収まるよう区切ってください。",
-      needCassette: "カセットを選んでください（一覧が空なら、Irodori-TTS の cassettes フォルダに入れて「一覧を読み直す」を押します）。",
+      needCassette: "カセットのファイル（*.speaker.safetensors）をドロップするか、クリックして選んでください。",
       needReference: "参照音声のファイルを選んでください。",
       down: "Irodori Bridge（{url}）につながりません。Irodori-TTS のフォルダにある「Irodori Bridge起動.bat」で起動してください。",
       cors: "Irodori Bridge は動いていますが、このページからの接続が許可されていません（irodori_bridge.py の ALLOWED_ORIGINS を確認してください）。",
@@ -3303,7 +4197,21 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       cancel: "取り消す",
       generate: "音声を作る",
       regenerate: "作り直す",
-      meta: "{sec}秒・シード {seed}・{model}",
+      historyTitle: "作った音声（Irodori-TTS の gradio_outputs フォルダの新しい順に {n} 件）",
+      historyNoMeta: "Irodori-TTS の画面などで作った音声です（生成時の設定の記録はありません）。",
+      historyRemoveConfirm: "もう一度押すと消します（フォルダからも消えます）",
+      historyLoading: "読み込み中…",
+      historyFailed: "作った音声の一覧を読めませんでした: ",
+      historyLatest: "最新",
+      historyWhen: "{sec}秒・{date}",
+      historyAdopt: "素材に入れる（セリフとして使う）",
+      historyDownload: "ダウンロード",
+      historyKeepSeed: "このシードに固定",
+      historyRemove: "消す",
+      historyStepsAuto: "おすすめ",
+      historyYes: "あり",
+      historyNo: "なし",
+      historyLabels: { text: "セリフ", mode: "声の指定", source: "声の元", caption: "声・話し方", checkpoint: "モデル", seed: "シード", steps: "ステップ数", scale: "長さの倍率", lengthCheck: "長さの確認", file: "ファイル" },
       adopted: "音声の素材に入れました（使い方「そのまま使う」、メモにセリフを入れました）。",
       voiceOn: "プロンプトの指定の「セリフ・歌」を「あり」にしました。",
       audioFull: "音声の素材がいっぱいです（動画の音声を含めて {n} 本まで）。いらない音声を外してから入れてください。",
@@ -3313,7 +4221,13 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
       cassettesNone: "（カセットがありません）",
       cassettesDown: "（Irodori Bridge につながると一覧が出ます）",
       refInfo: "{n} 本・合計 {sec} 秒",
-      refNone: "まだありません（上の枠に声の見本の音声をドロップします）",
+      refNone: "声の見本の音声をここにドロップ",
+      refNoneSub: "クリックして選ぶこともできます（{n} 本まで。足していけます）",
+      refSub: "{info}（ドロップかクリックで足せます）",
+      cassetteNone: "カセット（*.speaker.safetensors）をここにドロップ",
+      cassetteNoneSub: "クリックして選ぶこともできます",
+      cassetteSub: "{kb} KB（ドロップかクリックで差し替え）",
+      cassetteNotFile: "カセットは *.speaker.safetensors のファイルです: {names}",
       refFull: "参照音声は {n} 本までです。",
       cassetteUpload: "{name}（ドロップしたファイル）",
       dropCassette: "カセット「{name}」を使います。",
@@ -3401,7 +4315,7 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
 
   transientUiKeys: ["direction", "negative"],
   settingsVersion: 1,
-  defaultsRevision: 16,
+  defaultsRevision: 17,
   legacyDefaultHashes: {
     style: ["3906cdd9", "22f38199", "cabc417d", "94a3ea5", "b130724"], skill: ["f6e1e724", "647fe80d", "a270060a", "e3bbdb81"],
     refStyle: ["9888f177", "8705b46e"], refSkill: ["2584959"],
@@ -4259,7 +5173,7 @@ Tips for better results:
     busyWaiting: "待機中...",
     storyDone: "ストーリーを作りました。直したいところがあれば書き直して「このストーリーでプロンプトを作り直す」を押してください。",
     storyPromptDone: "ストーリーに合わせてプロンプトを作り直しました。「このプロンプトで動画を作り直す」で動画を作れます。",
-    frameRef: "素材の画像や動画は ComfyUI 側でこの大きさに合わせて縮小されます（切り抜きはしません）。",
+    frameRef: "基準の画像以外の素材は、ComfyUI 側でこの大きさに合わせて縮小されます（切り抜きはしません）。",
     needMaterials: "先に「素材」に画像か動画を入れてください（音声だけでは作れません）。",
     materialsProblem: "素材に直すところがあります: ",
     needRefWorkflow: "「素材から動画」に使えるワークフロー（Fantastic H3 Media Loader 入り）がありません。設定の「動画AI」で登録してください。",
@@ -4391,6 +5305,8 @@ Tips for better results:
     stateInvalid: "Stillmotion の「状態を保存」で保存したファイルではないため、読み込めません。",
     stateBusy: "ストーリーやプロンプトを作っている間は、状態を読み込めません。",
     stateFailed: "状態を読み込めません: ",
+    stateSaveFailed: "状態を保存できません: ",
+    stateSkipped: "（元のファイルが見つからないため、入れられなかったもの: {names}。入れ直してから保存し直してください）",
     stateNoVideo: "ワークフロー「{name}」がこのブラウザにないため、いまのワークフローのままにしました。",
     stateNoLlm: "文章AI「{name}」がこのブラウザにないため、いまの文章AIのままにしました。",
     stateDropHere: "画像は左の枠に、素材は素材の枠にドロップしてください（「状態を保存」の JSON は画面のどこにドロップしても読み込めます）。",
@@ -5541,9 +6457,12 @@ class IrodoriClient {
   cassettes(signal) { return this.call("/cassettes", { signal }); }
   submit(body, signal) { return this.call("/jobs", { method: "POST", body, signal, timeoutMs: USER_SETTINGS.voice.submitTimeoutMs }); }
   job(id, signal) { return this.call(`/jobs/${id}`, { signal }); }
-  audio(id, signal) { return this.call(`/jobs/${id}/audio.wav`, { signal, binary: true, timeoutMs: USER_SETTINGS.voice.submitTimeoutMs }); }
   cancel(id) { return this.call(`/jobs/${id}`, { method: "DELETE" }); }
   unload() { return this.call("/unload", { method: "POST" }); }
+  outputs(limit, signal) { return this.call(`/outputs?limit=${limit}`, { signal }); }
+  outputUrl(name) { return `${this.base}/outputs/${encodeURIComponent(name)}`; }
+  outputBlob(name) { return this.call(`/outputs/${encodeURIComponent(name)}`, { binary: true, timeoutMs: USER_SETTINGS.voice.submitTimeoutMs }); }
+  deleteOutput(name) { return this.call(`/outputs/${encodeURIComponent(name)}`, { method: "DELETE" }); }
 
   async check() {
     const m = USER_SETTINGS.voice.messages;
@@ -5556,6 +6475,23 @@ class IrodoriClient {
       const probe = await Net.probe(`${this.base}/health`);
       return { state: probe === "cors" ? "warn" : "down", text: probe === "cors" ? m.cors : m.down.replace("{url}", this.base), health: null };
     }
+  }
+
+  static zip() {
+    const cfg = USER_SETTINGS.irodoriBridge;
+    const origins = CorsExtension.origins();
+    const source = cfg.source.replace("__ORIGINS__", origins.map((o) => `    ${JSON.stringify(o)},`).join("\n"));
+    const readme = cfg.readme.replace("__ORIGINS_TEXT__", origins.join(" / ")).replace(/\n/g, "\r\n");
+    const bat = Uint8Array.from(atob(cfg.bat), (c) => c.charCodeAt(0));
+    return ZipWriter.build([
+      { path: `${cfg.folder}/${cfg.script}`, data: source },
+      { path: `${cfg.folder}/${cfg.batName}`, data: bat },
+      { path: `${cfg.folder}/README.txt`, data: readme },
+    ]);
+  }
+
+  static download() {
+    downloadBlob(IrodoriClient.zip(), USER_SETTINGS.irodoriBridge.zipName);
   }
 
   static async fileToDataUrl(file) {
@@ -6928,6 +7864,11 @@ class Materials {
   }
 
   // Fantastic H3 Media Loader の media_state（files は 素材ID → "minimax_h3/xxx.png [input]"）
+  static baseItem(items) {
+    const pictures = this.ordered(items).filter((i) => i.kind === "picture");
+    return pictures.find((i) => i.base) || pictures[0] || null;
+  }
+
   static mediaState(items, files) {
     return JSON.stringify(this.ordered(items).map((i) => {
       const row = {
@@ -7029,7 +7970,13 @@ class Materials {
     }
   }
 
+  static async inMemory(file) {
+    if (!(file instanceof File)) return file;
+    return new File([await file.arrayBuffer()], file.name, { type: file.type, lastModified: file.lastModified });
+  }
+
   static async analyze(file, kind) {
+    file = await Materials.inMemory(file);
     const cfg = USER_SETTINGS.refs;
     const item = {
       id: uid() + uid(), kind, name: file.name, mime: file.type, blob: file, size: file.size,
@@ -7506,6 +8453,7 @@ class MainView {
     this.bind();
     this.bindMaterials();
     this.bindVoice();
+    this.bindRefFrame();
     this.buildFrameControls();
     this.buildPromptOptions();
     this.buildLoopControls();
@@ -8214,6 +9162,7 @@ class MainViewModels {
     this.view.setStep("image", "active", "");
     this.view.status(USER_SETTINGS.messages.readingImage);
     try {
+      file = await Materials.inMemory(file);
       const meta = await PngMetadataReader.read(file);
       const img = await this.decodeImage(file);
       meta.width = img.naturalWidth;
@@ -8388,6 +9337,7 @@ class MainViewAutoSize {
     $("crop-zoom-out").textContent = pct;
     this.drawPreview();
     this.view.drawLastPreview();
+    this.view.renderRefFrame();
   }
 
   drawPreview() {
@@ -8884,6 +9834,7 @@ class MainViewLoop {
 
   async loadLastImage(file) {
     try {
+      file = await Materials.inMemory(file);
       const meta = await PngMetadataReader.read(file);
       const url = URL.createObjectURL(file);
       const img = await new Promise((resolve, reject) => {
@@ -9240,6 +10191,7 @@ class MainViewModeAndMaterials {
     this.renderMaterials();
     if (this.isRef() && !this.view.running) this.view.setStep("image", this.view.materialItems.length ? "done" : "idle", Materials.shortSummary(this.view.materialItems));
     this.view.updateSpecCheck();
+    this.view.renderRefFrame();
   }
 
   updateMaterial(id, patch, rerender = false) {
@@ -9378,6 +10330,7 @@ class MainViewModeAndMaterials {
       const num = (value, placeholder, label, key) => {
         const input = el("input");
         input.type = "number";
+        input.dataset.numctl = "1";
         input.min = "0";
         input.step = "0.1";
         input.placeholder = placeholder;
@@ -12237,13 +13190,22 @@ class MainViewState {
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(blob);
     });
-    const entry = async (file, name) => ({ name: file.name || name, type: file.type || "", data: await toData(file) });
+    const skipped = [];
+    const entry = async (file, name) => {
+      try {
+        return { name: file.name || name, type: file.type || "", data: await toData(file) };
+      } catch {
+        skipped.push(file.name || name);
+        return null;
+      }
+    };
     // つなぎの画像（画像そのもの・プロンプト・画像の情報）も入れる
     const keyEntry = async (h) => (h?.key || h?.keyPlan ? {
       image: h.key ? await entry(h.key.file, "key.png") : null, prompt: h.key?.prompt || "", info: h.keyInfo || null, plan: h.keyPlan || null, tries: h.keyTry || 0,
     } : null);
     this.view.status(m.stateSaving);
     try {
+      const image = this.view.file ? await entry(this.view.file, "image.png") : null;
       const settings = this.view.restoreSnapshot();
       settings.ui.runCount = this.view.store.ui.runCount;
       // 作り方（長い動画も）と、長い動画の左パネルの設定も入れる
@@ -12253,9 +13215,9 @@ class MainViewState {
         format: USER_SETTINGS.state.format, version: USER_SETTINGS.state.version, savedAt: new Date().toISOString(),
         settings, videoName: this.view.store.video?.name || "", llmName: this.view.store.llm?.name || "",
         texts: { story: $("story").value, promptEn: $("prompt-en").value, promptJa: $("prompt-ja").value, instruction: $("instruction").value },
-        image: this.view.file ? { ...(await entry(this.view.file, "image.png")), focus: { ...this.view.focus } } : null,
+        image: image ? { ...image, focus: { ...this.view.focus } } : null,
         last: this.view.last ? await entry(this.view.last.file, "last.png") : null,
-        materials: await Promise.all(this.view.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) }))),
+        materials: (await Promise.all(this.view.materialItems.map(async ({ blob, ...rest }) => ({ ...rest, file: await entry(blob, rest.name) })))).filter((mat) => mat.file),
         // 長い動画の区間（内容・長さ・プロンプトだけ。区間の動画は入れない）
         long: {
           segments: await Promise.all((this.view.longSegs || []).map(async (g) => ({ seconds: g.seconds, instruction: g.instruction, text: g.text, prompt: g.prompt, key: await keyEntry(g) }))),
@@ -12268,9 +13230,9 @@ class MainViewState {
       };
       const name = this.stateFileName();
       downloadBlob(new Blob([JSON.stringify(state)], { type: "application/json" }), name);
-      this.view.status(m.stateSaved.replace("{name}", name));
+      this.view.status(m.stateSaved.replace("{name}", name) + (skipped.length ? m.stateSkipped.replace("{names}", skipped.join("、")) : ""), skipped.length > 0);
     } catch (err) {
-      this.view.status(m.stateFailed + err.message, true);
+      this.view.status(m.stateSaveFailed + err.message, true);
     }
   }
 
@@ -12508,7 +13470,7 @@ class MainViewState {
     const values = await this.computeValues(comfy, job, size);
     job.values = values;
     const workflow = WorkflowMapper.apply(v.workflow, v.mapping, values);
-    if (job.flow === "ref") await this.applyMaterials(comfy, job, workflow);
+    if (job.flow === "ref") await this.applyMaterials(comfy, job, workflow, size);
     else await this.applyImage(comfy, job, workflow, size, values);
     job.workflow = workflow;
     if (signal.aborted) throw new DOMException("aborted", "AbortError");
@@ -12609,24 +13571,31 @@ class MainViewState {
   }
 
   // 素材から動画: 素材を ComfyUI の input/minimax_h3 に送り、Media Loader の media_state を書き込む
-  async applyMaterials(comfy, job, workflow) {
+  async applyMaterials(comfy, job, workflow, size) {
     const cfg = USER_SETTINGS.refs;
     if (!job.profile.mapping.media) throw new UserError(USER_SETTINGS.messages.needRefWorkflow);
     this.setJob(job, { note: USER_SETTINGS.messages.uploadingMaterials });
     MainView.uploaded ??= new Map();
     const files = {};
+    const base = Materials.baseItem(job.refs);
+    const fitted = base && size && base.fit && base.fit !== "none" ? base : null;
     for (const item of Materials.ordered(job.refs)) {
-      const key = `${comfy.base}|${item.id}`;
+      const f = item === fitted ? { ...USER_SETTINGS.refFrame.defaultFocus, ...(item.focus || {}) } : null;
+      const variant = f ? `|${item.fit}|${f.x.toFixed(4)},${f.y.toFixed(4)},${f.zoom.toFixed(4)}|${size.width}x${size.height}` : "";
+      const key = `${comfy.base}|${item.id}${variant}`;
       if (!MainView.uploaded.has(key)) {
-        const ext = (item.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
-        MainView.uploaded.set(key, comfy.uploadAs(item.blob, `${cfg.filePrefix}${item.id}${ext}`, cfg.subfolder)
+        const ext = f ? ".png" : (item.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+        const name = f ? `${cfg.filePrefix}${item.id}_${size.width}x${size.height}_${textHash(variant)}${ext}` : `${cfg.filePrefix}${item.id}${ext}`;
+        MainView.uploaded.set(key, (f ? this.view.fitRefImage(item, size) : Promise.resolve(item.blob))
+          .then((blob) => comfy.uploadAs(blob, name, cfg.subfolder))
           .catch((err) => { MainView.uploaded.delete(key); throw err; }));
       }
       files[item.id] = `${await MainView.uploaded.get(key)} [input]`;
     }
     const sep = job.profile.mapping.media.indexOf("|");
     const node = job.profile.mapping.media.slice(0, sep);
-    workflow[node].inputs[job.profile.mapping.media.slice(sep + 1)] = Materials.mediaState(job.refs, files);
+    const refs = fitted ? job.refs.map((i) => (i === fitted ? { ...i, width: size.width, height: size.height } : i)) : job.refs;
+    workflow[node].inputs[job.profile.mapping.media.slice(sep + 1)] = Materials.mediaState(refs, files);
     this.setJob(job, { note: "" });
   }
 
@@ -13019,20 +13988,247 @@ class MainViewPromptReel {
   }
 }
 
+// ===== 素材から動画の基準の画像 =====
+class MainViewRefFrame {
+  constructor(view) {
+    this.view = view;
+    this.refImage = null;
+    this.refDrag = null;
+  }
+
+  refBase() {
+    return this.view.isRef() ? Materials.baseItem(this.view.materialItems) : null;
+  }
+
+  refFocus(item) {
+    return { ...USER_SETTINGS.refFrame.defaultFocus, ...(item.focus || {}) };
+  }
+
+  bindRefFrame() {
+    const on = (id, type, fn) => this.view.on($(id), type, fn);
+    const fits = [...USER_SETTINGS.refFrame.fits, ...USER_SETTINGS.frame.fits];
+    $("ref-fit").replaceChildren(...fits.map(([value, label]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.fit = value;
+      b.textContent = label;
+      this.view.on(b, "click", () => this.setRefFrame({ fit: value }));
+      return b;
+    }));
+    on("ref-base", "change", (e) => {
+      for (const i of this.view.materialItems) if (i.kind === "picture") i.base = i.id === e.target.value;
+      this.renderRefFrame();
+    });
+    on("ref-zoom", "input", (e) => this.setRefFrame({ focus: { ...this.refFocus(this.refBase()), zoom: 100 / Math.max(1, Number(e.target.value) || 100) } }));
+    on("ref-reset", "click", () => this.setRefFrame({ focus: { ...USER_SETTINGS.refFrame.defaultFocus } }));
+    on("ref-change", "click", () => $("ref-change-input").click());
+    on("ref-change-input", "change", async (e) => {
+      const files = [...e.target.files];
+      e.target.value = "";
+      const before = new Set(this.view.materialItems.map((i) => i.id));
+      await this.view.addMaterials(files);
+      const added = this.view.materialItems.find((i) => i.kind === "picture" && !before.has(i.id));
+      if (!added) return;
+      for (const i of this.view.materialItems) if (i.kind === "picture") i.base = i === added;
+      this.renderRefFrame();
+    });
+    on("ref-aspect-fit", "click", () => {
+      const item = this.refBase();
+      if (!item?.width || !item?.height) return;
+      $("aspect").value = MainView.nearestAspect(item.width, item.height);
+      $("aspect").dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const canvas = $("ref-frame-canvas");
+    const canDrag = () => { const item = this.refBase(); return !!item && item.fit === "crop" && !!this.view.frameSize() && !this.view.running; };
+    const moveBy = (dx, dy) => {
+      const item = this.refBase();
+      const f = this.refFocus(item);
+      item.focus = { ...f, x: f.x + dx, y: f.y + dy };
+      this.drawRefFrame();
+    };
+    const zoomBy = (factor) => {
+      const f = this.refFocus(this.refBase());
+      this.setRefFrame({ focus: { ...f, zoom: Math.min(Math.max(f.zoom * factor, 1), USER_SETTINGS.frame.maxZoom) } });
+    };
+    this.view.on(canvas, "wheel", (e) => {
+      if (!canDrag()) return;
+      e.preventDefault();
+      const step = USER_SETTINGS.frame.zoomStep;
+      zoomBy(e.deltaY < 0 ? step : 1 / step);
+    });
+    this.view.on(canvas, "pointerdown", (e) => {
+      if (!canDrag()) return;
+      canvas.setPointerCapture(e.pointerId);
+      canvas.classList.add("dragging");
+      this.refDrag = { x: e.clientX, y: e.clientY };
+    });
+    this.view.on(canvas, "pointermove", (e) => {
+      if (!this.refDrag) return;
+      const rect = canvas.getBoundingClientRect();
+      moveBy((e.clientX - this.refDrag.x) / rect.width, (e.clientY - this.refDrag.y) / rect.height);
+      this.refDrag = { x: e.clientX, y: e.clientY };
+    });
+    const end = () => { this.refDrag = null; canvas.classList.remove("dragging"); this.renderRefFrame(); };
+    this.view.on(canvas, "pointerup", end);
+    this.view.on(canvas, "pointercancel", end);
+    this.view.on(canvas, "keydown", (e) => {
+      if (!canDrag()) return;
+      const cfg = USER_SETTINGS.frame;
+      const zoomKey = { "+": cfg.zoomStep, "=": cfg.zoomStep, "-": 1 / cfg.zoomStep }[e.key];
+      if (zoomKey) { e.preventDefault(); zoomBy(zoomKey); return; }
+      const delta = { ArrowLeft: [-cfg.keyStep, 0], ArrowRight: [cfg.keyStep, 0], ArrowUp: [0, -cfg.keyStep], ArrowDown: [0, cfg.keyStep] }[e.key];
+      if (!delta) return;
+      e.preventDefault();
+      moveBy(...delta);
+    });
+  }
+
+  setRefFrame(patch) {
+    const item = this.refBase();
+    if (!item || this.view.running) return;
+    Object.assign(item, patch);
+    this.renderRefFrame();
+  }
+
+  async renderRefFrame() {
+    const item = this.refBase();
+    $("ref-frame").hidden = !item;
+    $("sec-ref-base").hidden = !item;
+    if (!item) return;
+    const c = USER_SETTINGS.refFrame;
+    const tags = Materials.tags(this.view.materialItems);
+    const pictures = Materials.ordered(this.view.materialItems).filter((i) => i.kind === "picture");
+    fillSelect($("ref-base"), pictures.map((i) => [i.id, `${tags.get(i.id).tag} ${i.name}`]), item.id);
+    $("ref-base-field").hidden = pictures.length < 2;
+    $("ref-change").disabled = this.view.running;
+    const fit = item.fit || "none";
+    const size = this.view.frameSize();
+    $("ref-fit").querySelectorAll("button").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.fit === fit));
+      b.disabled = !size || this.view.running;
+    });
+    const zoomable = !!size && fit === "crop";
+    const focus = this.refFocus(item);
+    $("ref-zoom-field").hidden = !zoomable;
+    $("ref-zoom").value = Math.round(100 / focus.zoom);
+    $("ref-reset").disabled = !zoomable || this.view.running;
+    const tag = tags.get(item.id).tag;
+    const text = !size ? c.messages.workflowSize : c.messages[fit === "none" ? "none" : fit === "crop" ? "crop" : "pad"];
+    $("ref-frame-info").textContent = text.replace("{tag}", tag).replace("{w}", size?.width ?? "").replace("{h}", size?.height ?? "");
+    if (this.refImage?.id !== item.id) {
+      const url = URL.createObjectURL(item.blob);
+      try {
+        this.refImage = { id: item.id, img: await Materials.loadImage(url) };
+      } catch {
+        this.refImage = null;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+      $("ref-meta-text").textContent = await this.refMetaText(item, tags.get(item.id).tag);
+    }
+    this.drawRefFrame();
+  }
+
+  drawRefFrame() {
+    const item = this.refBase();
+    if (!item || this.refImage?.id !== item.id) return;
+    const cfg = USER_SETTINGS.frame;
+    const img = this.refImage.img;
+    const canvas = $("ref-frame-canvas");
+    const ctx = canvas.getContext("2d");
+    const srcW = img.naturalWidth, srcH = img.naturalHeight;
+    const size = this.view.frameSize();
+    const fit = item.fit || "none";
+    const cropMode = !!size && fit === "crop";
+    canvas.classList.toggle("draggable", cropMode);
+    if (!size || fit === "none" || cropMode) {
+      const scale = Math.min(1, cfg.previewMaxSide / Math.max(srcW, srcH));
+      canvas.width = Math.round(srcW * scale);
+      canvas.height = Math.round(srcH * scale);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      if (!cropMode) return;
+      const r = FrameFitter.cropRect(srcW, srcH, size.width, size.height, this.refFocus(item));
+      item.focus = r.focus;
+      const [x, y, w, h] = [r.x * scale, r.y * scale, r.w * scale, r.h * scale];
+      ctx.fillStyle = cfg.cropShade;
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.rect(x, y, w, h);
+      ctx.fill("evenodd");
+      ctx.strokeStyle = cfg.cropStroke;
+      ctx.lineWidth = cfg.cropStrokeWidth;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      return;
+    }
+    const scale = Math.min(1, cfg.previewMaxSide / Math.max(size.width, size.height));
+    const small = { width: Math.round(size.width * scale), height: Math.round(size.height * scale) };
+    canvas.width = small.width;
+    canvas.height = small.height;
+    ctx.drawImage(FrameFitter.render(img, small, fit, this.refFocus(item)), 0, 0);
+  }
+
+  async refMetaText(item, tag) {
+    const lines = [`${tag} ${item.name}`, `サイズ: ${item.width}×${item.height}`];
+    try {
+      const meta = await PngMetadataReader.read(item.blob);
+      if (meta.format !== "none") {
+        const label = { a1111: "A1111 / Forge", comfyui: "ComfyUI" }[meta.format] || meta.format;
+        lines.push(`メタデータ: ${label}`, `モデル: ${meta.model || "-"}`, `シード: ${meta.seed ?? "-"}`, "", "[プロンプト]", meta.prompt || "-", "", "[ネガティブ]", meta.negative || "-");
+      } else {
+        lines.push("メタデータ: なし");
+      }
+    } catch {
+      lines.push("メタデータ: なし");
+    }
+    return lines.join("\n");
+  }
+
+  async fitRefImage(item, size) {
+    const url = URL.createObjectURL(item.blob);
+    try {
+      const img = await Materials.loadImage(url);
+      return await FrameFitter.toFile(FrameFitter.render(img, size, item.fit, this.refFocus(item)), "stillmotion_base");
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
+
 // ===== セリフの音声（Irodori-TTS） =====
 class MainViewVoice {
   constructor(view) {
     this.view = view;
     this.voiceJob = null;
-    this.voiceResult = null;
+    this.voiceHistory = [];
+    this.voiceMade = false;
     this.voiceRefs = [];
-    this.voiceCassettes = null;
     this.voiceReachable = false;
     this.voiceCheckedAt = 0;
     this.voiceFitSeconds = 0;
     this.voiceTab = "items";
-    this.voiceCassetteUpload = null;
-    this.voiceUseUpload = false;
+    this.voiceCassetteUpload = MainViewVoice.storedCassette();
+  }
+
+  static storedCassette() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(USER_SETTINGS.voice.cassetteStorageKey) || "null");
+      if (!saved?.data) return null;
+      const bytes = Uint8Array.from(atob(saved.data), (ch) => ch.charCodeAt(0));
+      return new File([bytes], saved.name, { type: "application/octet-stream" });
+    } catch {
+      return null;
+    }
+  }
+
+  async storeCassette(file) {
+    const key = USER_SETTINGS.voice.cassetteStorageKey;
+    try {
+      if (!file) { localStorage.removeItem(key); return; }
+      const data = (await IrodoriClient.fileToDataUrl(file)).split(",")[1];
+      localStorage.setItem(key, JSON.stringify({ name: file.name, data }));
+    } catch {
+      localStorage.removeItem(key);
+    }
   }
 
   voiceConfig() {
@@ -13070,33 +14266,130 @@ class MainViewVoice {
     fillSelect($("voice-checkpoint"), v.checkpoints);
     $("voice-text").maxLength = v.maxTextChars;
     $("mat-tabs").querySelectorAll("button").forEach((b) => this.view.on(b, "click", () => this.setMatTab(b.dataset.matTab)));
-    const drop = $("voice-drop");
-    on("voice-drop", "dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
-    on("voice-drop", "dragleave", () => drop.classList.remove("over"));
-    on("voice-drop", "drop", (e) => { e.preventDefault(); e.stopPropagation(); drop.classList.remove("over"); this.dropVoiceFiles([...e.dataTransfer.files]); });
-    on("voice-drop-input", "change", (e) => { this.dropVoiceFiles([...e.target.files]); e.target.value = ""; });
+    for (const id of ["voice-cassette-drop", "voice-ref-drop"]) {
+      const zone = $(id);
+      on(id, "dragover", (e) => { e.preventDefault(); zone.classList.add("over"); });
+      on(id, "dragleave", () => zone.classList.remove("over"));
+      on(id, "drop", (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.remove("over"); this.dropVoiceFiles([...e.dataTransfer.files]); });
+    }
+    for (const id of ["voice-cassette-input", "voice-ref-input"]) on(id, "change", (e) => { this.dropVoiceFiles([...e.target.files]); e.target.value = ""; });
     on("voice-ref-clear", "click", () => { this.voiceRefs = []; this.renderVoiceRefs(); });
+    on("voice-cassette-clear", "click", () => { this.voiceCassetteUpload = null; this.storeCassette(null); this.renderCassette(); });
     on("voice-checkpoint", "change", (e) => this.saveVoice({ checkpoint: e.target.value }));
-    on("voice-cassette", "change", (e) => {
-      this.voiceUseUpload = e.target.value === "__upload__";
-      if (this.voiceUseUpload) this.renderVoice();
-      else this.saveVoice({ cassette: e.target.value });
+    on("voice-history-list", "click", (e) => {
+      const button = e.target.closest("button[data-action]");
+      const entry = this.voiceHistory.find((h) => h.name === button?.closest("[data-name]")?.dataset.name);
+      if (!entry) return;
+      ({ download: () => this.downloadVoice(entry), seed: () => this.keepVoiceSeed(entry), adopt: () => this.adoptVoice(entry), remove: () => this.removeVoice(entry, button) })[button.dataset.action]?.();
     });
-    on("voice-cassette-reload", "click", () => this.loadCassettes());
     on("voice-caption", "input", (e) => { this.view.autoGrow(e.target); IrodoriClient.save(this.view.store, { caption: e.target.value }); });
     on("voice-seed", "input", (e) => IrodoriClient.save(this.view.store, { seed: e.target.value }));
     on("voice-steps", "input", (e) => IrodoriClient.save(this.view.store, { numSteps: e.target.value }));
     on("voice-duration", "input", (e) => IrodoriClient.save(this.view.store, { durationScale: Number(e.target.value) || 1 }));
     on("voice-length-check", "change", (e) => IrodoriClient.save(this.view.store, { lengthCheck: e.target.checked }));
     on("voice-generate", "click", () => (this.voiceJob ? this.cancelVoice() : this.generateVoice()));
-    on("voice-keep-seed", "click", () => {
-      if (!this.voiceResult) return;
-      $("voice-seed").value = this.voiceResult.meta.seed;
-      this.saveVoice({ seed: String(this.voiceResult.meta.seed) });
-    });
-    on("voice-adopt", "click", () => this.adoptVoice());
+    PanelWindow.queryAll("[data-irodori-download]").forEach((b) => this.view.on(b, "click", () => IrodoriClient.download()));
+    PanelWindow.queryAll("[data-irodori-guide]").forEach((b) => this.view.on(b, "click", () => this.openVoiceGuide()));
     on("voice-fit-btn", "click", () => this.fitSecondsToVoice());
     this.renderVoice();
+  }
+
+  async loadVoiceHistory() {
+    try {
+      const data = await this.voiceClient().outputs(USER_SETTINGS.voice.history.max);
+      this.voiceHistory = data.outputs || [];
+    } catch (err) {
+      this.voiceHistory = [];
+      if (this.voiceReachable) this.setVoiceStatus(USER_SETTINGS.voice.messages.historyFailed + err.message, "err");
+    }
+    this.renderVoiceHistory();
+    this.renderVoiceButton();
+  }
+
+  async removeVoice(entry, button) {
+    const m = USER_SETTINGS.voice.messages;
+    if (button.dataset.armed !== "1") {
+      button.dataset.armed = "1";
+      button.textContent = m.historyRemoveConfirm;
+      setTimeout(() => { if (button.isConnected) { delete button.dataset.armed; button.textContent = m.historyRemove; } }, USER_SETTINGS.probeTimeoutMs * 2);
+      return;
+    }
+    try {
+      await this.voiceClient().deleteOutput(entry.name);
+    } catch (err) {
+      this.setVoiceStatus(describeError(err, "Irodori Bridge"), "err");
+    }
+    await this.loadVoiceHistory();
+  }
+
+  keepVoiceSeed(entry) {
+    if (entry.meta?.seed == null) return;
+    $("voice-seed").value = entry.meta.seed;
+    this.saveVoice({ seed: String(entry.meta.seed) });
+  }
+
+  voiceSettingsRows(entry) {
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
+    const L = m.historyLabels;
+    const meta = entry.meta;
+    if (!meta) return [[L.file, entry.name]];
+    const label = (list, id) => (list.find(([x]) => x === id) || [, id])[1];
+    const source = (meta.source || []).join("、");
+    return [
+      [L.text, meta.text],
+      [L.mode, label(v.modes, meta.mode)],
+      ...(source ? [[L.source, source]] : []),
+      [L.caption, meta.caption || "-"],
+      [L.checkpoint, label(v.checkpoints, meta.checkpoint)],
+      [L.seed, meta.seed],
+      [L.steps, meta.steps ?? m.historyStepsAuto],
+      [L.scale, meta.duration_scale ?? 1],
+      [L.lengthCheck, meta.length_check ? m.historyYes : m.historyNo],
+      [L.file, entry.name],
+    ];
+  }
+
+  renderVoiceHistory() {
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
+    $("voice-history").hidden = !this.voiceHistory.length;
+    $("voice-history-title").textContent = m.historyTitle.replace("{n}", v.history.max);
+    const el = (tag, cls, text) => {
+      const node = document.createElement(tag);
+      if (cls) node.className = cls;
+      if (text != null) node.textContent = text;
+      return node;
+    };
+    const fmt = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    $("voice-history-list").replaceChildren(...this.voiceHistory.map((entry, index) => {
+      const li = el("li", index === 0 ? "voice-item latest" : "voice-item");
+      li.dataset.name = entry.name;
+      const main = el("div", "voice-item-main");
+      const head = el("div", "voice-item-head");
+      if (index === 0) head.append(el("span", "voice-item-badge", m.historyLatest));
+      const seconds = entry.duration == null ? "-" : Number(entry.duration).toFixed(1);
+      head.append(el("span", "", m.historyWhen.replace("{sec}", seconds).replace("{date}", fmt.format(new Date(entry.meta?.created_at || entry.modified)))));
+      const audio = el("audio");
+      audio.controls = true;
+      audio.preload = "none";
+      audio.src = this.voiceClient().outputUrl(entry.name);
+      audio.volume = USER_SETTINGS.initialVolume;
+      const actions = el("div", "voice-item-actions");
+      for (const [action, text, cls] of [["download", m.historyDownload, ""], ["seed", m.historyKeepSeed, ""], ["adopt", m.historyAdopt, "primary"], ["remove", m.historyRemove, "danger"]]) {
+        if (action === "seed" && entry.meta?.seed == null) continue;
+        const b = el("button", cls, text);
+        b.type = "button";
+        b.dataset.action = action;
+        actions.append(b);
+      }
+      main.append(head, audio, actions);
+      const dl = el("dl", "voice-item-settings");
+      if (!entry.meta) dl.append(el("dd", "voice-item-nometa", m.historyNoMeta));
+      for (const [k, val] of this.voiceSettingsRows(entry)) dl.append(el("dt", "", k), el("dd", "", String(val)));
+      li.append(main, dl);
+      return li;
+    }));
   }
 
   renderVoice() {
@@ -13118,12 +14411,18 @@ class MainViewVoice {
     $("voice-steps").value = cfg.numSteps;
     $("voice-duration").value = cfg.durationScale;
     $("voice-length-check").checked = !!cfg.lengthCheck;
-    this.renderCassettes();
+    this.renderCassette();
     this.renderVoiceRefs();
     const warn = mode === "cassette" && cfg.checkpoint !== v.cassetteBase ? v.messages.baseWarn : "";
     if (warn) $("voice-mode-note").textContent += `\n${warn}`;
     this.view.autoGrow($("voice-caption"));
     this.renderVoiceButton();
+  }
+
+  openVoiceGuide() {
+    if ($("materials").open) $("materials").close();
+    this.view.openSettings("guide");
+    requestAnimationFrame(() => $("guide-irodori")?.scrollIntoView({ block: "start" }));
   }
 
   setMatTab(tab) {
@@ -13142,23 +14441,26 @@ class MainViewVoice {
 
   renderVoiceButton() {
     const m = USER_SETTINGS.voice.messages;
-    $("voice-generate").textContent = this.voiceJob ? m.cancel : this.voiceResult ? m.regenerate : m.generate;
+    $("voice-generate").textContent = this.voiceJob ? m.cancel : this.voiceMade ? m.regenerate : m.generate;
     $("voice-generate").classList.toggle("primary", !this.voiceJob);
   }
 
-  renderCassettes() {
+  renderCassette() {
     const m = USER_SETTINGS.voice.messages;
-    const cfg = this.voiceConfig();
-    const list = this.voiceCassettes || [];
-    const entries = list.map((c) => [c.path, c.path]);
-    if (cfg.cassette && !list.some((c) => c.path === cfg.cassette)) entries.unshift([cfg.cassette, cfg.cassette]);
-    if (this.voiceCassetteUpload) entries.unshift(["__upload__", m.cassetteUpload.replace("{name}", this.voiceCassetteUpload.name)]);
-    if (!entries.length) entries.push(["", this.voiceCassettes ? m.cassettesNone : m.cassettesDown]);
-    fillSelect($("voice-cassette"), entries, this.voiceUseUpload && this.voiceCassetteUpload ? "__upload__" : cfg.cassette);
+    const file = this.voiceCassetteUpload;
+    $("voice-cassette-name").textContent = file ? file.name : m.cassetteNone;
+    $("voice-cassette-sub").textContent = file ? m.cassetteSub.replace("{kb}", Math.max(1, Math.round(file.size / 1024))) : m.cassetteNoneSub;
+    $("voice-cassette-drop").classList.toggle("has-file", !!file);
+    $("voice-cassette-clear").hidden = !file;
   }
 
   setVoiceStatus(text, kind = "") {
     setMsg($("voice-status"), text, kind);
+    this.renderVoiceAlert();
+  }
+
+  renderVoiceAlert() {
+    $("voice-alert").hidden = !$("voice-status").textContent.trim() && $("voice-setup").hidden;
   }
 
   insertVoiceEmoji(emoji) {
@@ -13177,7 +14479,7 @@ class MainViewVoice {
     const notes = [];
     if (cassette) {
       this.voiceCassetteUpload = cassette;
-      this.voiceUseUpload = true;
+      await this.storeCassette(cassette);
       notes.push(m.dropCassette.replace("{name}", cassette.name));
     }
     if (audios.length) {
@@ -13200,38 +14502,31 @@ class MainViewVoice {
   }
 
   renderVoiceRefs() {
-    const m = USER_SETTINGS.voice.messages;
+    const v = USER_SETTINGS.voice;
+    const m = v.messages;
     const total = this.voiceRefs.reduce((sum, r) => sum + r.duration, 0);
-    $("voice-ref-info").textContent = this.voiceRefs.length
-      ? `${m.refInfo.replace("{n}", this.voiceRefs.length).replace("{sec}", total.toFixed(1))}: ${this.voiceRefs.map((r) => r.file.name).join("、")}`
-      : m.refNone;
-    $("voice-ref-clear").hidden = !this.voiceRefs.length;
+    const has = this.voiceRefs.length > 0;
+    $("voice-ref-name").textContent = has ? this.voiceRefs.map((r) => r.file.name).join("、") : m.refNone;
+    $("voice-ref-info").textContent = has
+      ? m.refSub.replace("{info}", m.refInfo.replace("{n}", this.voiceRefs.length).replace("{sec}", total.toFixed(1)))
+      : m.refNoneSub.replace("{n}", v.maxReferences);
+    $("voice-ref-drop").classList.toggle("has-file", has);
+    $("voice-ref-clear").hidden = !has;
   }
 
   async refreshVoiceConnection(force = false) {
-    if (this.voiceTab !== "voice" || !$("materials").open || (!force && Date.now() - this.voiceCheckedAt < USER_SETTINGS.probeTimeoutMs * 4)) return;
+    if (this.voiceTab !== "voice" || !$("materials").open || (!force && this.voiceReachable && Date.now() - this.voiceCheckedAt < USER_SETTINGS.probeTimeoutMs * 4)) return;
     this.voiceCheckedAt = Date.now();
     $("voice-conn").textContent = USER_SETTINGS.voice.messages.checking;
     const result = await this.voiceClient().check();
     this.voiceReachable = !!result.health;
+    $("voice-setup").hidden = result.state === "ok";
+    this.renderVoiceAlert();
+    if (result.health) await this.loadVoiceHistory();
+    else { this.voiceHistory = []; this.renderVoiceHistory(); }
     $("voice-conn").textContent = result.state === "ok" ? `● ${result.text}` : "";
     if (result.state !== "ok" && !this.voiceJob) this.setVoiceStatus(result.text, "err");
     else if (!this.voiceJob && $("voice-status").classList.contains("err")) this.setVoiceStatus("");
-    if (result.health) await this.loadCassettes(true);
-    else this.renderCassettes();
-  }
-
-  async loadCassettes(quiet = false) {
-    try {
-      const data = await this.voiceClient().cassettes();
-      this.voiceCassettes = data.cassettes || [];
-      const cfg = this.voiceConfig();
-      if (!cfg.cassette && this.voiceCassettes.length) IrodoriClient.save(this.view.store, { cassette: this.voiceCassettes[0].path });
-    } catch (err) {
-      this.voiceCassettes = null;
-      if (!quiet) this.setVoiceStatus(describeError(err, "Irodori Bridge"), "err");
-    }
-    this.renderCassettes();
   }
 
   async voiceRequest() {
@@ -13243,11 +14538,10 @@ class MainViewVoice {
     if (text.length > v.maxTextChars) throw new UserError(m.tooLong.replace("{n}", v.maxTextChars));
     const number = (s) => (String(s ?? "").trim() === "" ? null : Number(s));
     const voice = { mode: cfg.mode };
-    if (cfg.mode === "cassette" && this.voiceUseUpload && this.voiceCassetteUpload) {
+    if (cfg.mode === "cassette") {
+      if (!this.voiceCassetteUpload) throw new UserError(m.needCassette);
       voice.cassette_upload_base64 = await IrodoriClient.fileToDataUrl(this.voiceCassetteUpload);
-    } else if (cfg.mode === "cassette") {
-      if (!cfg.cassette) throw new UserError(m.needCassette);
-      voice.cassette = cfg.cassette;
+      voice.cassette_name = this.voiceCassetteUpload.name;
     } else if (cfg.mode === "reference") {
       if (!this.voiceRefs.length) throw new UserError(m.needReference);
       voice.reference_audio_base64 = await Promise.all(this.voiceRefs.map(async (r) => ({ name: r.file.name, data: await IrodoriClient.fileToDataUrl(r.file) })));
@@ -13282,13 +14576,10 @@ class MainViewVoice {
         if (state.state === "cancelled") throw new DOMException("aborted", "AbortError");
         this.setVoiceStatus(state.state === "queued" ? m.queued.replace("{n}", state.queue_position || 1) : m.running.replace("{note}", state.note || "").replace("{sec}", Math.round(state.elapsed || 0)));
       }
-      const blob = await client.audio(job.id, signal);
       const r = state.result;
-      this.setVoiceResult(blob, {
-        engine: "Irodori-TTS", text: body.text, caption: body.caption || "", mode: body.voice.mode,
-        cassette: body.voice.cassette || (body.voice.cassette_upload_base64 ? this.voiceCassetteUpload?.name || "" : ""),
-        checkpoint: r.checkpoint, seed: r.seed, duration: r.duration,
-      });
+      this.voiceMade = true;
+      await this.loadVoiceHistory();
+      $("voice-fit").hidden = true;
       const warnings = [...(sent.warnings || []), ...(r.warnings || [])].filter((w, i, a) => a.indexOf(w) === i);
       this.setVoiceStatus([m.done, ...warnings].join("\n"), warnings.length ? "" : "ok");
     } catch (err) {
@@ -13301,41 +14592,44 @@ class MainViewVoice {
     }
   }
 
+  async downloadVoice(entry) {
+    try {
+      downloadBlob(await this.voiceClient().outputBlob(entry.name), entry.name);
+    } catch (err) {
+      this.setVoiceStatus(describeError(err, "Irodori Bridge"), "err");
+    }
+  }
+
   cancelVoice() {
     this.voiceJob?.controller.abort();
   }
 
-  setVoiceResult(blob, meta) {
-    const m = USER_SETTINGS.voice.messages;
-    if (this.voiceResult) URL.revokeObjectURL(this.voiceResult.url);
-    this.voiceResult = { blob, meta, url: URL.createObjectURL(blob) };
-    $("voice-audio").src = this.voiceResult.url;
-    $("voice-audio").volume = USER_SETTINGS.initialVolume;
-    const model = (USER_SETTINGS.voice.checkpoints.find(([id]) => id === meta.checkpoint) || [, meta.checkpoint])[1];
-    $("voice-meta").textContent = m.meta.replace("{sec}", Number(meta.duration).toFixed(1)).replace("{seed}", meta.seed).replace("{model}", model);
-    $("voice-result").hidden = false;
-    $("voice-fit").hidden = true;
-  }
-
-  async adoptVoice() {
+  async adoptVoice(entry) {
     const v = USER_SETTINGS.voice;
     const m = v.messages;
     const refs = USER_SETTINGS.refs;
-    const r = this.voiceResult;
-    if (!r || this.view.running) return;
+    if (!entry || this.view.running) return;
     const items = this.view.materialItems;
     if (Materials.counts(items).audio >= refs.max.audio) { this.setVoiceStatus(m.audioFull.replace("{n}", refs.max.audio), "err"); return; }
-    if (r.meta.duration > refs.clip.max + 0.05) {
-      this.setVoiceStatus(m.tooLongClip.replace("{sec}", Number(r.meta.duration).toFixed(1)).replace("{max}", refs.clip.max), "err");
+    if (Number(entry.duration) > refs.clip.max + 0.05) {
+      this.setVoiceStatus(m.tooLongClip.replace("{sec}", Number(entry.duration).toFixed(1)).replace("{max}", refs.clip.max), "err");
       return;
     }
+    let blob;
+    try {
+      blob = await this.voiceClient().outputBlob(entry.name);
+    } catch (err) {
+      this.setVoiceStatus(describeError(err, "Irodori Bridge"), "err");
+      return;
+    }
+    const r = { blob, meta: { ...(entry.meta || {}), text: entry.meta?.text || "", duration: entry.duration, file: entry.name } };
     const names = new Set(items.map((i) => i.name));
     let n = 1;
     while (names.has(v.fileName.replace("{n}", String(n).padStart(2, "0")))) n++;
     const file = new File([r.blob], v.fileName.replace("{n}", String(n).padStart(2, "0")), { type: "audio/wav" });
     const item = await Materials.analyze(file, "audio");
     const spoken = r.meta.text.replace(v.emojiPattern, "").replace(/\s+/g, " ").trim();
-    Object.assign(item, { role: v.materialRole, memo: v.materialMemo.replace("{text}", spoken), voice: { ...r.meta } });
+    Object.assign(item, { role: v.materialRole, memo: spoken ? v.materialMemo.replace("{text}", spoken) : "", voice: { ...r.meta } });
     this.view.materialItems.push(item);
     this.view.materialsChanged();
     const notes = [m.adopted];
@@ -13345,7 +14639,7 @@ class MainViewVoice {
     }
     this.setVoiceStatus(notes.join("\n"), "ok");
     const length = Number($("seconds").value);
-    const sec = Number(item.duration) || r.meta.duration;
+    const sec = Number(item.duration) || Number(r.meta.duration) || 0;
     this.voiceFitSeconds = sec;
     $("voice-fit").hidden = !(sec > length + 0.05);
     $("voice-fit-text").textContent = m.fit.replace("{sec}", sec.toFixed(1)).replace("{len}", length);
@@ -13420,6 +14714,7 @@ installParts(MainView, [
   MainViewState,
   MainViewPromptReel,
   MainViewVoice,
+  MainViewRefFrame,
 ]);
 
 // ===== 数値の入力（スライダー＋ステッパー＋数値を押すと手入力。Stillmange と同じ） =====
