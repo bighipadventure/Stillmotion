@@ -545,7 +545,8 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 }
 .seg button:last-child { margin-right: 0; }
 .seg button:hover:not(:disabled) { background: var(--control); color: var(--ink); }
-.seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-low); }
+/* 選択中は塗りつぶしではっきり示す（タブ・並び順と同じ。ライトは黒地に白、ダークは白地に黒） */
+.seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: none; }
 .opt-grid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 5px 8px; align-items: center; }
 .frame-info { font-size: 12px; color: var(--muted); margin: 0; white-space: pre-wrap; }
 .frame-info:empty { display: none; }
@@ -600,6 +601,10 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 @keyframes shimmer { from { background-position: -60px 0; } to { background-position: calc(100% + 60px) 0; } }
 #run-status { margin: 0; font-size: 12px; min-height: 1.5em; white-space: pre-wrap; color: var(--muted); }
 #run-status.err { color: var(--danger); }
+/* ===== 「Prompt Reel に投稿」（3アプリ共通の置き場所: 上部の進み具合バーの右下） ===== */
+.status-sub { display: flex; align-items: flex-start; gap: 10px; }
+.status-sub > #run-status { flex: 1 1 auto; min-width: 0; }
+.status-share { flex: none; margin-left: auto; min-height: 26px; height: 26px; padding: 0 12px; font-size: 12px; }
 
 /* ComfyUI のデータ不足の案内 */
 .help-box { border: 1px solid transparent; background: var(--warn-soft); color: var(--on-warn-soft); border-radius: var(--radius-l); padding: 10px 14px; font-size: 12px; }
@@ -831,7 +836,7 @@ dialog#settings::backdrop { background: var(--backdrop); }
 .tab-group:not(:first-child) { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 12px; }
 .tabs button { justify-content: flex-start; border: 1px solid transparent; text-align: left; background: none; padding: 3px 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
 .tabs button:hover:not(:disabled) { background: var(--control); border-color: transparent; color: var(--ink); }
-.tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--surface); border-color: transparent; color: var(--ink); font-weight: 600; box-shadow: var(--shadow-low); }
+.tabs button[aria-selected="true"], .tabs button[aria-selected="true"]:hover:not(:disabled) { background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600; box-shadow: none; }
 .pane { padding: 20px 24px 0; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
 .pane::after { content: ""; flex: none; height: 4px; }
 @media (max-width: 700px) {
@@ -1199,7 +1204,10 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         </div>
         <button class="danger" id="cancel" hidden>中止する</button>
       </div>
-      <p id="run-status" role="status"></p>
+      <div class="status-sub">
+        <p id="run-status" role="status"></p>
+        <button class="primary status-share" id="post-share" disabled title="下の一覧で選んでいる動画と生成情報を、Prompt Reel の投稿画面に渡します">Prompt Reel に投稿</button>
+      </div>
       <div class="help-box" id="comfy-help" role="alert" hidden>
         <div class="help-head">
           <strong>ComfyUI でデータが足りていない可能性があります</strong>
@@ -1292,7 +1300,6 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
           <button id="dl-video" disabled>動画を保存</button>
           <button id="dl-gif" disabled>GIFで保存</button>
           <button id="dl-prompt" disabled>プロンプトを保存</button>
-          <button class="primary" id="post-share" disabled>Prompt Reel に投稿</button>
         </div>
       </div>
     </section>
@@ -1587,7 +1594,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <section class="help-sec"><h4><span class="no">3</span>素材から動画を作る</h4><ul><li>「作り方」で「素材から動画」を選び、画像・動画・音声をまとめてドロップします。</li><li>素材の画面で、それぞれにタグ・使い方・メモを付けると、それらを参照した動画を作ります。</li><li>素材の順番（&lt;Picture 1&gt; などのタグの番号）は、素材の画面で各素材の左上の点々（取っ手）をドラッグして入れ替えます。</li></ul></section>
       <section class="help-sec"><h4><span class="no">4</span>長い動画を作る</h4><ul><li>「作り方」で「長い動画」を選び、全体の長さと区間の数を決めます。</li><li>文章AIが全体のストーリーを区間に分け、区間ごとに動画を作ります。区間の一覧で文を直したり、「区間を追加」「まだの区間を作る」で続きを作れます。</li><li>区間のつなぎ目の画像は、SD WebUI で作ることもできます。最後に「つないで1本にする」で1本の動画にします。</li></ul></section>
       <section class="help-sec"><h4><span class="no">5</span>ストーリーとプロンプトを直す</h4><ul><li>右の「ストーリー」を書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。</li><li>プロンプトの下の欄に直したい内容を書いて「AIで修正」（Ctrl+Enter）を押すと、文章AIが英語のプロンプトを書き直します。</li><li>「このプロンプトで動画を作り直す」で、同じ画像からもう一度作ります。「自然なループ」をオンにすると、終わりと始まりがつながるループ動画になります。</li></ul></section>
-      <section class="help-sec"><h4><span class="no">6</span>残す・共有する</h4><ul><li>動画の下の「動画を保存」「GIFで保存」「プロンプトを保存」で残します。</li><li>上の「状態を保存」で、画像・素材・設定・ストーリー・プロンプトを JSON に保存します。その JSON を画面にドロップすると、そのときの状態に戻ります。</li><li>「Prompt Reel に投稿」で、動画と生成情報を Prompt Reel の投稿画面に渡します。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">6</span>残す・共有する</h4><ul><li>動画の下の「動画を保存」「GIFで保存」「プロンプトを保存」で残します。</li><li>上の「状態を保存」で、画像・素材・設定・ストーリー・プロンプトを JSON に保存します。その JSON を画面にドロップすると、そのときの状態に戻ります。</li><li>上の進み具合バーの右下にある「Prompt Reel に投稿」で、下の一覧で選んでいる動画と生成情報を Prompt Reel の投稿画面に渡します。投稿画面には、タグ「Stillmotion」（Irodori-TTS で作ったセリフの音声を素材に使ったときは「Irodori TTS」も）が最初から付いています。</li></ul></section>
       <section class="help-sec"><h4><span class="no">7</span>画面を使いやすくする</h4><ul><li>上の「説明」をオフにすると、左パネルの説明文を隠します。</li><li>左パネルの上の « でパネルを畳み、作業エリアを広くできます。畳んだ細い帯の » で開きます。</li><li>「別ウィンドウ」で、左パネルだけを別のウィンドウに出せます（2画面で使うときなど）。中身はそのまま使え、ウィンドウを閉じるか「メイン画面に戻す」で元に戻ります。</li><li>左パネルの右端をドラッグすると幅を変えられます（ダブルクリックで元の幅）。</li></ul></section>
     </section>
 
@@ -4577,6 +4584,8 @@ if __name__ == "__main__":
   metadataVersion: 1,
   shareHandoff: {
     db: "stillmotion-handoff", store: "videos",
+    // Prompt Reel の投稿画面に最初から付けるタグ。voiceTag は Irodori-TTS で作った音声を素材に使ったときだけ足す
+    tags: ["Stillmotion"], voiceTag: "Irodori TTS",
   },
   shareAppUrl: "https://bighipadventure.github.io/prompt-reel-images/",
   maxRunCount: 8,
@@ -13957,7 +13966,7 @@ class MainViewPromptReel {
       const key = `sm_${job.stamp}_${job.id}_${Math.random().toString(36).slice(2, 8)}`;
       const record = {
         source: "stillmotion", createdAt: Date.now(), blob: job.blob, mime: job.blob.type || "video/mp4",
-        name: this.view.videoFileName(job), meta: this.view.jobRecord(job),
+        name: this.view.videoFileName(job), meta: this.view.jobRecord(job), tags: this.shareTags(job),
       };
       const db = await this.handoffDb();
       await new Promise((resolve, reject) => {
@@ -13975,6 +13984,13 @@ class MainViewPromptReel {
       win.close();
       this.view.status(`${m.shareFailed}${err.message || err}`, true);
     }
+  }
+
+  // アプリ名と、この動画に使ったツール（Irodori-TTS で作ったセリフの音声を素材に入れていれば Irodori TTS）
+  shareTags(job) {
+    const cfg = USER_SETTINGS.shareHandoff;
+    const voiced = job.flow === "ref" && (job.refs || []).some((i) => i.kind === "audio" && i.voice);
+    return [...cfg.tags, ...(voiced ? [cfg.voiceTag] : [])];
   }
 
   async embedMetadata(job, blob) {
