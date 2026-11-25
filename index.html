@@ -312,12 +312,12 @@ body.no-help #frame-info .frame-help { display: none; }
 .adv-badge:empty { display: none; }
 .adv-arrow { margin-left: auto; font-size: 16px; color: var(--muted); }
 dialog#advanced {
-  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
+  width: min(var(--dlg-l-w), 94vw); height: min(var(--dlg-l-h), 92dvh); max-width: none; max-height: none;
   padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: var(--shadow-high);
 }
 dialog#advanced[open] { display: flex; flex-direction: column; }
-dialog.leave { width: min(560px, 94vw); padding: 20px 24px; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-high); }
+dialog.leave { width: min(var(--dlg-s-w), 94vw); padding: 20px 24px; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-high); }
 dialog.leave::backdrop { background: var(--backdrop); }
 dialog.leave h2 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
 dialog.leave p { margin: 0 0 12px; line-height: 1.6; }
@@ -380,7 +380,7 @@ dialog#advanced::backdrop { background: var(--backdrop); }
 .mat-icon { font-size: 18px; line-height: 1; }
 .mat-tag { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; line-height: 1.5; background: rgba(0, 0, 0, .7); color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 dialog#materials {
-  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
+  width: min(var(--dlg-l-w), 94vw); height: min(var(--dlg-l-h), 92dvh); max-width: none; max-height: none;
   padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: var(--shadow-high);
 }
@@ -530,14 +530,11 @@ textarea.story-text { min-height: 48px; }  /* プロンプト欄と同じく、�
 #frame-actions button { min-height: 28px; padding: 1px 10px; }
 #meta-text { white-space: pre-wrap; font-size: 11px; max-height: 200px; overflow: auto; margin: 0; color: var(--muted); }
 .dropzone.small { min-height: 90px; }
+.loop-audio { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.loop-audio .dropzone.small { min-height: 56px; }
+.loop-audio audio { flex: 1; min-width: 0; height: 32px; }
 #last-canvas { display: block; max-width: 100%; max-height: 160px; }
 .skill-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.engine-list { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.engine-list select { width: 100%; min-width: 0; }
-.engine-lora { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; cursor: pointer; }
-.engine-lora input { flex: none; margin: 0; }
-.engine-lora span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.engine-lora.off span { color: var(--disabled-ink); }
 .seg { display: flex; gap: 2px; padding: 2px; border: none; border-radius: var(--radius-s); overflow: hidden; background: var(--control); }
 .seg button {
   flex: 1; min-width: 0; min-height: 28px; border: none; border-radius: calc(var(--radius-s) - 2px);
@@ -818,7 +815,7 @@ label.field .busy-wrap > textarea, .busy-wrap > textarea { margin-top: 0; }
 
 /* ===== SETTINGS DIALOG ===== */
 dialog#settings {
-  width: min(1600px, 94vw); height: min(1200px, 92dvh); max-width: none; max-height: none;
+  width: min(var(--dlg-l-w), 94vw); height: min(var(--dlg-l-h), 92dvh); max-width: none; max-height: none;
   padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden;
   box-shadow: var(--shadow-high);
 }
@@ -828,7 +825,7 @@ dialog#settings::backdrop { background: var(--backdrop); }
 .dlg-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
 .dlg-head button { margin-left: auto; }
 .dlg-foot { flex: none; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: flex-end; padding: 8px 20px; border-top: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--muted); }
-.dlg-foot a { color: var(--link); font-weight: 600; }
+.dlg-foot a, .share-note a { color: var(--link); font-weight: 600; }
 .dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .tabs { border-right: 1px solid var(--line); padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--bg); }
 .tab-group { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--muted); padding: 10px 10px 4px; }
@@ -984,6 +981,108 @@ body.panel-window-body { display: flex; flex-direction: column; overflow: hidden
 body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user-select: none; user-select: none; }
 
 /* ===== DESIGN RULES 2 (RED FILL = WHITE TEXT / NO GRADIENT) ===== */
+/* ===== MODEL PANEL (SAME IN 3 APPS) ===== */
+.mp { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mp-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.mp-title { font-weight: 700; font-size: 13px; }
+.mp-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.mp-btn { min-height: 26px; padding: 2px 10px; font-size: 12px; border: none; border-radius: var(--radius-s); background: var(--control); color: var(--ink); cursor: pointer; }
+.mp-btn:hover { background: var(--control-hover); }
+.mp-btn:active { scale: .98; }
+.mp-status { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.mp-status.off { color: var(--on-warn-soft); background: var(--warn-soft); padding: 4px 8px; border-radius: var(--radius-xs); }
+.mp-row { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 6px; align-items: center; min-width: 0; }
+.mp-row-top { align-items: start; }
+.mp-row-top > .mp-label { padding-top: 6px; }
+.mp-label { font-size: 12px; color: var(--muted); line-height: 1.3; overflow-wrap: anywhere; }
+.mp-select { width: 100%; min-width: 0; min-height: var(--h-control); font-size: 12px; }
+.mp-missing .mp-select { border-color: var(--danger); }
+.mp-warn { margin: 0 0 0 110px; font-size: 12px; line-height: 1.4; color: var(--danger); }
+.mp-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.mp-loras { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mp-lora-list { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mp-lora { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid var(--line); background: var(--surface-2); min-width: 0; }
+.mp-lora-line { display: grid; grid-template-columns: auto minmax(0, 1fr) 24px; gap: 6px; align-items: center; min-width: 0; }
+.mp-lora-weight { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: center; padding-left: 42px; min-width: 0; }
+.mp-weight-label { font-size: 12px; color: var(--muted); }
+.mp-lora.off .mp-select, .mp-lora.off .mp-weight-label { color: var(--disabled-ink); }
+.mp-lora .mp-warn, .mp-lora-label { margin: 0 0 0 42px; }
+.mp-del, .mp-del-space { width: 24px; height: 24px; }
+.mp-switch-space { width: 36px; height: 20px; }
+.mp-del { border: none; border-radius: var(--radius-xs); background: transparent; cursor: pointer; position: relative; padding: 0; }
+.mp-del::before { content: ""; position: absolute; inset: 5px; background: var(--muted); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6l12 12M18 6L6 18' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.mp-del:hover { background: var(--control); }
+.mp-del:hover::before { background: var(--danger); }
+.mp-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.mp-tools button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.mp-wf { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mp-wf-now { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.mp-wf-tag { flex: none; font-size: 11px; font-weight: 600; line-height: 18px; padding: 0 8px; border-radius: 999px; background: var(--control); color: var(--muted); }
+.mp-wf-now.custom .mp-wf-tag { background: var(--accent); color: var(--on-accent); }
+.mp-wf .note { margin: 0; }
+.mp-wf-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 12px; }
+.mp-wf-list dt { font-weight: 600; }
+.mp-wf-list dd { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.mp-compact .mp-row { grid-template-columns: 76px minmax(0, 1fr); }
+.mp-compact .mp-warn { margin-left: 82px; }
+/* ===== SETTINGS SHELL AND DIALOG SIZES (SAME IN 3 APPS) ===== */
+:root { --dlg-l-w: 1600px; --dlg-l-h: 1200px; --dlg-m-w: 880px; --dlg-m-h: 900px; --dlg-s-w: 640px; --dlg-nav-w: 200px; }
+dialog.dlg-l, dialog#settings { width: min(var(--dlg-l-w), 94vw); height: min(var(--dlg-l-h), 92dvh); max-width: none; max-height: none; }
+dialog.dlg-m { width: min(var(--dlg-m-w), 94vw); height: min(var(--dlg-m-h), 92dvh); max-width: none; max-height: none; }
+dialog.dlg-s { width: min(var(--dlg-s-w), 94vw); height: auto; max-width: none; max-height: 92dvh; }
+dialog#settings { padding: 0; border: none; border-radius: var(--radius-l); background: var(--surface); color: var(--ink); overflow: hidden; box-shadow: var(--shadow-high); }
+dialog#settings[open] { display: flex; flex-direction: column; }
+dialog#settings::backdrop { background: var(--backdrop); }
+#settings > .dlg-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 20px; min-height: 52px; border-bottom: 1px solid var(--line); background: var(--surface); }
+#settings > .dlg-head h2 { margin: 0; flex: 1; font-size: 17px; font-weight: 600; }
+#settings > .dlg-head > button { background: var(--control); border-color: transparent; color: var(--ink); }
+#settings > .dlg-head > button:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
+#settings > .dlg-split, #settings > .dlg-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: var(--dlg-nav-w) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); padding: 0; gap: 0; overflow: hidden; }
+#settings [role="tablist"] { border-right: 1px solid var(--line); padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; background: var(--bg); }
+#settings .tab-group { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--muted); padding: 10px 10px 4px; }
+#settings .tab-group:first-child { padding-top: 2px; }
+#settings .tab-group:not(:first-child) { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 12px; }
+#settings [role="tablist"] > button { flex: none; justify-content: flex-start; text-align: left; border: 1px solid transparent; background: none; padding: 3px 10px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: none; }
+#settings [role="tablist"] > button:hover:not(:disabled) { background: var(--control); border-color: transparent; color: var(--ink); }
+#settings [role="tablist"] > button[aria-selected="true"], #settings [role="tablist"] > button[aria-selected="true"]:hover:not(:disabled) { background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600; box-shadow: none; }
+#settings .pane { padding-top: 20px; padding-left: 24px; padding-right: 24px; overflow-y: auto; scrollbar-gutter: stable; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+#settings .pane { padding-bottom: 20px; }
+#settings .pane-actions { position: static; margin: 2px 0 0; padding: 0; background: none; border-top: none; }
+#settings .pane > h3, #settings .pane-head h3 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+#settings .lead { margin: 0; font-size: 12px; color: var(--muted); max-width: 72ch; }
+#settings .card { border: 1px solid var(--line); border-radius: var(--radius-l); padding: 12px 14px; background: var(--surface-2); }
+#settings .cards > .card { padding-left: 42px; }
+#settings .card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+#settings .card > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+#settings .card > button, #settings .card > a.btn { align-self: flex-start; }
+#settings .card > .row + .check, #settings .card > .row + label:has(> input[type="checkbox"]) { margin-top: 4px !important; }
+#settings .card label.field { display: flex; flex-direction: column; gap: 2px; margin: 0; font-weight: 400; }
+#settings .card label.field > :is(input, select, textarea, .numctl) { margin-top: 0; }
+#settings .pane-head { display: flex; flex-direction: column; gap: 10px; }
+#settings .card .inline-field { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+#settings .card .inline-field > .field { align-self: stretch; }
+#settings .card-title { display: flex; align-items: flex-start; flex-wrap: nowrap; gap: 6px; font-size: 14px; font-weight: 600; line-height: 20px; }
+#settings .card-title .badge { flex: none; margin-top: 1px; }
+#settings .card > .prop { grid-template-columns: 104px minmax(0, 1fr); gap: 6px; }
+#settings .card-title .num { display: block; box-sizing: border-box; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; flex: none; text-align: center; line-height: 1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-variant-numeric: lining-nums tabular-nums; text-box: trim-both cap alphabetic; padding-top: calc((20px - 1cap) / 2); }
+#settings .badge { position: static; font-size: 11px; font-weight: 500; line-height: 18px; color: var(--muted); background: var(--control); border: 1px solid transparent; border-radius: 999px; padding: 0 8px; }
+#settings .sub-title { display: flex; align-items: center; gap: 6px; margin: 10px 0 2px; font-size: 13px; font-weight: 600; padding-top: 8px; border-top: 1px solid var(--line); }
+#settings .dropzone { display: grid; place-items: center; min-height: 70px; border: 1px dashed var(--line-strong); border-radius: var(--radius-l); cursor: pointer; text-align: center; padding: 8px; overflow: hidden; position: relative; background: var(--surface-2); transition: border-color .12s, background-color .12s; }
+#settings .dropzone:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+#settings .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
+#settings .dropzone .hint { color: var(--muted); font-size: 12px; }
+#settings .dropzone .hint strong { display: block; color: var(--ink); font-size: 13px; margin-bottom: 2px; }
+#settings .dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+@media (max-width: 700px) {
+  #settings > .dlg-split, #settings > .dlg-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  #settings [role="tablist"] { flex-direction: row; overflow-x: auto; overflow-y: hidden; border-right: none; border-bottom: 1px solid var(--line); }
+  #settings .tab-group { display: none; }
+  #settings .pane { padding-top: 12px; padding-left: 12px; padding-right: 12px; }
+}
+.topbar button.quiet { background: var(--control); border-color: transparent; }
+.topbar button.quiet:hover:not(:disabled) { background: var(--control-hover); border-color: transparent; }
+.topbar .pill { min-height: var(--h-control); font-size: 12px; }
+/* ===== END SETTINGS SHELL ===== */
 </style>
 </head>
 <body>
@@ -1129,6 +1228,17 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
               <div class="prop"><span class="prop-label" id="loop-label">自然なループ</span><div class="seg" id="loop-choice" role="group" aria-labelledby="loop-label"></div></div>
               <p class="note" id="loop-info"></p>
               <p class="note" id="loop-status" aria-live="polite"></p>
+              <div class="loop-audio" id="loop-audio-box" hidden>
+                <span class="prop-label" id="loop-audio-label"></span>
+                <div class="dropzone small" id="loop-audio-drop">
+                  <input type="file" id="loop-audio-input" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a,.aac,.opus">
+                  <span class="hint" id="loop-audio-hint"></span>
+                </div>
+                <div class="row" id="loop-audio-row" hidden><audio id="loop-audio-player" controls preload="metadata"></audio><button id="loop-audio-clear"></button></div>
+                <label class="field" id="loop-audio-role-field"><span id="loop-audio-role-label"></span><select id="loop-audio-role"></select></label>
+                <label class="field"><span id="loop-audio-memo-label"></span><input type="text" id="loop-audio-memo" spellcheck="false"></label>
+                <p class="note" id="loop-audio-note"></p>
+              </div>
               <div class="help-box" id="loop-guide" role="alert" hidden>
                 <strong id="loop-guide-title"></strong>
                 <p id="loop-guide-lead"></p>
@@ -1153,8 +1263,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
           <div class="prop"><span class="prop-label">文章AI</span><select id="sel-model" aria-label="文章AIのモデル" title="プロンプトを書く文章AIのモデル"></select></div>
           <p class="note" id="sel-model-note"></p>
           <div class="prop" id="sel-video-field"><span class="prop-label">ワークフロー</span><select id="sel-video" aria-label="ワークフロー（動画を作る ComfyUI のワークフロー）" title="動画を作る ComfyUI のワークフロー"></select></div>
-          <div class="prop prop-top" id="sel-models-field" hidden><span class="prop-label">モデル</span><div class="engine-list" id="sel-models"></div></div>
-          <div class="prop prop-top" id="sel-loras-field" hidden><span class="prop-label">LoRA</span><div class="engine-list" id="sel-loras"></div></div>
+          <div id="sel-model-panel" hidden></div>
           <div class="prop prop-top" id="skill-chips-label"><span class="prop-label">スキル</span><div class="skill-chips" id="skill-chips"></div></div>
           <p class="note" id="skill-default-note"></p>
           <div class="prop"><span class="prop-label" id="ja-label">日本語訳</span><div class="seg" id="ja-toggle" role="group" aria-labelledby="ja-label"><button type="button" data-ja="on">作る</button><button type="button" data-ja="off">作らない</button></div></div>
@@ -1452,11 +1561,11 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <button role="tab" data-pane="help">ツールの使い方</button>
       <div class="tab-group" aria-hidden="true">接続</div>
       <button role="tab" data-pane="llm">文章AI</button>
-      <button role="tab" data-pane="video">動画AI</button>
       <button role="tab" data-pane="sd">画像AI</button>
+      <button role="tab" data-pane="video">動画AI</button>
       <button role="tab" data-pane="voice">音声AI</button>
       <button role="tab" data-pane="machine">マシンスペック</button>
-      <div class="tab-group" aria-hidden="true">プロンプトの調整</div>
+      <div class="tab-group" aria-hidden="true">調整</div>
       <button role="tab" data-pane="skills">スキル</button>
       <button role="tab" data-pane="styles">プロンプト形式</button>
       <div class="tab-group" aria-hidden="true">その他</div>
@@ -1537,6 +1646,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         <button class="primary" id="run-diag">いまの設定で接続を確認</button>
         <div id="diag-out"></div>
       </div>
+      <p class="note share-note"><span>作った動画を人と共有するなら</span> <a id="share-app-link" target="_blank" rel="noopener">Prompt Reel Images を開く ↗</a></p>
     </section>
 
     <section class="pane" data-pane="flow" hidden>
@@ -1593,26 +1703,24 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <section class="help-sec"><h4><span class="no">2</span>1枚の画像から動画を作る</h4><ul><li>左の「作り方」で「画像から動画」を選び、「画像」に PNG をドロップします。Stable Diffusion で作った画像なら、埋め込まれたプロンプトやモデル名も読み取ります。</li><li>「動画のサイズ」で縦横比・大きさ・合わせ方（切り抜く・ぼかし余白・黒い余白）を選びます。切り抜くときは、画像をドラッグして位置を変えられます。</li><li>「プロンプトの指定」でモードを選びます。I2VA は画像を最初のフレームに、L2VA は最後のフレームにします。FL2VA は最初と最後の画像のあいだをつなぎます。</li><li>左下の「最初から実行」を押すと、文章AIがストーリーとプロンプトを書き、ComfyUI が動画を作ります。本数を選ぶと、同じ画像とプロンプトで続けて作ります。</li></ul></section>
       <section class="help-sec"><h4><span class="no">3</span>素材から動画を作る</h4><ul><li>「作り方」で「素材から動画」を選び、画像・動画・音声をまとめてドロップします。</li><li>素材の画面で、それぞれにタグ・使い方・メモを付けると、それらを参照した動画を作ります。</li><li>素材の順番（&lt;Picture 1&gt; などのタグの番号）は、素材の画面で各素材の左上の点々（取っ手）をドラッグして入れ替えます。</li></ul></section>
       <section class="help-sec"><h4><span class="no">4</span>長い動画を作る</h4><ul><li>「作り方」で「長い動画」を選び、全体の長さと区間の数を決めます。</li><li>文章AIが全体のストーリーを区間に分け、区間ごとに動画を作ります。区間の一覧で文を直したり、「区間を追加」「まだの区間を作る」で続きを作れます。</li><li>区間のつなぎ目の画像は、SD WebUI で作ることもできます。最後に「つないで1本にする」で1本の動画にします。</li></ul></section>
-      <section class="help-sec"><h4><span class="no">5</span>ストーリーとプロンプトを直す</h4><ul><li>右の「ストーリー」を書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。</li><li>プロンプトの下の欄に直したい内容を書いて「AIで修正」（Ctrl+Enter）を押すと、文章AIが英語のプロンプトを書き直します。</li><li>「このプロンプトで動画を作り直す」で、同じ画像からもう一度作ります。「自然なループ」をオンにすると、終わりと始まりがつながるループ動画になります。</li></ul></section>
+      <section class="help-sec"><h4><span class="no">5</span>ストーリーとプロンプトを直す</h4><ul><li>右の「ストーリー」を書き直して「このストーリーでプロンプトを作り直す」を押すと、それに合わせたプロンプトになります。</li><li>プロンプトの下の欄に直したい内容を書いて「AIで修正」（Ctrl+Enter）を押すと、文章AIが英語のプロンプトを書き直します。</li><li>「このプロンプトで動画を作り直す」で、同じ画像からもう一度作ります。「自然なループ」をオンにすると、終わりと始まりがつながるループ動画になります。その下の「音声（任意）」に BGM・効果音・セリフの音声を入れると、選んだ使い方（そのまま使う・声の参考・曲調の参考）でループに使います。</li></ul></section>
       <section class="help-sec"><h4><span class="no">6</span>残す・共有する</h4><ul><li>動画の下の「動画を保存」「GIFで保存」「プロンプトを保存」で残します。</li><li>上の「状態を保存」で、画像・素材・設定・ストーリー・プロンプトを JSON に保存します。その JSON を画面にドロップすると、そのときの状態に戻ります。</li><li>上の進み具合バーの右下にある「Prompt Reel に投稿」で、下の一覧で選んでいる動画と生成情報を Prompt Reel の投稿画面に渡します。投稿画面には、タグ「Stillmotion」（Irodori-TTS で作ったセリフの音声を素材に使ったときは「Irodori TTS」も）が最初から付いています。</li></ul></section>
       <section class="help-sec"><h4><span class="no">7</span>画面を使いやすくする</h4><ul><li>上の「説明」をオフにすると、左パネルの説明文を隠します。</li><li>左パネルの上の « でパネルを畳み、作業エリアを広くできます。畳んだ細い帯の » で開きます。</li><li>「別ウィンドウ」で、左パネルだけを別のウィンドウに出せます（2画面で使うときなど）。中身はそのまま使え、ウィンドウを閉じるか「メイン画面に戻す」で元に戻ります。</li><li>左パネルの右端をドラッグすると幅を変えられます（ダブルクリックで元の幅）。</li></ul></section>
     </section>
 
     <section class="pane" data-pane="llm" hidden>
-      <header class="pane-head"><h3>文章AI</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。サーバーURLの下の候補を押すと切り替わります（緑の点は起動中）。ページを開いたとき・このページに戻ってきたとき・上部の「更新」を押したときに起動中のものを探し、まだ候補にないものは自動で追加します。</p></header>
+      <header class="pane-head"><h3>文章AI（LLM）</h3><p class="lead">プロンプトを書いてくれる文章AI（LM Studio / Bionic、KoboldCpp、Ollama など）の接続先です。サーバーURLの下の候補を押すと切り替わります（緑の点は起動中）。ページを開いたとき・このページに戻ってきたとき・上部の「更新」を押したときに起動中のものを探し、まだ候補にないものは自動で追加します。</p></header>
       <div class="card">
-        <h4 class="card-title"><span class="num">1</span>サーバーに接続</h4>
+        <h4 class="card-title"><span class="num">1</span>接続先</h4>
         <div class="row" style="margin-bottom:8px"><button class="primary" id="llm-detect"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>自動で探す</button><span class="note" style="margin:0">文章AIのサーバーを起動してから押します</span></div>
         <label class="field" style="margin-bottom:0">サーバーURL<input type="url" id="llm-url" placeholder="http://localhost:1234/v1"></label>
         <div class="llm-chips" id="llm-chips" role="group" aria-label="接続先（押すと切り替わります）"></div>
         <label class="field" style="margin-bottom:0">名前（メイン画面に表示されます）<input type="text" id="llm-name"></label>
       </div>
       <div class="card">
-        <h4 class="card-title"><span class="num">2</span>モデルを選ぶ</h4>
-        <div class="inline-field">
-          <label class="field" style="margin:0">モデル<select id="llm-model"></select></label>
-          <button id="llm-fetch">一覧を更新</button>
-        </div>
+        <h4 class="card-title"><span class="num">2</span>モデル</h4>
+        <label class="field" style="margin:0">モデル<select id="llm-model"></select></label>
+        <div class="row" style="margin-top:8px"><button id="llm-fetch">一覧を更新</button></div>
         <label class="field" id="llm-model-custom-field" style="margin:8px 0 0" hidden>モデル名<input type="text" id="llm-model-custom" placeholder="例: qwen2.5-vl-7b-instruct"></label>
         <div class="row" style="margin-top:8px">
           <label class="check" style="margin:0"><input type="checkbox" id="llm-vision"> 画像もAIに見せる（画像対応モデルのみ）</label>
@@ -1622,10 +1730,8 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       <div class="card">
         <h4 class="card-title"><span class="num">3</span>細かい調整 <span class="badge">変更しなくても動きます</span></h4>
         <label class="field">発想の自由度（温度）<output id="llm-temp-out" class="sr-only"></output><input type="range" id="llm-temp" min="0" max="1.5" step="0.05"></label>
-        <div class="map-grid">
-          <label class="field" style="margin:0">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
-          <label class="field" style="margin:0">APIキー（ローカルなら空欄）<input type="password" id="llm-key" autocomplete="off"></label>
-        </div>
+        <label class="field">最大出力トークン数<input type="number" id="llm-maxtok" min="256" step="256"></label>
+        <label class="field" style="margin:0">APIキー（ローカルなら空欄）<input type="password" id="llm-key" autocomplete="off"></label>
       </div>
       <div class="pane-actions"><button class="primary" id="llm-save">追加して使う</button><button class="danger" id="llm-del">この設定を削除</button><p class="msg" id="llm-msg"></p></div>
     </section>
@@ -1638,15 +1744,19 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       </div>
       <div class="picker"><label class="field">編集する設定<select id="vid-pick"></select></label><button id="vid-new">＋ 新しく追加</button><button id="vid-cancel" hidden>編集をやめて戻る</button></div>
       <div class="card">
-        <h4 class="card-title"><span class="num">1</span>ComfyUI に接続</h4>
+        <h4 class="card-title"><span class="num">1</span>接続先</h4>
         <div class="inline-field">
           <label class="field" style="margin:0">ComfyUI のURL<input type="url" id="vid-url" placeholder="http://127.0.0.1:8188"></label>
           <button id="vid-test">接続テスト</button>
         </div>
         <label class="field" style="margin:8px 0 0">名前（メイン画面に表示されます）<input type="text" id="vid-name"></label>
       </div>
+      <div class="card" id="vid-models-card">
+        <h4 class="card-title"><span class="num">2</span>モデル</h4>
+        <div id="vid-models"></div>
+      </div>
       <div class="card">
-        <h4 class="card-title"><span class="num">2</span>ワークフロー</h4>
+        <h4 class="card-title"><span class="num">3</span>ワークフロー</h4>
         <p class="note" id="wf-note"></p>
         <label class="dropzone" id="wf-drop" style="min-height:70px">
           <input type="file" id="wf-file" accept=".json,application/json" aria-label="ワークフローJSONを選ぶ">
@@ -1664,7 +1774,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         </div>
       </div>
       <div class="card">
-        <h4 class="card-title"><span class="num">3</span>動画の作り方</h4>
+        <h4 class="card-title"><span class="num">4</span>動画の作り方</h4>
         <div class="map-grid">
           <label class="field">プロンプト形式<select id="vid-style"></select></label>
           <label class="field">標準の長さ（秒）<input type="number" id="vid-seconds" min="0.5" max="15" step="0.5"></label>
@@ -1673,7 +1783,7 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         <p class="note" style="margin:6px 0 0">縦横比と大きさは、メイン画面の「動画のサイズ」で選びます。</p>
       </div>
       <div class="card" id="vid-params-card">
-        <h4 class="card-title"><span class="num">4</span>モデル・LoRA・サンプラーなど <span class="badge">メイン画面の「詳しい設定」と同じ</span></h4>
+        <h4 class="card-title"><span class="num">5</span>サンプラー・ステップなど</h4>
         <p class="note" id="vid-params-note"></p>
         <div class="wfp-grid" id="vid-params"></div>
         <div class="row" style="margin-top:6px"><button id="vid-params-reset" hidden>ワークフローの値に戻す</button></div>
@@ -1682,17 +1792,21 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
     </section>
 
     <section class="pane" data-pane="sd" hidden>
-      <header class="pane-head"><h3>画像AI（Stable Diffusion）</h3><p class="lead">「長い動画」で、区間のつなぎ目の画像を作ってもらう Stable Diffusion の接続先です（Stillmange と同じ設定）。元の画像のメタデータにあるモデル・サンプラー・ステップ数・CFG・LoRA をそのまま使うので、同じモデルと LoRA が入っている必要があります。変更は自動で保存されます。</p></header>
+      <header class="pane-head"><h3>画像AI（SD WebUI / ComfyUI）</h3><p class="lead">「長い動画」で、区間のつなぎ目の画像を作ってもらう Stable Diffusion の接続先です（Stillmange と同じ設定）。元の画像のメタデータにあるモデル・サンプラー・ステップ数・CFG・LoRA をそのまま使うので、同じモデルと LoRA が入っている必要があります。変更は自動で保存されます。</p></header>
       <div class="card">
-        <h4 class="card-title">接続先</h4>
+        <h4 class="card-title"><span class="num">1</span>接続先</h4>
         <div class="seg" id="sd-backend" role="group" aria-label="Stable Diffusion の種類"></div>
         <label class="field" style="margin-top:8px">URL<input type="url" id="sd-url" spellcheck="false"></label>
-        <div class="row"><button id="sd-test">接続を確かめる</button><span class="msg" id="sd-msg"></span></div>
+        <div class="row"><button id="sd-test">接続テスト</button><span class="msg" id="sd-msg"></span></div>
         <p class="note" id="sd-cors"></p>
         <p class="note">同じ PC の GPU で動画も作るため、つなぎの画像を作り終えたら、Stable Diffusion のモデルを VRAM から外してから動画づくりに移ります。</p>
       </div>
       <div class="card">
-        <h4 class="card-title">画像の作り方 <span class="badge">メイン画面の「詳しい設定」と同じ</span></h4>
+        <h4 class="card-title"><span class="num">2</span>モデル</h4>
+        <div id="sd-models"></div>
+      </div>
+      <div class="card">
+        <h4 class="card-title"><span class="num">3</span>画像の作り方</h4>
         <p class="note" id="sd-gen-note"></p>
         <div class="wfp-grid" id="sd-gen"></div>
         <div class="row" style="margin-top:6px"><button id="sd-gen-reset" hidden>元の画像に合わせる設定に戻す</button></div>
@@ -1707,9 +1821,9 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
         <div class="row"><button class="primary" type="button" data-irodori-download>Irodori Bridge をダウンロード（irodori-bridge.zip）</button><button type="button" data-irodori-guide>「はじめに」の手順を見る</button></div>
       </div>
       <div class="card">
-        <h4 class="card-title">接続先</h4>
+        <h4 class="card-title"><span class="num">1</span>接続先</h4>
         <label class="field">Irodori Bridge の URL<input type="url" id="voice-url" spellcheck="false"></label>
-        <div class="row"><button id="voice-test">接続を確かめる</button><span class="msg" id="voice-msg"></span></div>
+        <div class="row"><button id="voice-test">接続テスト</button><span class="msg" id="voice-msg"></span></div>
         <label class="check voice-unload-check"><input type="checkbox" id="voice-unload"> 動画を作る前に、音声AIのモデルを外して VRAM を空ける（おすすめ）</label>
         <p class="note">音声AIと動画AI（ComfyUI）は同じ GPU を使います。セリフの音声を先に作ってから動画を作ると、取り合いにならず速く済みます。音声を作るときは、動画AIの設定で「生成後に ComfyUI のGPUメモリを解放する」がオンなら、先に ComfyUI のモデルを外します。</p>
       </div>
@@ -1803,14 +1917,104 @@ body.drag-active, body.drag-active * { cursor: grabbing !important; -webkit-user
       </div>
     </section>
   </div>
-  <div class="dlg-foot">
-    <span>作った動画を人と共有するなら</span>
-    <a id="share-app-link" target="_blank" rel="noopener">Prompt Reel Images を開く ↗</a>
-  </div>
 </dialog>
 
 <script>
 const USER_SETTINGS = {
+  autoValues: ["", "Automatic", "None", "automatic", "none"],
+  vaeLike: /(vae|(^|[_\-.])ae([_\-.]|$))/i,
+  modelPanel: {
+    fileExt: /\.(safetensors|ckpt|pt|pth|bin|gguf|sft)$/i,
+    noiseWords: /(^|[_\-.\s])(fp\d+|bf\d+|int\d+|nvfp\d+|q\d+(_[a-z0-9])*|pruned|convrot|ema|e4m3fn|e5m2|scaled|awq|mixed|\d+p)(?=$|[_\-.\s])/g,
+    weightStep: 0.05,
+    weightMin: -2,
+    weightMax: 3,
+    sliderMin: 0,
+    sliderMax: 1.5,
+    weight: "強さ",
+    title: "モデル",
+    reload: "一覧を読み込む",
+    reloadTitle: "接続先にあるモデル・VAE・Text Encoder・LoRA の一覧を読み込み直します",
+    reset: "初期設定に戻す",
+    resetWorkflow: "ワークフローの値に戻す",
+    resetTitle: "基準の設定に戻します",
+    resetVideoTitle: "モデル・VAE・Text Encoder・LoRA を、基準のワークフローの値に戻します（追加した LoRA は外します）",
+    resetMossTitle: "MOSS 用の Checkpoint・VAE・Text Encoder を空欄（Forge で選んでいるもの）に戻し、LoRA を外します",
+    resetImageTitle: "Checkpoint を接続先で選んでいるもの、VAE・Text Encoder を Checkpoint 内蔵のものに戻し、LoRA を外します",
+    loaded: "接続先（{source}）にあるファイルから選びます。選んだものは覚えていて、次に開いたときも使います。",
+    offline: "接続先（{source}）の一覧をまだ読み込めていません。接続してから「一覧を読み込む」を押してください。",
+    notLoaded: "（一覧を読み込んでいません）",
+    missingItem: "{name}（接続先にありません）",
+    missingNote: "「{name}」は接続先にありません。一覧から選び直してください。",
+    substituted: "「{from}」が接続先に無いので、近い名前の「{to}」を選びました。",
+    lora: "LoRA",
+    loraUse: "{name} を使う",
+    loraFile: "LoRA のファイル",
+    loraWeight: "{name} の強さ",
+    loraRemove: "外す",
+    loraAdd: "LoRA を追加",
+    loraAddItem: "＋ LoRA を追加（{n} 個）",
+    loraNotLoaded: "（LoRA の一覧を読み込んでいません）",
+    checkpoint: "Checkpoint",
+    vae: "VAE",
+    textEncoder: "Text Encoder",
+    builtInVae: "Checkpoint 内蔵の VAE",
+    builtInTe: "Checkpoint 内蔵の Text Encoder",
+    noVae: "使わない（None）",
+    webuiModel: "（WebUI で選んでいるモデル）",
+    pickModel: "（選んでください）",
+    workflowValue: "（ワークフローのまま）",
+    teA1111: "この接続先では選べません（Forge Neo・ComfyUI で選べます）",
+    teComfy: "ComfyUI では Checkpoint の Text Encoder を使います",
+    teWorkflow: "このワークフローには Text Encoder を読み込むノードがありません",
+    kindLabels: { model: "モデル", te: "Text Encoder", vision: "CLIP Vision", vae: "VAE", audioVae: "音声 VAE" },
+    loaderKinds: {
+      model: [[/^(?!.*(upscale|interpol|vfi|film|rife|sam|clip|vision|depth|pose|detect|segment)).*$/i, "unet_name"], [/^(?!.*(upscale|interpol|vfi|film|rife|sam|clip|vision|depth|pose|detect|segment)).*$/i, "ckpt_name"], [/^(?!.*(upscale|interpol|vfi|film|rife|sam|clip|vision|depth|pose|detect|segment)).*$/i, "model_name"]],
+      vision: [[/vision/i, "clip_name"]],
+      te: [[/./, "clip_name"], [/./, "clip_name1"], [/./, "clip_name2"], [/./, "clip_name3"]],
+      vae: [[/./, "vae_name"]],
+      lora: [[/lora/i, "lora_name"]],
+    },
+    modelLoaderClass: /load/i,
+    audioTitle: /audio/i,
+    extraLoraClass: "LoraLoaderModelOnly",
+    extraLoraPrefix: "mp_lora_",
+    loraListClass: ["LoraLoaderModelOnly", "lora_name"],
+    workflow: {
+      textKeys: ["text", "text_g", "prompt"],
+      guiderClass: /guider/i,
+      samplerClass: /sampler|scheduler/i,
+      loadImageClass: /loadimage/i,
+      outputClass: /save|preview|combine|output/i,
+      saveClass: /^saveimage$/i,
+      clipLoaderClass: /checkpoint/i,
+      loraClipClass: "LoraLoader",
+      vaeNodeId: "mp_vae",
+      seedKeys: ["seed", "noise_seed"],
+      lengthKeys: ["length", "num_frames"],
+      autoNames: ["", "Automatic", "automatic", "Auto", "auto", "None"],
+      sizeClass: {
+        image: { include: /latent/i, exclude: /upscale/i },
+        video: { include: /./, exclude: /upscale|scale|resize|crop|pad|latentup/i },
+      },
+      partLabels: { positive: "プロンプト", negative: "ネガティブ", images: "元の画像", size: "大きさ", length: "長さ（フレーム数）", seed: "シード", steps: "ステップ数", cfg: "CFG", sampler: "サンプラー", scheduler: "スケジューラー", clipSkip: "CLIP スキップ", output: "画像・動画の保存（Save / Preview）" },
+      notJson: "JSON として読めませんでした。ComfyUI で書き出したワークフローの JSON を選んでください。",
+      notApi: "ComfyUI の API 形式のワークフローではありません。ComfyUI で「ワークフロー」→「エクスポート（API）」で保存し直してください。",
+      missing: "このワークフローには、アプリが値を書き込む場所（{list}）が見つかりません。",
+      pick: "ワークフローの JSON を選ぶ",
+      drop: "API形式のワークフローJSONをドロップ",
+      dropSub: "クリックして選ぶこともできます",
+      tagBuiltIn: "組み込み",
+      tagCustom: "手持ち",
+      reset: "組み込みのワークフローに戻す",
+      exportLabel: "このワークフローを書き出す（ComfyUI 用 JSON）",
+      apiHow: "手持ちのワークフローは、ComfyUI の「ワークフロー」→「エクスポート（API）」で保存した JSON を使います。プロンプト・大きさ・シードなどはアプリの値を書き込み、モデル・VAE・Text Encoder・LoRA はこの画面で選んだものに差し替えます。",
+      mapTitle: "書き込み先",
+      mapBadge: "自動で選ばれます",
+      loaded: "「{name}」を使います。",
+      cleared: "組み込みのワークフローに戻しました。",
+    },
+  },
   appName: "Stillmotion",
   pagesUrl: "https://bighipadventure.github.io/Stillmotion/",
   pagesOrigin: "https://bighipadventure.github.io",
@@ -1824,7 +2028,7 @@ const USER_SETTINGS = {
 
 A1111 / Forge / Forge Neo に、次のWebアプリ（__ORIGINS_TEXT__）からの接続を許可します。
 ほかのサイトからの接続は許可しません。
-許可したサイトから使えるのは、画像生成・モデル一覧など Stillmange / Stillmotion が使う窓口だけです
+許可したサイトから使えるのは、画像生成・モデル一覧など Stillmange / Stillmotion / Stillsheet が使う窓口だけです
 （設定画面・拡張機能の管理などの窓口は断ります）。
 起動オプションに --api を書かなくても、画像生成用のAPIを有効にします。
 
@@ -1868,7 +2072,7 @@ ALLOW_ALL = False
 ENABLE_API = True
 
 # ===== 許可したサイトから使える窓口 =====
-# Stillmange / Stillmotion が使うものだけを並べています。ここに無い窓口（設定画面・拡張機能の管理など）は、
+# Stillmange / Stillmotion / Stillsheet が使うものだけを並べています。ここに無い窓口（設定画面・拡張機能の管理など）は、
 # 許可したサイトからでも 403 で断ります。WebUI 自身の画面（同じアドレスから開いたページ）には影響しません。
 ALLOWED_PATHS = {
     "/web-app-cors/ping",
@@ -2079,7 +2283,7 @@ script_callbacks.on_app_started(on_app_started)
 
 ComfyUI に、次のWebアプリ（__ORIGINS_TEXT__）からの接続を許可します。
 ほかのサイトからの接続は許可しません。
-許可したサイトから使えるのは、ワークフローの実行・画像の受け渡し・モデル一覧など Stillmange / Stillmotion が使う窓口だけです
+許可したサイトから使えるのは、ワークフローの実行・画像の受け渡し・モデル一覧など Stillmange / Stillmotion / Stillsheet が使う窓口だけです
 （ComfyUI Manager によるカスタムノードの追加や、設定の書き換えなどの窓口は断ります）。
 
 入れ方
@@ -2118,7 +2322,7 @@ LOCALHOST_PATTERN = r"^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$"
 ALLOW_ALL = False
 
 # ===== 許可したサイトから使える窓口 =====
-# Stillmange / Stillmotion が使うものだけを並べています（先頭に /api が付いた形も同じ扱い。/ws は生成の進み具合の受け取り）。
+# Stillmange / Stillmotion / Stillsheet が使うものだけを並べています（先頭に /api が付いた形も同じ扱い。/ws は生成の進み具合の受け取り）。
 # ここに無い窓口（ComfyUI Manager によるカスタムノードの追加、設定やユーザーデータの書き換えなど）は、
 # 許可したサイトからでも 403 で断ります。ComfyUI 自身の画面（同じアドレスから開いたページ）には影響しません。
 ALLOWED_PATHS = {
@@ -3097,7 +3301,7 @@ Write the result in natural Japanese only, in exactly this form and nothing else
   // Stable Diffusion（長い動画のつなぎの画像）の接続先。Stillmange と同じく SD WebUI（A1111 / Forge）か ComfyUI
   sd: {
     backends: {
-      a1111: { label: "SD WebUI（A1111 / Forge）", url: "http://127.0.0.1:7860", cors: "--api --cors-allow-origins={origin}", corsNote: "このページからつなぐには、SD WebUI に拡張機能 web-app-cors（WebUI 用）を入れて起動し直してください（「はじめに」からダウンロードできます。起動オプションの --api と --cors-allow-origins は不要です）。" },
+      a1111: { label: "SD WebUI（A1111 / Forge / Forge Neo）", url: "http://127.0.0.1:7860", cors: "--api --cors-allow-origins={origin}", corsNote: "このページからつなぐには、SD WebUI に拡張機能 web-app-cors（WebUI 用）を入れて起動し直してください（「はじめに」からダウンロードできます。起動オプションの --api と --cors-allow-origins は不要です）。" },
       comfy: { label: "ComfyUI", url: "http://127.0.0.1:8188", corsNote: "このページからつなぐには、ComfyUI にカスタムノード web-app-cors（ComfyUI 用）を入れて起動し直してください（「はじめに」からダウンロードできます。起動オプションの --enable-cors-header は外します）。" },
     },
     defaultBackend: "a1111",
@@ -3372,11 +3576,12 @@ Answer in natural Japanese only, in exactly this form and nothing else (no markd
     zipName: "irodori-bridge.zip",
     script: "irodori_bridge.py",
     batName: "Irodori Bridge起動.bat",
-    readme: `Irodori Bridge（Stillmotion から Irodori-TTS でセリフの音声を作るための中継プログラム）
+    readme: `Irodori Bridge（Stillmotion・Stillsheet から Irodori-TTS でセリフの音声を作るための中継プログラム）
 
-Stillmotion（__ORIGINS_TEXT__）の「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」から、
+Stillmotion（__ORIGINS_TEXT__）の「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」や、
+Stillsheet の「ノベルゲーム」（登場人物の声・④ 音声を作る）から、
 このPCの中の Irodori-TTS にセリフを読み上げてもらうためのプログラムです。
-このPCの中（127.0.0.1:8791）だけで待ち受け、次のWebアプリ（__ORIGINS_TEXT__）からの接続だけを受け付けます。
+このPCの中（127.0.0.1:8791）だけで待ち受け、次のWebアプリ（https://bighipadventure.github.io）からの接続だけを受け付けます。
 ほかのサイトからの接続は断ります。文章や音声が外部に送られることはありません。
 
 入っているもの
@@ -3414,9 +3619,10 @@ Stillmotion（__ORIGINS_TEXT__）の「素材から動画」→「素材」→�
    止めるときは、最小化された「Irodori Bridge」の画面を閉じます。
    Irodori-TTS の画面（Gradio）は起動しなくてかまいません。同時に起動すると GPU のメモリを取り合います。
 
-4. Stillmotion で使う
+4. Stillmotion・Stillsheet で使う
    「素材から動画」→「素材」→「セリフの音声を作る（Irodori-TTS）」タブを開き、
    「接続OK」と出ればセリフの音声を作れます。
+   Stillsheet では、「作り方」を「ノベルゲーム」にすると、右上の「音声AI」が緑になり、セリフの音声を作れます。
    最初の1回は、モデル（約 3.3GB）のダウンロードと読み込みに数分かかります。2回目からは速くなります。
    作った音声は、Irodori-TTS の画面と同じ D:\\Irodori-TTS\\gradio_outputs に sample_日時_001.wav の名前で保存されます
    （生成時の設定は、同じ名前の .stillmotion.json に入ります）。Stillmotion には新しい 10 件が一覧で出ます。
@@ -3431,7 +3637,7 @@ Stillmotion（__ORIGINS_TEXT__）の「素材から動画」→「素材」→�
 - 60 秒待っても応答がない ………… 最小化された「Irodori Bridge」の画面のエラーを確かめます。
                                    ほかのアプリが 8791 番を使っている場合は、BAT の PORT=8791 の数字を変え、
                                    Stillmotion の「設定」→「音声AI」の URL も同じ番号にします。
-- Stillmotion で「接続が許可されていません」と出る … Stillmotion は必ず https://bighipadventure.github.io/Stillmotion/ から開きます。
+- Stillmotion・Stillsheet で「接続が許可されていません」と出る … 必ず https://bighipadventure.github.io/Stillmotion/ または /Stillsheet/ から開きます。
 `,
     source: `"""Irodori Bridge: Stillmotion（ブラウザ）から Irodori-TTS で音声を作るための中継プログラム。
 
@@ -4501,6 +4707,35 @@ if __name__ == "__main__":
       off: "最初の画像を最後のフレームにも使う FL2VA で、元の姿に戻る動画を作ります（これまでどおり）。",
       on: "ComfyUI-MiniMaxH3-Loop のループ専用ワークフロー（MiniMax H3 Loop Turbo）で、終わりが始まりにそのままつながるループ動画を作ります。画像は最初のフレームには固定せず、見た目の参考（<Picture 1>）として使います。「生成」のワークフロー・モデル・LoRA・「詳しい設定」はループ専用のものに切り替わり（変えた値はループ専用として別に保存します）、「しない」に戻すと元のワークフローに戻ります。",
     },
+    audio: {
+      label: "音声（任意）",
+      hintTitle: "ループに入れる音声（省略可）",
+      hintSub: "BGM・効果音・セリフの音声をドロップ（またはクリックして選ぶ）",
+      pick: "ループに入れる音声を選ぶ",
+      clear: "音声を外す",
+      roleLabel: "使い方",
+      memoLabel: "メモ（任意。セリフの内容・曲の雰囲気など、文章AIに伝えること）",
+      memoPlaceholder: "例: セリフ「おはよう」をくり返す",
+      roles: ["reuse", "voice", "style"],
+      defaultRole: "reuse",
+      tag: "<Audio 1>",
+      info: "{name}（{sec} 秒）を {tag} として、ループ専用のワークフローに渡します。ループの長さは {loop} 秒です。",
+      longer: "音声のほうがループより長いので、はみ出した部分は使われません。",
+      notAudio: "音声のファイルではありません（WAV・MP3・FLAC・OGG・M4A など）: {name}",
+      noNode: "このワークフローには、音声を渡せるノード（MiniMaxH3ReferenceToVideo）がありません。「生成」のワークフローを「ワークフローの値に戻す」で元に戻してください。",
+      nodeClass: "MiniMaxH3ReferenceToVideo",
+      inputKey: "ref_audios.ref_audio_0",
+      loaderClass: "LoadAudio",
+      loaderId: "loop_audio",
+      filePrefix: "stillmotion_loop_audio_",
+      story: "音声: {tag}（{name}・{sec} 秒、使い方: {role}）{memo}",
+      rule: "Reference audio: {tag} ({name}, {sec} s{memo}) is given to the video model together with <Picture 1>. {role} Mention {tag} by this tag in the description where its sound is used. The audio role wins over the no-speech rule and over the speech, vocal-sound and music settings above for the sound only; all the visual loop rules still apply.",
+      roleRules: {
+        reuse: "Role: audio reuse. Copy {tag} into the loop as its soundtrack (fully_copy): write overall_soundscape as {tag} reused as is (and non_diegetic_music as {tag} when it is music). If it contains speech or singing, the subject from <Picture 1> speaks or sings it with matching lip movement, the same way in every cycle.",
+        voice: "Role: audio reference. {tag} is the voice timbre and delivery of the subject from <Picture 1>; do not copy its words. The subject may say one short line in that voice, the same way in every cycle, so the loop still has no visible joint.",
+        style: "Role: audio reference. Reference only the music style, rhythm and atmosphere of {tag} for non_diegetic_music and for the rhythm of the repeating action; do not copy the signal and add no speech.",
+      },
+    },
     lengthNote: "長さは、ループがきれいにつながる長さ（{list} 秒）から選びます。いまは {sec} 秒（{frames} フレーム）です。「しない」に戻すと、元の長さ（{prev} 秒）に戻ります。",
     fps: 24,
     tailFrames: 5,
@@ -5200,8 +5435,6 @@ Tips for better results:
     materialsReading: "素材を読み込んでいます…",
     materialsClearConfirm: "素材をすべて外しますか？（元のファイルは消えません）",
     specOptimized: "このPCに合わせて最適化しました: ",
-    engineModel: "モデル",
-    engineLoraExt: /\.(safetensors|ckpt|pt|bin|gguf)$/i,
     specNothing: "最適化で変えるところはありませんでした。",
     specChangesTitle: "最適化で変えた項目",
     specStillHeavy: "それでも目安を超えます（長さは3秒より短くしません）。大きさか長さを手で下げてください",
@@ -5224,7 +5457,7 @@ Tips for better results:
     needPrompt: "英語プロンプトが空です。先に「最初から実行」してください。",
     needInstruction: "修正の指示を入力してください（例: もっと動きを大きく）。",
     needJa: "日本語欄が空です。",
-    needLlm: "文章AIの設定がまだです。「設定」→「文章AI（LLM）」で設定してください。",
+    needLlm: "文章AIの設定がまだです。「設定」→「文章AI」で設定してください。",
     needLlmModel: "文章AIのモデルが選ばれていません。「設定」→「文章AI」でモデルを選んでください。",
     needVideo: "動画の設定がまだです。「設定」→「動画AI」でワークフローを登録してください。",
     bannerSetup: "最初に、文章AIとComfyUIの接続を設定してください。",
@@ -5289,11 +5522,13 @@ Tips for better results:
     helpMissingModel: "モデル: ",
     wfpNote: "「{name}」のワークフローの値です。変えた項目には ● が付きます（ワークフローごとに保存されます）。",
     wfpNoProfile: "先に上でワークフローを登録して「追加して使う」を押すと、ここでモデル・LoRA・サンプラーなどを変えられます。",
-    advLlmNote: "いま使っている文章AI（{name}）の設定です。設定の「文章AI」と同じ値です。",
+    advLlmNote: "いま使っている文章AI（{name}）の設定です。",
     advLlmNone: "文章AIがまだ登録されていません。設定の「文章AI」で登録してください。",
-    sdGenNote: "つなぎの画像を作るときのモデル・サンプラーなどです。「元の画像と同じ」・空欄のままなら、元の画像のメタデータ（作ったときのモデル・設定）に合わせます。メイン画面の「詳しい設定」と同じ値です。",
+    sdGenNote: "つなぎの画像を作るときのモデル・サンプラーなどです。「元の画像と同じ」・空欄のままなら、元の画像のメタデータ（作ったときのモデル・設定）に合わせます。",
     sdGenOffline: "画像AI（{name}）につながらないため、モデルやサンプラーの一覧を読めませんでした（いまの値だけ表示しています）。",
     sdSame: "元の画像と同じ",
+    sdSameAsNow: "画像AIで選んでいるもののまま",
+    sdModelResetTitle: "モデルを「元の画像と同じ」、VAE・Text Encoder を「画像AIで選んでいるもののまま」に戻します",
     wfpNone: "このワークフローには、ここで変えられる値がありません。",
     wfpSimpleTitle: "スイッチ・数値",
     wfpOffline: "ComfyUI につながっていないため、選択肢を読み込めませんでした。値は文字で入力できます。",
@@ -6204,11 +6439,29 @@ class SdWebUiClient {
 
   // モデル・サンプラー・スケジューラーの一覧（「詳しい設定」のプルダウン用）
   async options() {
-    const [models, samplers, schedulers] = await Promise.all([
+    const [models, samplers, schedulers, vaeList, moduleList, opts] = await Promise.all([
       this.get("/sdapi/v1/sd-models").catch(() => []), this.get("/sdapi/v1/samplers").catch(() => []), this.get("/sdapi/v1/schedulers").catch(() => []),
+      this.get("/sdapi/v1/sd-vae").catch(() => []), this.get("/sdapi/v1/sd-modules").catch(() => []), this.get("/sdapi/v1/options").catch(() => ({})),
     ]);
     if (!models.length && !samplers.length) throw new Error("no lists");
-    return { models: models.map((m) => m.title), samplers: samplers.map((x) => x.name), schedulers: schedulers.map((x) => x.label || x.name) };
+    const forgeNeo = Array.isArray(opts?.forge_additional_modules);
+    const files = (list) => (Array.isArray(list) ? list : []).map((x) => ({ name: x.model_name, file: x.filename }));
+    const vaeFiles = files(vaeList);
+    const all = forgeNeo && files(moduleList).length ? files(moduleList) : vaeFiles;
+    const vaeLike = (x) => vaeFiles.some((v) => v.file === x.file) || USER_SETTINGS.vaeLike.test(x.name || "");
+    this.moduleFiles = Object.fromEntries([...all, ...vaeFiles].map((x) => [x.name, x.file]));
+    return {
+      models: models.map((m) => m.title), samplers: samplers.map((x) => x.name), schedulers: schedulers.map((x) => x.label || x.name),
+      vaes: (forgeNeo ? all.filter(vaeLike) : vaeFiles).map((x) => x.name), textEncoders: forgeNeo ? all.filter((x) => !vaeLike(x)).map((x) => x.name) : [], forgeNeo,
+    };
+  }
+
+  async moduleOverride(vae, te) {
+    if (!vae && !te) return {};
+    const lists = await this.options().catch(() => null);
+    if (!lists?.forgeNeo) return vae ? { sd_vae: vae } : {};
+    const file = (n) => (!n || USER_SETTINGS.autoValues.includes(n) ? "" : this.moduleFiles?.[n] || "");
+    return { forge_additional_modules: [file(te), file(vae)].filter(Boolean) };
   }
 
   // 元の画像のモデル名を、WebUI のモデル一覧の名前（title）にする
@@ -6255,6 +6508,7 @@ class SdWebUiClient {
       else notes.push(`モデル「${spec.model}」が見つからないため、いま WebUI で選んでいるモデルで作りました。`);
     }
     if (s.clipSkip) override.CLIP_stop_at_last_layers = s.clipSkip;
+    Object.assign(override, await this.moduleOverride(spec.vae, spec.textEncoder));
     // WebUI の設定「生成した画像をすべて保存する」がオフでも、つなぎの画像は保存する
     override.samples_save = true;
     const payload = {
@@ -6324,11 +6578,12 @@ class SdComfyClient {
 
   // A1111 のサンプラー名・スケジューラー名を ComfyUI の名前にする
   async options() {
-    const [models, samplers, schedulers] = await Promise.all([
+    const [models, samplers, schedulers, vaes] = await Promise.all([
       this.inputList("CheckpointLoaderSimple", "ckpt_name"), this.inputList("KSampler", "sampler_name"), this.inputList("KSampler", "scheduler"),
+      this.inputList("VAELoader", "vae_name"),
     ]);
     if (!models.length && !samplers.length) throw new Error("no lists");
-    return { models, samplers, schedulers };
+    return { models, samplers, schedulers, vaes, textEncoders: [], comfy: true };
   }
 
   static samplerName(name) {
@@ -6363,6 +6618,11 @@ class SdComfyClient {
     const g = {};
     let model = ["1", 0], clip = ["1", 1];
     g["1"] = { class_type: "CheckpointLoaderSimple", inputs: { ckpt_name: ckpt } };
+    let vae = ["1", 2];
+    if (spec.vae && !USER_SETTINGS.autoValues.includes(spec.vae)) {
+      g["9"] = { class_type: "VAELoader", inputs: { vae_name: spec.vae } };
+      vae = ["9", 0];
+    }
     loras.forEach((l, i) => {
       const id = String(100 + i);
       g[id] = { class_type: "LoraLoader", inputs: { lora_name: l.name, strength_model: l.weight, strength_clip: l.weight, model, clip } };
@@ -6381,7 +6641,7 @@ class SdComfyClient {
       if (!up.ok) throw new Error(`ComfyUI に画像を送れませんでした（${up.status}）`);
       const d = await up.json();
       g["20"] = { class_type: "LoadImage", inputs: { image: d.subfolder ? `${d.subfolder}/${d.name}` : d.name } };
-      g["21"] = { class_type: "VAEEncode", inputs: { pixels: ["20", 0], vae: ["1", 2] } };
+      g["21"] = { class_type: "VAEEncode", inputs: { pixels: ["20", 0], vae } };
       latent = ["21", 0];
     } else {
       g["5"] = { class_type: "EmptyLatentImage", inputs: { width: spec.width, height: spec.height, batch_size: 1 } };
@@ -6394,7 +6654,7 @@ class SdComfyClient {
         denoise: spec.init ? spec.denoise : 1, model, positive: ["3", 0], negative: ["4", 0], latent_image: latent,
       },
     };
-    g["10"] = { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae: ["1", 2] } };
+    g["10"] = { class_type: "VAEDecode", inputs: { samples: ["6", 0], vae } };
     g["11"] = { class_type: "SaveImage", inputs: { images: ["10", 0], filename_prefix: "stillmotion_key" } };
     const res = await fetch(`${this.base}/prompt`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: g }), signal });
     if (!res.ok) throw new Error(`ComfyUI が画像のワークフローを受け付けませんでした（${res.status}）: ${(await res.text()).slice(0, 400)}`);
@@ -8305,6 +8565,483 @@ class MachineSpec {
   }
 }
 
+// ===== MODEL PANEL (SAME CODE IN STILLSHEET / STILLMOTION / STILLMANGE) =====
+class ModelPanel {
+  static get T() { return USER_SETTINGS.modelPanel; }
+
+  static el(tag, attrs = {}, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v === undefined || v === null || v === false) continue;
+      if (k === "text") e.textContent = v;
+      else if (k === "class") e.className = v;
+      else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
+      else if (v === true) e.setAttribute(k, "");
+      else e.setAttribute(k, String(v));
+    }
+    for (const kid of kids.flat(Infinity)) if (kid !== null && kid !== undefined && kid !== false) e.append(kid);
+    return e;
+  }
+
+  static norm(name) {
+    return String(name ?? "").replace(/\s*\[[0-9a-f]+\]$/i, "").split(/[\\/]/).pop().replace(ModelPanel.T.fileExt, "").toLowerCase().trim();
+  }
+
+  static words(name) {
+    return new Set(ModelPanel.norm(name).split(/[^a-z0-9]+/).filter(Boolean));
+  }
+
+  static has(list, value) {
+    return (list || []).map(String).includes(String(value));
+  }
+
+  static core(name) {
+    return new Set(ModelPanel.norm(name).replace(ModelPanel.T.noiseWords, " ").split(/[^a-z0-9]+/).filter(Boolean));
+  }
+
+  static closest(list, wanted) {
+    const items = (list || []).map(String);
+    if (!items.length || wanted === undefined || wanted === null || wanted === "") return null;
+    if (items.includes(String(wanted))) return String(wanted);
+    const key = ModelPanel.norm(wanted);
+    const same = items.find((x) => ModelPanel.norm(x) === key);
+    if (same) return same;
+    const want = ModelPanel.core(wanted);
+    const inside = (a, b) => [...a].every((t) => b.has(t));
+    const all = ModelPanel.words(wanted);
+    let best = null, score = 0;
+    for (const x of items) {
+      const c = ModelPanel.core(x);
+      if (!c.size || !want.size || !(inside(c, want) || inside(want, c))) continue;
+      const w = ModelPanel.words(x);
+      const s = ([...w].filter((t) => all.has(t)).length + 1) / (new Set([...w, ...all]).size + 1);
+      if (s > score) { best = x; score = s; }
+    }
+    return best;
+  }
+
+  static display(name) {
+    return String(name ?? "").split(/[\\/]/).pop();
+  }
+
+  static fill(select, list, value, specials = []) {
+    const T = ModelPanel.T;
+    const items = (list || []).map(String);
+    const special = specials.some(([v]) => String(v) === String(value ?? ""));
+    const missing = !special && value !== undefined && value !== null && value !== "" && !items.includes(String(value));
+    const entries = [...specials.map(([v, label]) => [String(v), label]), ...items.map((x) => [x, x])];
+    if (missing) entries.push([String(value), items.length ? T.missingItem.replace("{name}", ModelPanel.display(value)) : ModelPanel.display(value)]);
+    if (!entries.length) entries.push(["", T.notLoaded]);
+    fillSelect(select, entries, String(value ?? ""));
+    return missing && items.length > 0;
+  }
+
+  static slotRow(slot) {
+    const T = ModelPanel.T;
+    const select = ModelPanel.el("select", { class: "mp-select", "aria-label": slot.label, ...(slot.attrs || {}) });
+    let warn = null;
+    if (slot.disabledNote) {
+      fillSelect(select, [["", slot.disabledNote]], "");
+      select.disabled = true;
+    } else {
+      const missing = ModelPanel.fill(select, slot.list, slot.value, slot.specials || []);
+      if (missing) warn = ModelPanel.el("p", { class: "mp-warn", text: T.missingNote.replace("{name}", ModelPanel.display(slot.value)) });
+      select.addEventListener("change", () => slot.onChange?.(select.value));
+    }
+    const row = ModelPanel.el("div", { class: `mp-row${warn ? " mp-missing" : ""}`, "data-slot": slot.key },
+      ModelPanel.el("span", { class: "mp-label", text: slot.label, title: slot.title || null }), select);
+    return [row, warn, slot.note ? ModelPanel.el("p", { class: "mp-note", text: slot.note }) : null];
+  }
+
+  static loraEditor(spec) {
+    const T = ModelPanel.T;
+    const list = (spec.list || []).map(String);
+    const items = spec.items || [];
+    const rows = items.map((item, i) => {
+      const missing = list.length > 0 && !!item.name && !list.includes(String(item.name));
+      const on = ModelPanel.el("input", { type: "checkbox", class: "mp-switch", "aria-label": T.loraUse.replace("{name}", ModelPanel.display(item.name)) });
+      on.checked = item.on !== false;
+      on.disabled = !!spec.disabled;
+      on.addEventListener("change", () => spec.onSet?.(i, { on: on.checked }));
+      const lead = spec.noSwitch ? ModelPanel.el("span", { class: "mp-switch-space", "aria-hidden": "true" }) : on;
+      const sel = ModelPanel.el("select", { class: "mp-select", "aria-label": T.loraFile });
+      ModelPanel.fill(sel, list, item.name);
+      sel.disabled = !!spec.disabled || !!item.fixedName;
+      sel.addEventListener("change", () => spec.onSet?.(i, { name: sel.value }));
+      const weight = ModelPanel.el("input", { type: "number", class: "mp-weight", step: T.weightStep, min: T.weightMin, max: T.weightMax, "data-slider-min": T.sliderMin, "data-slider-max": T.sliderMax, "aria-label": T.loraWeight.replace("{name}", ModelPanel.display(item.name)) });
+      const hasWeight = item.weight !== undefined && item.weight !== null;
+      weight.value = hasWeight ? item.weight : 1;
+      weight.disabled = !!spec.disabled || !hasWeight;
+      weight.addEventListener("change", () => {
+        const v = Number(weight.value);
+        if (weight.value === "" || !Number.isFinite(v)) return;
+        spec.onSet?.(i, { weight: v });
+      });
+      const del = item.fixed || spec.disabled ? ModelPanel.el("span", { class: "mp-del-space", "aria-hidden": "true" })
+        : ModelPanel.el("button", { type: "button", class: "mp-del", title: T.loraRemove, "aria-label": T.loraRemove, onclick: () => spec.onRemove?.(i) });
+      const row = ModelPanel.el("div", { class: `mp-lora${on.checked ? "" : " off"}${missing ? " mp-missing" : ""}`, title: item.label || item.name || "" },
+        ModelPanel.el("div", { class: "mp-lora-line" }, lead, sel, del),
+        hasWeight ? ModelPanel.el("div", { class: "mp-lora-weight" }, ModelPanel.el("span", { class: "mp-weight-label", text: T.weight }), weight) : null,
+        item.label ? ModelPanel.el("p", { class: "mp-note mp-lora-label", text: item.label }) : null,
+        missing ? ModelPanel.el("p", { class: "mp-warn", text: T.missingNote.replace("{name}", ModelPanel.display(item.name)) }) : null);
+      on.addEventListener("change", () => row.classList.toggle("off", !on.checked));
+      return row;
+    });
+    const box = ModelPanel.el("div", { class: "mp-lora-list" }, rows);
+    if (!spec.disabled && spec.onAdd) {
+      const used = new Set(items.map((x) => String(x.name)));
+      const rest = spec.showUsed ? list : list.filter((n) => !used.has(n));
+      const add = ModelPanel.el("select", { class: "mp-select mp-add", "aria-label": T.loraAdd, ...(spec.addAttrs || {}) });
+      fillSelect(add, [["", list.length ? T.loraAddItem.replace("{n}", rest.length) : spec.emptyText || T.loraNotLoaded], ...rest.map((n) => [n, n])], "");
+      add.disabled = !rest.length;
+      add.addEventListener("change", () => { const name = add.value; add.value = ""; if (name) spec.onAdd(name); });
+      box.append(add);
+    }
+    if (spec.tools?.length) box.append(ModelPanel.el("div", { class: "mp-tools" }, spec.tools));
+    if (!items.length && spec.emptyNote) box.prepend(ModelPanel.el("p", { class: "mp-note", text: spec.emptyNote }));
+    return ModelPanel.el("div", { class: "mp-loras", "data-slot": "loras" },
+      ModelPanel.el("span", { class: "mp-label", text: spec.label || T.lora }), box);
+  }
+
+  static render(spec) {
+    const T = ModelPanel.T;
+    const actions = [
+      ...(spec.actions || []),
+      spec.onReload ? ModelPanel.el("button", { type: "button", class: "mp-btn", "data-mp": "reload", text: T.reload, title: T.reloadTitle, onclick: () => spec.onReload() }) : null,
+      spec.onReset ? ModelPanel.el("button", { type: "button", class: "mp-btn", "data-mp": "reset", text: spec.resetLabel || T.reset, title: spec.resetTitle || T.resetTitle, onclick: () => spec.onReset() }) : null,
+    ].filter(Boolean);
+    const status = spec.loaded === undefined ? null
+      : ModelPanel.el("p", { class: `mp-status${spec.loaded ? "" : " off"}`, text: (spec.loaded ? T.loaded : T.offline).replace("{source}", spec.source || "") });
+    const root = ModelPanel.el("div", { class: `mp${spec.compact ? " mp-compact" : ""}`, ...(spec.attrs || {}) },
+      spec.title || actions.length ? ModelPanel.el("div", { class: "mp-head" }, spec.title ? ModelPanel.el("span", { class: "mp-title", text: spec.title }) : null, actions.length ? ModelPanel.el("span", { class: "mp-actions" }, actions) : null) : null,
+      status,
+      ...(spec.slots || []).map((s) => ModelPanel.slotRow(s)),
+      spec.loras ? ModelPanel.loraEditor(spec.loras) : null,
+      spec.note ? ModelPanel.el("p", { class: "mp-note", text: spec.note }) : null,
+      ...(spec.extra || []));
+    return root;
+  }
+}
+
+// ===== WORKFLOW MODELS (LOADER NODES OF A COMFYUI API WORKFLOW) =====
+class WorkflowModels {
+  static isLink(v) {
+    return Array.isArray(v) && v.length === 2 && typeof v[0] === "string" && typeof v[1] === "number";
+  }
+
+  static kindOf(classType, key) {
+    for (const [kind, rules] of Object.entries(USER_SETTINGS.modelPanel.loaderKinds)) {
+      if (rules.some(([cls, k]) => cls.test(classType) && k === key)) return kind;
+    }
+    return null;
+  }
+
+  static find(wf) {
+    const T = USER_SETTINGS.modelPanel;
+    const out = [];
+    for (const [id, node] of Object.entries(wf || {})) {
+      for (const [key, value] of Object.entries(node?.inputs || {})) {
+        if (typeof value !== "string") continue;
+        const kind = WorkflowModels.kindOf(node.class_type, key);
+        if (!kind || kind === "lora") continue;
+        const title = node._meta?.title || node.class_type;
+        const audio = kind === "vae" && T.audioTitle.test(`${title} ${value}`);
+        out.push({ id, key, path: `${id}|${key}`, classType: node.class_type, kind: audio ? "audioVae" : kind, value, title });
+      }
+    }
+    const order = Object.keys(T.kindLabels);
+    out.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+    const counts = {};
+    for (const s of out) counts[s.kind] = (counts[s.kind] || 0) + 1;
+    for (const s of out) s.label = counts[s.kind] > 1 ? `${T.kindLabels[s.kind]}（${s.title}）` : T.kindLabels[s.kind];
+    return out;
+  }
+
+  static loraNodes(wf) {
+    const out = [];
+    for (const [id, node] of Object.entries(wf || {})) {
+      const inputs = node?.inputs || {};
+      if (typeof inputs.lora_name === "string" && WorkflowModels.kindOf(node.class_type, "lora_name") === "lora") {
+        const strengthKey = ["strength_model", "strength", "lora_strength"].find((k) => typeof inputs[k] === "number");
+        out.push({ id, classType: node.class_type, title: node._meta?.title || node.class_type, name: inputs.lora_name, strengthKey, weight: strengthKey ? inputs[strengthKey] : null });
+      }
+    }
+    return out;
+  }
+
+  static modelLoaders(wf) {
+    return Object.entries(wf || {}).filter(([, n]) => USER_SETTINGS.modelPanel.modelLoaderClass.test(n?.class_type || "") && Object.entries(n?.inputs || {}).some(([k, v]) => typeof v === "string" && WorkflowModels.kindOf(n.class_type, k) === "model")).map(([id]) => id);
+  }
+
+  static insertLoras(wf, loras) {
+    const use = (loras || []).filter((l) => l && l.name && l.on !== false);
+    if (!use.length) return wf;
+    const T = USER_SETTINGS.modelPanel;
+    for (const tail of WorkflowModels.modelLoaders(wf)) {
+      const consumers = [];
+      for (const [nid, node] of Object.entries(wf)) {
+        for (const [k, v] of Object.entries(node.inputs || {})) {
+          if (WorkflowModels.isLink(v) && v[0] === tail && v[1] === 0) consumers.push([nid, k]);
+        }
+      }
+      let prev = [tail, 0];
+      use.forEach((l, i) => {
+        const id = `${T.extraLoraPrefix}${tail}_${i}`;
+        wf[id] = { class_type: T.extraLoraClass, inputs: { lora_name: l.name, strength_model: Number(l.weight ?? 1), model: prev }, _meta: { title: `LoRA ${ModelPanel.norm(l.name)}` } };
+        prev = [id, 0];
+      });
+      for (const [nid, k] of consumers) wf[nid].inputs[k] = [...prev];
+    }
+    return wf;
+  }
+
+  static async lists(comfy, slots, extraClasses = []) {
+    const pairs = [...slots.map((s) => [s.classType, s.key]), ...extraClasses];
+    const uniq = [...new Map(pairs.map((p) => [p.join("|"), p])).values()];
+    const got = await Promise.all(uniq.map(async ([cls, key]) => [`${cls}|${key}`, await comfy(cls, key)]));
+    return Object.fromEntries(got);
+  }
+}
+
+// ===== CUSTOM WORKFLOW (USER'S OWN COMFYUI API WORKFLOW) =====
+class CustomWorkflow {
+  static get T() { return USER_SETTINGS.modelPanel.workflow; }
+
+  static parse(text) {
+    const T = CustomWorkflow.T;
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error(T.notJson); }
+    if (data && typeof data.prompt === "object" && !Array.isArray(data.prompt) && Object.values(data.prompt).some((n) => n?.class_type)) data = data.prompt;
+    if (Array.isArray(data?.nodes) && Array.isArray(data?.links)) throw new Error(T.notApi);
+    const nodes = Object.entries(data && typeof data === "object" ? data : {})
+      .filter(([, n]) => n && typeof n === "object" && typeof n.class_type === "string" && n.inputs && typeof n.inputs === "object");
+    if (!nodes.length) throw new Error(T.notApi);
+    return Object.fromEntries(nodes);
+  }
+
+  static title(wf, id) {
+    return wf[id]?._meta?.title || wf[id]?.class_type || id;
+  }
+
+  static each(wf, test) {
+    const out = [];
+    for (const [id, n] of Object.entries(wf || {})) {
+      for (const [key, v] of Object.entries(n?.inputs || {})) if (test(n, key, v)) out.push({ id, key });
+    }
+    return out;
+  }
+
+  static upstream(wf, start, test) {
+    const seen = new Set();
+    const queue = [start];
+    while (queue.length) {
+      const id = queue.shift();
+      if (seen.has(id) || !wf[id]) continue;
+      seen.add(id);
+      const hit = test(id, wf[id]);
+      if (hit) return hit;
+      for (const v of Object.values(wf[id].inputs || {})) if (WorkflowModels.isLink(v)) queue.push(v[0]);
+    }
+    return null;
+  }
+
+  static textOf(wf, link) {
+    if (!WorkflowModels.isLink(link)) return null;
+    const keys = CustomWorkflow.T.textKeys;
+    return CustomWorkflow.upstream(wf, link[0], (id, n) => {
+      const key = keys.find((k) => typeof n.inputs?.[k] === "string");
+      return key ? { id, key } : null;
+    });
+  }
+
+  static detect(wf, kind) {
+    const T = CustomWorkflow.T;
+    let positive = null, negative = null;
+    for (const n of Object.values(wf || {})) {
+      const inp = n?.inputs || {};
+      positive ??= CustomWorkflow.textOf(wf, inp.positive) || (T.guiderClass.test(n.class_type) ? CustomWorkflow.textOf(wf, inp.conditioning) : null);
+      negative ??= CustomWorkflow.textOf(wf, inp.negative);
+    }
+    positive ??= CustomWorkflow.each(wf, (n, k, v) => k === "prompt" && typeof v === "string")[0] || null;
+    if (negative && positive && negative.id === positive.id && negative.key === positive.key) negative = null;
+    const num = (keys, cls) => CustomWorkflow.each(wf, (n, k, v) => keys.includes(k) && typeof v === "number" && (!cls || cls.test(n.class_type)));
+    const str = (keys, cls) => CustomWorkflow.each(wf, (n, k, v) => keys.includes(k) && typeof v === "string" && (!cls || cls.test(n.class_type)));
+    const sizeClass = T.sizeClass[kind];
+    const parts = {
+      positive, negative,
+      size: CustomWorkflow.each(wf, (n, k, v) => k === "width" && typeof v === "number" && typeof n.inputs.height === "number" && sizeClass.include.test(n.class_type) && !sizeClass.exclude.test(n.class_type)).map((p) => p.id),
+      length: kind === "video" ? num(T.lengthKeys) : [],
+      seed: num(T.seedKeys),
+      steps: num(["steps"], T.samplerClass),
+      cfg: num(["cfg"]),
+      sampler: str(["sampler_name"]),
+      scheduler: str(["scheduler"], T.samplerClass),
+      clipSkip: num(["stop_at_clip_layer"]),
+      images: str(["image"], T.loadImageClass),
+      output: Object.values(wf || {}).some((n) => T.outputClass.test(n?.class_type || "")),
+    };
+    const need = kind === "video" ? { images: parts.images.length, positive: parts.positive, output: parts.output } : { positive: parts.positive, size: parts.size.length, output: parts.output };
+    parts.missing = Object.entries(need).filter(([, ok]) => !ok).map(([k]) => T.partLabels[k]);
+    return parts;
+  }
+
+  static found(wf, parts) {
+    const T = CustomWorkflow.T;
+    const at = (list) => [...new Set(list.map((p) => CustomWorkflow.title(wf, p.id ?? p)))].join("、");
+    const rows = [
+      ["positive", parts.positive ? [parts.positive] : []], ["negative", parts.negative ? [parts.negative] : []],
+      ["images", parts.images], ["size", parts.size], ["length", parts.length], ["seed", parts.seed],
+      ["steps", parts.steps], ["cfg", parts.cfg], ["sampler", parts.sampler], ["scheduler", parts.scheduler], ["clipSkip", parts.clipSkip],
+    ];
+    return rows.filter(([, list]) => list.length).map(([k, list]) => [T.partLabels[k], at(list)]);
+  }
+
+  static setAll(wf, list, value) {
+    for (const { id, key } of list) wf[id].inputs[key] = value;
+  }
+
+  static redirect(wf, from, to) {
+    for (const node of Object.values(wf)) {
+      for (const [k, v] of Object.entries(node.inputs || {})) {
+        if (WorkflowModels.isLink(v) && v[0] === from[0] && v[1] === from[1]) node.inputs[k] = [...to];
+      }
+    }
+  }
+
+  static bypass(wf, id) {
+    const n = wf[id];
+    if (!n) return wf;
+    const outs = { 0: n.inputs.model, 1: n.inputs.clip };
+    delete wf[id];
+    for (const [i, src] of Object.entries(outs)) if (WorkflowModels.isLink(src)) CustomWorkflow.redirect(wf, [id, Number(i)], src);
+    return wf;
+  }
+
+  static addLoras(wf, loras) {
+    const T = USER_SETTINGS.modelPanel;
+    const use = (loras || []).filter((l) => l && l.name && l.on !== false);
+    if (!use.length) return wf;
+    for (const tail of WorkflowModels.modelLoaders(wf)) {
+      const withClip = CustomWorkflow.T.clipLoaderClass.test(wf[tail].class_type);
+      const users = (out) => CustomWorkflow.each(wf, (n, k, v) => WorkflowModels.isLink(v) && v[0] === tail && v[1] === out);
+      const modelUsers = users(0), clipUsers = withClip ? users(1) : [];
+      let m = [tail, 0], c = [tail, 1];
+      use.forEach((l, i) => {
+        const id = `${T.extraLoraPrefix}${tail}_${i}`;
+        const w = Number(l.weight ?? 1);
+        wf[id] = withClip
+          ? { class_type: CustomWorkflow.T.loraClipClass, inputs: { lora_name: l.name, strength_model: w, strength_clip: w, model: m, clip: c }, _meta: { title: `LoRA ${ModelPanel.norm(l.name)}` } }
+          : { class_type: T.extraLoraClass, inputs: { lora_name: l.name, strength_model: w, model: m }, _meta: { title: `LoRA ${ModelPanel.norm(l.name)}` } };
+        m = [id, 0];
+        if (withClip) c = [id, 1];
+      });
+      for (const { id, key } of modelUsers) wf[id].inputs[key] = [...m];
+      for (const { id, key } of clipUsers) wf[id].inputs[key] = [...c];
+    }
+    return wf;
+  }
+
+  static named(v) {
+    return !!v && !CustomWorkflow.T.autoNames.includes(String(v));
+  }
+
+  static image(base, spec, { samplerName = (v) => v, schedulerName = (v) => v, prefix } = {}) {
+    const wf = structuredClone(base);
+    const p = CustomWorkflow.detect(wf, "image");
+    const s = spec.settings || {};
+    const size = spec.size || { width: spec.width, height: spec.height };
+    if (p.positive) wf[p.positive.id].inputs[p.positive.key] = spec.prompt ?? "";
+    if (p.negative) wf[p.negative.id].inputs[p.negative.key] = spec.negative ?? "";
+    for (const id of p.size) {
+      Object.assign(wf[id].inputs, { width: size.width, height: size.height });
+      if (typeof wf[id].inputs.batch_size === "number") wf[id].inputs.batch_size = 1;
+    }
+    const seed = Number(spec.seed ?? s.seed);
+    if (Number.isFinite(seed) && seed >= 0) CustomWorkflow.setAll(wf, p.seed, seed);
+    if (Number(s.steps) > 0) CustomWorkflow.setAll(wf, p.steps, Number(s.steps));
+    if (Number(s.cfg) > 0) CustomWorkflow.setAll(wf, p.cfg, Number(s.cfg));
+    if (s.sampler) CustomWorkflow.setAll(wf, p.sampler, samplerName(s.sampler));
+    if (s.scheduler) CustomWorkflow.setAll(wf, p.scheduler, schedulerName(s.scheduler));
+    if (Number(s.clipSkip) > 0) CustomWorkflow.setAll(wf, p.clipSkip, -Math.max(1, Number(s.clipSkip)));
+    const slots = WorkflowModels.find(wf);
+    const slot = (kind) => slots.find((x) => x.kind === kind);
+    if (CustomWorkflow.named(spec.model) && slot("model")) wf[slot("model").id].inputs[slot("model").key] = spec.model;
+    if (CustomWorkflow.named(spec.textEncoder) && slot("te")) wf[slot("te").id].inputs[slot("te").key] = spec.textEncoder;
+    if (CustomWorkflow.named(spec.vae)) {
+      if (slot("vae")) wf[slot("vae").id].inputs[slot("vae").key] = spec.vae;
+      else {
+        const id = CustomWorkflow.T.vaeNodeId;
+        const users = CustomWorkflow.each(wf, (n, k, v) => k === "vae" && WorkflowModels.isLink(v));
+        wf[id] = { class_type: "VAELoader", inputs: { vae_name: spec.vae }, _meta: { title: "VAE" } };
+        for (const u of users) wf[u.id].inputs[u.key] = [id, 0];
+      }
+    }
+    CustomWorkflow.addLoras(wf, spec.loras);
+    if (prefix) for (const n of Object.values(wf)) if (CustomWorkflow.T.saveClass.test(n.class_type) && typeof n.inputs.filename_prefix === "string") n.inputs.filename_prefix = prefix;
+    return wf;
+  }
+
+  static video(base, { image, prompt, size, length, seed }) {
+    const wf = structuredClone(base);
+    const p = CustomWorkflow.detect(wf, "video");
+    if (image) CustomWorkflow.setAll(wf, p.images, image);
+    if (p.positive) wf[p.positive.id].inputs[p.positive.key] = prompt ?? "";
+    if (size) for (const id of p.size) Object.assign(wf[id].inputs, { width: size.width, height: size.height });
+    if (length) CustomWorkflow.setAll(wf, p.length, length);
+    if (Number.isFinite(seed) && seed >= 0) CustomWorkflow.setAll(wf, p.seed, seed);
+    return wf;
+  }
+
+  static async imageLists(comfy, wf) {
+    const T = USER_SETTINGS.modelPanel;
+    const slots = WorkflowModels.find(wf);
+    const of = (kind) => slots.find((s) => s.kind === kind);
+    const list = (s) => (s ? comfy(s.classType, s.key) : Promise.resolve([]));
+    const [models, textEncoders, vaes] = await Promise.all([list(of("model")), list(of("te")), of("vae") ? list(of("vae")) : comfy("VAELoader", "vae_name")]);
+    return { models, textEncoders, vaes, hasTe: !!of("te"), loraClass: T.loraListClass };
+  }
+}
+
+// ===== WORKFLOW CARD (DROP / RESET / EXPORT A CUSTOM WORKFLOW) =====
+class WorkflowCard {
+  static render({ kind, custom, builtIn, onLoad, onReset, onExport, exportNote, attrs }) {
+    const T = CustomWorkflow.T;
+    const el = ModelPanel.el;
+    const msg = el("p", { class: "msg" });
+    const input = el("input", { type: "file", accept: ".json,application/json", "aria-label": T.pick });
+    const zone = el("label", { class: "dropzone mp-drop" }, input,
+      el("span", { class: "hint" }, el("strong", { text: T.drop }), T.dropSub));
+    const read = async (file) => {
+      if (!file) return;
+      try {
+        const wf = CustomWorkflow.parse(await file.text());
+        const parts = CustomWorkflow.detect(wf, kind);
+        if (parts.missing.length) throw new Error(T.missing.replace("{list}", parts.missing.join("・")));
+        await onLoad({ name: file.name, workflow: wf });
+      } catch (err) {
+        setMsg(msg, err.message || String(err), "err");
+      }
+    };
+    input.addEventListener("change", () => { read(input.files[0]); input.value = ""; });
+    zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("over"); });
+    zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+    zone.addEventListener("drop", (e) => { e.preventDefault(); zone.classList.remove("over"); read(e.dataTransfer.files[0]); });
+    const found = custom ? CustomWorkflow.found(custom.workflow, CustomWorkflow.detect(custom.workflow, kind)) : [];
+    return el("div", { class: "mp-wf", ...(attrs || {}) },
+      el("p", { class: `mp-wf-now${custom ? " custom" : ""}` }, el("span", { class: "mp-wf-tag", text: custom ? T.tagCustom : T.tagBuiltIn }), el("span", { text: custom ? custom.name : builtIn })),
+      zone,
+      el("div", { class: "row" },
+        el("button", { type: "button", "data-wf": "reset", text: T.reset, disabled: !custom, onclick: () => onReset() }),
+        onExport ? el("button", { type: "button", "data-wf": "export", text: T.exportLabel, onclick: () => onExport() }) : null),
+      el("p", { class: "note", text: [T.apiHow, exportNote].filter(Boolean).join("") }),
+      msg,
+      found.length ? el("div", { class: "mp-wf-map" },
+        el("h5", { class: "sub-title" }, T.mapTitle, el("span", { class: "badge", text: T.mapBadge })),
+        el("dl", { class: "mp-wf-list" }, found.flatMap(([k, v]) => [el("dt", { text: k }), el("dd", { text: v })]))) : null);
+  }
+}
+// ===== END SHARED WORKFLOW CODE =====
+
 // ===== DRAG SORT (REORDER BY DRAGGING, OTHERS MOVE LIVE) =====
 class DragSort {
   constructor({ container, item, handle, id, onEnd, threshold = 5 }) {
@@ -8463,6 +9200,7 @@ class MainView {
     this.materialItems = [];
     this.materialNote = "";
     this.loopState = { status: "idle" };
+    this.loopAudioClip = null;
     this.secondsStep = $("seconds").getAttribute("step");
     this.initUiState();
     this.bind();
@@ -8835,7 +9573,110 @@ class MainViewWorkflowParams {
   }
 
   effectiveWorkflow(v = this.view.store.video) {
-    return v ? WorkflowParams.apply(v.workflow, this.overridesFor()) : null;
+    return v ? WorkflowModels.insertLoras(WorkflowParams.apply(v.workflow, this.overridesFor()), this.extraLorasFor()) : null;
+  }
+
+  extraLorasFor(id = this.view.store.data.videoActive) {
+    return this.view.store.ui.extraLoras?.[id] || [];
+  }
+
+  setExtraLoras(list, id = this.view.store.data.videoActive) {
+    const all = (this.view.store.ui.extraLoras ??= {});
+    if (list.length) all[id] = list;
+    else delete all[id];
+    this.view.store.save();
+    this.updateAdvancedBadge();
+  }
+
+  // VIDEO MODELS (SAME LAYOUT AS STILLSHEET)
+  modelParts(id) {
+    const v = this.view.store.data.videoProfiles[id];
+    if (!v) return null;
+    const wf = v.workflow;
+    const overrides = this.overridesFor(id);
+    const cur = (path, original) => (path in overrides ? overrides[path] : original);
+    const slots = WorkflowModels.find(wf).map((m) => ({ ...m, param: { path: m.path, value: m.value }, current: cur(m.path, m.value) }));
+    const nodes = Object.fromEntries(WorkflowModels.loraNodes(wf).map((n) => [n.id, n]));
+    const loras = WorkflowParams.loras(wf, v.mapping).map((l) => {
+      const [nid, key] = l.fileParam.path.split("|");
+      const strengthPath = l.param.kind === "lora-on" ? `${nid}|${key}|strength` : nodes[nid]?.strengthKey ? `${nid}|${nodes[nid].strengthKey}` : null;
+      const strength = strengthPath ? { path: strengthPath, value: WorkflowParams.get(wf, strengthPath) } : null;
+      const onRaw = cur(l.param.path, l.param.value);
+      return { ...l, strength, item: { name: String(cur(l.fileParam.path, l.fileParam.value)), weight: strength ? Number(cur(strength.path, strength.value)) : null, on: l.param.kind === "node-off" ? !onRaw : !!onRaw, fixed: true } };
+    });
+    return { v, slots, loras };
+  }
+
+  async renderVideoModels(box, id = this.view.store.data.videoActive, { compact = false, onChange } = {}) {
+    if (!box) return;
+    const parts = this.modelParts(id);
+    box.hidden = !parts;
+    if (!parts) { box.replaceChildren(); return; }
+    const tokens = (this.modelTokens ??= new Map());
+    const token = (tokens.get(box) || 0) + 1;
+    tokens.set(box, token);
+    const T = USER_SETTINGS.modelPanel;
+    const comfy = new ComfyClient(parts.v.comfyUrl);
+    const set = (param, value) => this.setOverride(param, value, id);
+    const notesOf = (this.modelNotes ??= {});
+    const paint = (lists) => {
+      const notes = notesOf[id] || [];
+      const p = this.modelParts(id);
+      const extra = this.extraLorasFor(id).map((l) => ({ ...l }));
+      const loraList = lists?.[T.loraListClass.join("|")] || null;
+      const changed = () => { delete notesOf[id]; this.renderVideoModels(box, id, { compact, onChange }); onChange?.(); if (box !== $("sel-model-panel")) this.renderVideoModels($("sel-model-panel")); };
+      box.replaceChildren(ModelPanel.render({
+        compact, loaded: lists ? Object.values(lists).some((l) => l?.length) : undefined, source: `ComfyUI: ${p.v.comfyUrl}`,
+        onReload: () => { ComfyClient.folderCache?.clear?.(); ComfyClient.infoCache?.clear?.(); this.renderVideoModels(box, id, { compact, onChange }); },
+        onReset: () => {
+          for (const sl of p.slots) set(sl.param, sl.param.value);
+          for (const l of p.loras) { set(l.fileParam, l.fileParam.value); set(l.param, l.param.value); if (l.strength) set(l.strength, l.strength.value); }
+          this.setExtraLoras([], id);
+          changed();
+        },
+        resetLabel: T.resetWorkflow, resetTitle: T.resetVideoTitle,
+        slots: p.slots.map((sl) => ({ key: sl.path, label: sl.label, list: lists?.[`${sl.classType}|${sl.key}`], value: sl.current, attrs: { "data-path": sl.path },
+          onChange: (val) => { set(sl.param, val); changed(); } })),
+        loras: {
+          list: loraList, items: [...p.loras.map((l) => l.item), ...extra],
+          onSet: (i, patch) => {
+            if (i < p.loras.length) {
+              const l = p.loras[i];
+              if ("name" in patch) set(l.fileParam, patch.name);
+              if ("on" in patch) set(l.param, l.param.kind === "node-off" ? !patch.on : patch.on);
+              if ("weight" in patch && l.strength) set(l.strength, patch.weight);
+            } else {
+              Object.assign(extra[i - p.loras.length], patch);
+              this.setExtraLoras(extra, id);
+            }
+            changed();
+          },
+          onRemove: (i) => { if (i >= p.loras.length) { extra.splice(i - p.loras.length, 1); this.setExtraLoras(extra, id); changed(); } },
+          onAdd: (name) => { extra.push({ name, weight: 1, on: true }); this.setExtraLoras(extra, id); changed(); },
+        },
+        extra: notes.map((t) => ModelPanel.el("p", { class: "mp-note", text: t })),
+      }));
+    };
+    paint(null);
+    const lists = await WorkflowModels.lists((cls, key) => comfy.options(cls, key).then((o) => o || []).catch(() => []), parts.slots, [T.loraListClass]);
+    if (token !== tokens.get(box)) return;
+    const notes = [];
+    const fresh = this.modelParts(id);
+    for (const sl of fresh.slots) {
+      const list = lists[`${sl.classType}|${sl.key}`] || [];
+      if (!list.length || ModelPanel.has(list, sl.current)) continue;
+      const near = ModelPanel.closest(list, sl.current);
+      if (near) { set(sl.param, near); notes.push(T.substituted.replace("{from}", sl.current).replace("{to}", near)); }
+    }
+    const loraList = lists[T.loraListClass.join("|")] || [];
+    for (const l of fresh.loras) {
+      if (!loraList.length || ModelPanel.has(loraList, l.item.name)) continue;
+      const near = ModelPanel.closest(loraList, l.item.name);
+      if (near) { set(l.fileParam, near); notes.push(T.substituted.replace("{from}", l.item.name).replace("{to}", near)); }
+    }
+    if (notes.length) notesOf[id] = [...(notesOf[id] || []), ...notes];
+    if (token !== tokens.get(box)) return;
+    paint(lists);
   }
 
   setOverride(param, value, id = this.view.store.data.videoActive, reset = $("wfp-reset")) {
@@ -8879,7 +9720,9 @@ class MainViewWorkflowParams {
     const cfg = USER_SETTINGS.workflowParams;
     const m0 = USER_SETTINGS.messages;
     if (!v) { box.replaceChildren(); note.textContent = id === undefined || !id ? m0.wfpNoProfile : ""; reset.hidden = true; return; }
-    const groups = WorkflowParams.list(v.workflow, v.mapping);
+    const parts = this.modelParts(id);
+    const skip = new Set(parts ? [...parts.slots.map((x) => x.path), ...parts.loras.flatMap((l) => [l.fileParam.path, l.param.path, l.strength?.path])] : []);
+    const groups = WorkflowParams.list(v.workflow, v.mapping).map((g) => ({ ...g, params: g.params.filter((p) => !skip.has(p.path)) })).filter((g) => g.params.length);
     const rank = (g) => { const i = cfg.order.findIndex((re) => re.test(g.classType)); return i < 0 ? cfg.order.length : i; };
     groups.sort((a, b) => rank(a) - rank(b));
     const comfy = new ComfyClient(v.comfyUrl);
@@ -9015,7 +9858,8 @@ class MainViewWorkflowParams {
 
   // 画像AI（つなぎの画像）の作り方: モデル・サンプラー・スケジューラー・ステップ数・CFG・CLIP スキップ。
   // 空欄（元の画像と同じ）なら、元の画像のメタデータに合わせる。メイン画面の「詳しい設定」と、設定の「画像AI」のどちらにも出す
-  async renderSdGen(box = $("adv-sd"), note = $("adv-sd-note"), reset = $("adv-sd-reset")) {
+  async renderSdGen(box = $("adv-sd"), note = $("adv-sd-note"), reset = $("adv-sd-reset"), modelBox = null) {
+    const again = () => this.renderSdGen(box, note, reset, modelBox);
     const m = USER_SETTINGS.messages;
     const cfg = this.view.sdConfig();
     const gen = (cfg.gen ??= {});
@@ -9066,14 +9910,27 @@ class MainViewWorkflowParams {
     const title = document.createElement("div");
     title.className = "wfp-title";
     title.textContent = `${client.label}（${client.base}）`;
+    const T = USER_SETTINGS.modelPanel;
+    const models = ModelPanel.render({
+      loaded: !!lists, source: client.label,
+      onReload: () => again(),
+      onReset: () => { for (const k of ["model", "vae", "textEncoder"]) save(k, ""); again(); },
+      resetTitle: m.sdModelResetTitle,
+      slots: [
+        { key: "model", label: T.checkpoint, list: lists?.models, value: gen.model || "", specials: [["", same(this.view.meta?.model)]], onChange: (val) => { save("model", val); again(); } },
+        { key: "vae", label: T.vae, list: (lists?.vaes || []).filter((v) => !USER_SETTINGS.autoValues.includes(v)), value: gen.vae || "",
+          specials: [["", m.sdSameAsNow], ["Automatic", T.builtInVae], ...(lists?.comfy ? [] : [["None", T.noVae]])], onChange: (val) => { save("vae", val); again(); } },
+        { key: "textEncoder", label: T.textEncoder, list: lists?.textEncoders, value: gen.textEncoder || "", specials: [["", m.sdSameAsNow], ["Automatic", T.builtInTe]],
+          disabledNote: lists?.comfy ? T.teComfy : lists && !lists.forgeNeo ? T.teA1111 : "", onChange: (val) => { save("textEncoder", val); again(); } },
+      ],
+    });
     group.append(title,
-      row("モデル", select("model", lists?.models, gen.model, this.view.meta?.model), "model"),
       row("サンプラー", select("sampler", lists?.samplers, gen.sampler, meta.sampler), "sampler"),
       row("スケジューラー", select("scheduler", lists?.schedulers, gen.scheduler, meta.scheduler), "scheduler"),
       row("ステップ数", num("steps", { min: 1, max: 100, step: 1 }, meta.steps), "steps"),
       row("CFG", num("cfg", { min: 1, max: 20, step: 0.5 }, meta.cfg), "cfg"),
       row("CLIP スキップ", num("clipSkip", { min: 1, max: 12, step: 1 }, meta.clipSkip), "clipSkip"));
-    box.replaceChildren(group);
+    if (modelBox) { modelBox.replaceChildren(models); box.replaceChildren(group); } else box.replaceChildren(models, group);
     changed();
   }
 
@@ -9095,46 +9952,7 @@ class MainViewModels {
   }
 
   async renderEngineModels() {
-    const v = this.view.store.video;
-    const token = (this.engineToken = (this.engineToken || 0) + 1);
-    if (!v) { $("sel-models-field").hidden = true; $("sel-loras-field").hidden = true; return; }
-    const id = this.view.store.data.videoActive;
-    const overrides = this.view.overridesFor(id);
-    const current = (param) => (param.path in overrides ? overrides[param.path] : param.value);
-    const models = WorkflowParams.models(v.workflow, v.mapping);
-    const loras = WorkflowParams.loras(v.workflow, v.mapping);
-    const comfy = new ComfyClient(v.comfyUrl);
-    const lists = await Promise.all(models.map(({ group, param }) => comfy.options(group.classType, param.key)));
-    if (token !== this.engineToken) return;
-    const set = (param, value) => this.view.setOverride(param, value, id);
-    $("sel-models").replaceChildren(...models.map(({ group, param }, i) => {
-      const value = String(current(param));
-      const list = (lists[i] || []).map(String);
-      const select = document.createElement("select");
-      fillSelect(select, (list.includes(value) ? list : [value, ...list]).map((o) => [o, o]), value);
-      select.title = `${group.title}: ${value}`;
-      select.setAttribute("aria-label", `${USER_SETTINGS.messages.engineModel}（${group.title}）`);
-      select.addEventListener("change", () => set(param, select.value));
-      return select;
-    }));
-    $("sel-models-field").hidden = !models.length;
-    $("sel-loras").replaceChildren(...loras.map((l) => {
-      const on = l.param.kind === "node-off" ? !current(l.param) : !!current(l.param);
-      const name = String(current(l.fileParam));
-      const row = document.createElement("label");
-      row.className = `engine-lora${on ? "" : " off"}`;
-      row.title = name;
-      const box = document.createElement("input");
-      box.type = "checkbox";
-      box.checked = on;
-      box.setAttribute("aria-label", `LoRA ${name}`);
-      box.addEventListener("change", () => set(l.param, l.param.kind === "node-off" ? !box.checked : box.checked));
-      const text = document.createElement("span");
-      text.textContent = name.replace(USER_SETTINGS.messages.engineLoraExt, "");
-      row.append(box, text);
-      return row;
-    }));
-    $("sel-loras-field").hidden = !loras.length;
+    await this.view.renderVideoModels($("sel-model-panel"), this.view.store.data.videoActive, { compact: true });
   }
 
   applyVideoProfile() {
@@ -9536,7 +10354,8 @@ class MainViewAutoSize {
     const chosen = this.promptOptions();
     // 素材から動画で、素材の音声（声・セリフ・BGM）を使うときは、素材の指定を優先して書き込まない
     const refAudio = this.view.isRef() && this.view.materialItems.some((i) => i.kind === "audio" || (i.kind === "video" && i.hasAudio && i.audioMode !== "off"));
-    if (refAudio) return out;
+    const loopAudio = this.view.loopActive() && ["reuse", "voice"].includes(this.view.loopAudioJob()?.role);
+    if (refAudio || loopAudio) return out;
     const rules = ["voice", "vocal", "sfx"].filter((k) => chosen[k] === "off").map((k) => cfg.audioRules[k][lang === "ja" ? "ja" : "en"]);
     if (rules.length) {
       const at = out.indexOf(cfg.soundscapeField);
@@ -9622,7 +10441,7 @@ class MainViewFixedCamera {
       .map((g) => g.choices.find(([v]) => v === chosen[g.key])[2].replace("{vocab}", cfg.cameraVocab))
       .map((line) => (ref ? line.replaceAll("integrated_multimodal_description", "detailed_description") : line));
     if (this.view.isH3() && !ref && !loop) lines.unshift(cfg.firstLineRule.replace("{line}", this.view.instructionLine()));
-    if (loop) lines.unshift(USER_SETTINGS.loop.promptRule, USER_SETTINGS.loop.motion[chosen.motion] || USER_SETTINGS.loop.motion.normal);
+    if (loop) lines.unshift(...[USER_SETTINGS.loop.promptRule, USER_SETTINGS.loop.motion[chosen.motion] || USER_SETTINGS.loop.motion.normal, this.view.loopAudioRule()].filter(Boolean));
     if (chosen.mode === "FL2VA" && !this.view.last && !this.view.segCtx && !loop) lines.push(cfg.lastSameAsFirst);
     if (this.view.segCtx) lines.push(...this.view.segCtx.rules);
     if (ref) lines.push(cfg.refRolesWin);
@@ -9671,10 +10490,120 @@ class MainViewLoop {
       });
       return b;
     }));
+    this.buildLoopAudio();
     $("loop-guide-title").textContent = cfg.guide.title;
     $("loop-guide-tip").textContent = cfg.guide.tip;
     $("loop-recheck").textContent = cfg.guide.recheck;
     $("loop-open").textContent = cfg.guide.open;
+  }
+
+  buildLoopAudio() {
+    const A = USER_SETTINGS.loop.audio;
+    const ui = this.view.store.ui;
+    $("loop-audio-label").textContent = A.label;
+    $("loop-audio-input").setAttribute("aria-label", A.pick);
+    $("loop-audio-clear").textContent = A.clear;
+    $("loop-audio-role-label").textContent = A.roleLabel;
+    $("loop-audio-memo-label").textContent = A.memoLabel;
+    $("loop-audio-memo").placeholder = A.memoPlaceholder;
+    const roles = USER_SETTINGS.refs.roles.audio.filter(([v]) => A.roles.includes(v)).map(([v, label]) => [v, label]);
+    fillSelect($("loop-audio-role"), roles, A.roles.includes(ui.loopAudioRole) ? ui.loopAudioRole : A.defaultRole);
+    $("loop-audio-memo").value = ui.loopAudioMemo || "";
+    this.view.on($("loop-audio-role"), "change", (e) => { this.view.saveUi({ loopAudioRole: e.target.value }); this.renderLoopAudio(); });
+    this.view.on($("loop-audio-memo"), "change", (e) => this.view.saveUi({ loopAudioMemo: e.target.value.trim() }));
+    this.view.on($("loop-audio-input"), "change", (e) => { if (e.target.files[0]) this.loadLoopAudio(e.target.files[0]); e.target.value = ""; });
+    this.view.on($("loop-audio-clear"), "click", () => this.clearLoopAudio());
+    const zone = $("loop-audio-drop");
+    this.view.on(zone, "dragover", (e) => { e.preventDefault(); e.stopPropagation(); zone.classList.add("over"); });
+    this.view.on(zone, "dragleave", () => zone.classList.remove("over"));
+    this.view.on(zone, "drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove("over");
+      if (e.dataTransfer.files[0]) this.loadLoopAudio(e.dataTransfer.files[0]);
+    });
+  }
+
+  async loadLoopAudio(file) {
+    const A = USER_SETTINGS.loop.audio;
+    const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+    if (!file.type.startsWith("audio/") && !USER_SETTINGS.refs.extensions.audio.includes(ext)) {
+      this.view.status(A.notAudio.replace("{name}", file.name), true);
+      return;
+    }
+    file = await Materials.inMemory(file);
+    const url = URL.createObjectURL(file);
+    const duration = await new Promise((resolve) => {
+      const probe = new Audio();
+      probe.preload = "metadata";
+      probe.onloadedmetadata = () => resolve(Number.isFinite(probe.duration) ? probe.duration : null);
+      probe.onerror = () => resolve(null);
+      probe.src = url;
+    });
+    this.clearLoopAudio(false);
+    this.view.loopAudioClip = { file, name: file.name, url, duration };
+    this.renderLoopAudio();
+  }
+
+  clearLoopAudio(render = true) {
+    if (this.view.loopAudioClip) URL.revokeObjectURL(this.view.loopAudioClip.url);
+    this.view.loopAudioClip = null;
+    if (render) this.renderLoopAudio();
+  }
+
+  renderLoopAudio() {
+    const A = USER_SETTINGS.loop.audio;
+    const clip = this.view.loopAudioClip;
+    const player = $("loop-audio-player");
+    $("loop-audio-row").hidden = !clip;
+    $("loop-audio-drop").classList.toggle("has-file", !!clip);
+    const strong = document.createElement("strong");
+    strong.textContent = clip ? clip.name : A.hintTitle;
+    $("loop-audio-hint").replaceChildren(strong, clip ? "" : A.hintSub);
+    if (clip && player.getAttribute("src") !== clip.url) player.src = clip.url;
+    if (!clip) player.removeAttribute("src");
+    const loopSec = LoopVideo.secondsOf(LoopVideo.lengthFor($("seconds").value));
+    $("loop-audio-note").textContent = clip
+      ? A.info.replace("{name}", clip.name).replace("{sec}", (clip.duration ?? 0).toFixed(2)).replace("{tag}", A.tag).replace("{loop}", loopSec.toFixed(2))
+        + (clip.duration && clip.duration > loopSec + 0.05 ? A.longer : "")
+      : "";
+  }
+
+  loopAudioJob() {
+    const clip = this.view.loopAudioClip;
+    if (!clip || !this.loopActive()) return null;
+    const ui = this.view.store.ui;
+    const A = USER_SETTINGS.loop.audio;
+    return { file: clip.file, name: clip.name, duration: clip.duration, role: A.roles.includes(ui.loopAudioRole) ? ui.loopAudioRole : A.defaultRole, memo: (ui.loopAudioMemo || "").trim() };
+  }
+
+  loopAudioRule() {
+    const a = this.loopAudioJob();
+    if (!a) return "";
+    const A = USER_SETTINGS.loop.audio;
+    const fill = (t) => t.replaceAll("{tag}", A.tag);
+    return fill(A.rule).replace("{name}", a.name).replace("{sec}", (a.duration ?? 0).toFixed(2)).replace("{memo}", a.memo ? `; note: ${a.memo}` : "").replace("{role}", fill(A.roleRules[a.role]));
+  }
+
+  loopAudioStory() {
+    const a = this.loopAudioJob();
+    if (!a) return "";
+    const A = USER_SETTINGS.loop.audio;
+    const role = (USER_SETTINGS.refs.roles.audio.find(([v]) => v === a.role) || [])[1] || a.role;
+    return A.story.replace("{tag}", A.tag).replace("{name}", a.name).replace("{sec}", (a.duration ?? 0).toFixed(2)).replace("{role}", role).replace("{memo}", a.memo ? ` メモ: ${a.memo}` : "");
+  }
+
+  async applyLoopAudio(comfy, job, workflow) {
+    const a = job.loopAudio;
+    if (!a) return;
+    const A = USER_SETTINGS.loop.audio;
+    const node = Object.keys(workflow).find((id) => workflow[id].class_type === A.nodeClass);
+    if (!node) throw new UserError(A.noNode);
+    const ext = (a.name.match(/\.[^.]+$/) || [".wav"])[0].toLowerCase();
+    const name = await comfy.uploadAs(a.file, `${A.filePrefix}${textHash(`${a.name}|${a.file.size}|${a.file.lastModified}`)}${ext}`, "");
+    workflow[A.loaderId] = { class_type: A.loaderClass, inputs: { audio: name }, _meta: { title: `${A.tag} ${a.name}` } };
+    workflow[node].inputs[A.inputKey] = [A.loaderId, 0];
+    job.loopAudioName = a.name;
   }
 
   loopComfyUrl() {
@@ -9686,6 +10615,9 @@ class MainViewLoop {
     const visible = !this.view.isRef() && !this.view.isLong() && this.view.isH3() && this.view.promptOptions().mode === "FL2VA" && !this.view.last;
     const on = this.view.store.ui.loop === "on";
     $("loop-box").hidden = !visible;
+    $("loop-audio-box").hidden = !(visible && on);
+    $("loop-audio-role").disabled = $("loop-audio-input").disabled = $("loop-audio-clear").disabled = !!this.view.running;
+    this.renderLoopAudio();
     PanelWindow.queryAll("#loop-choice button").forEach((b) => {
       b.setAttribute("aria-pressed", String(b.dataset.value === this.view.store.ui.loop));
       b.disabled = !!this.view.running;
@@ -10602,6 +11534,7 @@ class MainViewMachineSpec {
       .map((g) => `${g.label}: ${(g.choices.find(([v]) => v === chosen[g.key]) || [])[1] || chosen[g.key]}`);
     if (this.view.isRef()) lines.push("作り方: 素材から動画（素材の使い方の指定を優先）");
     else if (this.view.isH3()) lines.push(`モードの意味: ${this.view.loopActive() ? USER_SETTINGS.loop.storyMode : cfg.modeInfo[chosen.mode]}`);
+    if (this.view.loopActive() && this.view.loopAudioStory()) lines.push(this.view.loopAudioStory());
     lines.push(`長さ: ${this.view.loopActive() ? LoopVideo.secondsOf(LoopVideo.lengthFor($("seconds").value)).toFixed(2) : $("seconds").value}秒`);
     return lines.join("\n");
   }
@@ -10818,7 +11751,7 @@ class MainViewMachineSpec {
       seconds: Number($("seconds").value), negative: $("negative").value.trim(),
       aspect: ui.aspect, megapixels: Number(ui.megapixels), fit: ui.fit, focus: { ...this.view.focus },
       img: this.view.img, meta: this.view.meta, file: this.view.file, last: options.mode === "FL2VA" && this.view.last ? { ...this.view.last } : null, options,
-      flow: this.view.store.flow, refs: null,
+      flow: this.view.store.flow, refs: null, loopAudio: loop ? this.view.loopAudioJob() : null,
       direction: (ui.direction || "").trim(), story: $("story").value,
       skills: this.view.store.activeSkillObjects().map((s) => s.name), style: this.view.store.styleFor(v)?.name,
       llm: this.view.store.llm?.name, llmModel: this.view.store.llm?.model,
@@ -10861,6 +11794,7 @@ class MainViewMachineSpec {
       videoId: d.videoActive, llmId: d.llmActive, llmModel: this.view.store.llm?.model || "",
       activeSkills: [...(d.activeSkills || [])], translate: !!d.translate,
       overrides: clone(this.view.overridesFor()),
+      ...(this.view.extraLorasFor().length ? { extraLoras: clone(this.view.extraLorasFor()) } : {}),
       ui: clone({
         aspect: ui.aspect, megapixels: ui.megapixels, megapixelsAuto: !!ui.megapixelsAuto, fit: ui.fit, seconds: Number($("seconds").value),
         seed: ui.seed ?? "", negative: ui.negative ?? "", direction: ui.direction ?? "", promptOptions: ui.promptOptions,
@@ -10887,6 +11821,7 @@ class MainViewMachineSpec {
     const restoredFlow = r.ui.flow === "ref" ? "ref" : "image";
     if (!d.videoProfiles[r.videoId]) d.videoActive = this.view.pickVideoForFlow(restoredFlow);
     if (d.videoActive) (d.flowVideo ??= {})[restoredFlow] = d.videoActive;
+    if (d.videoActive === r.videoId) this.view.setExtraLoras(clone(r.extraLoras || []), r.videoId);
     this.view.store.save();
   }
 
@@ -12810,7 +13745,7 @@ class MainViewLongKeyImages {
     const seed = Number.isInteger(this.view.meta.seed) ? this.view.meta.seed + b + 1000 * (holder.keyTry || 0) : Math.floor(Math.random() * 2 ** 31);
     let out;
     try {
-      out = await client.generate({ prompt, negative: this.view.meta.negative, model, settings: st, width, height, seed, init, denoise: scene.denoise }, signal);
+      out = await client.generate({ prompt, negative: this.view.meta.negative, model, vae: gen.vae || "", textEncoder: gen.textEncoder || "", settings: st, width, height, seed, init, denoise: scene.denoise }, signal);
     } catch (err) {
       if (err.name === "AbortError" || err instanceof UserError) throw err;
       throw new UserError(fill(m.keyFailed) + (err.message || err));
@@ -13549,7 +14484,7 @@ class MainViewState {
     values.image = await comfy.upload(first ? await FrameFitter.toFile(first, baseName) : job.file);
     const [imageNode, imageKey] = v.mapping.image.split("|");
     workflow[imageNode].inputs[imageKey] = values.image;
-    if (job.loop) return;
+    if (job.loop) return this.view.applyLoopAudio(comfy, job, workflow);
     let lastName = null;
     if (mode === "FL2VA" && job.last) {
       const lastSize = size || { width: job.last.meta.width, height: job.last.meta.height };
@@ -15094,7 +16029,7 @@ class SettingsView {
 
   // 「画像の作り方」: メイン画面の「詳しい設定」と同じ表
   renderSdGen() {
-    window.stillmotion?.main?.renderSdGen($("sd-gen"), $("sd-gen-note"), $("sd-gen-reset"));
+    window.stillmotion?.main?.renderSdGen($("sd-gen"), $("sd-gen-note"), $("sd-gen-reset"), $("sd-models"));
   }
 
   async testSd() {
@@ -15642,6 +16577,7 @@ class SettingsView {
   // 「モデル・LoRA・サンプラーなど」: メイン画面の「詳しい設定」と同じ表を、編集中の動画AIの設定について出す
   renderVideoParams() {
     window.stillmotion?.main?.renderWorkflowParams({ box: $("vid-params"), id: this.editing.video, note: $("vid-params-note"), reset: $("vid-params-reset"), sub: null });
+    window.stillmotion?.main?.renderVideoModels($("vid-models"), this.editing.video, { onChange: () => this.renderVideoParams() });
   }
 
   renderMapping(wf, mapping) {
